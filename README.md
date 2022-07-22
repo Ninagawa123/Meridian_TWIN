@@ -74,7 +74,7 @@ Teensyスクリプトの サーボ設定 の項目で, 各サーボのマウン�
 <img width="600" alt="motorccw" src="https://user-images.githubusercontent.com/8329123/147812253-e6cbe388-f70a-445f-80c0-b4cd899aa15a.png">
   
 #### サーボを接続する
-<img width="600" src="https://github.com/Ninagawa123/Meridian_TWIN/blob/main/document/TypeK_pinassign.png">  
+<img width="600" src="https://github.com/Ninagawa123/Meridian_TWIN/blob/main/documents/TypeK_pinassign.png">  
 こちらのピンアサインを参考に, サーボを接続します.  
   
 #### センサーを接続する  
