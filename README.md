@@ -60,7 +60,7 @@ PlatformIOで"MeridianTWIN_Teensy40"等の名前で新規プロジェクトを�
 - **IcsClass_V210** (ICS_Library_for_Arduino_V2_1.zipをDL, 解凍してプロジェクトのLibディレクトリに配置)
   
 #### サーボのマウントを設定する
-Teensyスクリプトの サーボ設定 の項目で, 各サーボのマウントありなしを変更できます.  
+Teensy4.0ソースコードの サーボ設定 の項目で, 各サーボのマウントありなしを変更できます.  
 接続しているサーボIDは1に, 接続していないIDは0に設定します.  
 サーボのマウント設定により, KHR-3HVのフルセットがなくてもICSサーボが最低１つあればデモをテストすることができます.  
 サーボ設定に対し１箇所でも接続されていない箇所があると動作しません.  
@@ -70,7 +70,7 @@ Teensyスクリプトの サーボ設定 の項目で, 各サーボのマウン�
   
 また, サーボの0度状態を下記の姿勢に, サーボの＋回転方向も下図の矢印方向に合わせます.  
 左半身および体の中心は下図に順次つつ, 右半身については左半身のミラー方向に回転に合わせます.  
-サーボの回転方向は, サーボの内部の設定変更が望ましいですが, Teensyスクリプトの サーボ設定 の項目でも変更できます.  
+サーボの回転方向は, サーボの内部の設定変更が望ましいですが, Teensy4.0ソースコードの サーボ設定 の項目でも変更できます.  
 <img width="600" alt="motorccw" src="https://user-images.githubusercontent.com/8329123/147812253-e6cbe388-f70a-445f-80c0-b4cd899aa15a.png">
   
 #### サーボを接続する
@@ -80,12 +80,12 @@ Teensyスクリプトの サーボ設定 の項目で, 各サーボのマウン�
 #### センサーを接続する  
 MPU/AHRSセンサをMeridianボードのI2Cピンに接続します.  
 今のところキャリブレーション済みのMPU6050(GY-521)のみ対応しています.  
-センサーがない場合は, Teensyのスクリプト設定でセンサの接続をオフにすることができます.  
+センサーがない場合は, Teensy4.0のソースコード設定でセンサの接続をオフにすることができます.  
   
-#### Teensy4.0にスクリプトを書き込む
+#### Teensy4.0にソースコードを書き込む
 https://github.com/Ninagawa123/Meridian_TWIN/tree/main/Meridian_TWIN_for_Teensy40  
-の**main.cpp**, **platformio.ini** をPlatformIOのプロジェクトファイルに上書きし, Teensy4.0に書き込みます.  
-詳細な設定についてはスクリプト内のコメントに記しています.  
+の**src/main.cpp**, **platformio.ini** をPlatformIOのプロジェクトファイルに上書きし, Teensy4.0に書き込みます.  
+詳細な設定についてはソースコード内のコメントに記しています.  
   
   
 ## ESP32DevkitCの準備
@@ -109,9 +109,9 @@ https://github.com/hrgraf/ESP32Wiimote
 ESP32Wiimote.cpp, ESP32Wiimote.h, TinyWiimote.cpp, TinyWiimote.h  
 を格納します.  
   
-#### スクリプトを修正する
+#### ソースコードを修正する
 https://github.com/Ninagawa123/Meridian_TWIN/blob/main/Meridian_TWIN_for_ESP32/  
-の**main.cpp**, **platformio.ini** をPlatformIOのプロジェクトファイルに上書きします.  
+の**src/main.cpp**, **platformio.ini** をPlatformIOのプロジェクトファイルに上書きします.  
 通信関係の設定を修正する必要があるので, 下記にて必要項目を調べ, 書き換えます.  
   
 ##### 接続先のPCのIPアドレスを調べる
@@ -127,7 +127,7 @@ main.cppの /\* 頻繁に変更するであろう変数 #DEFINE \*/ のところ
 アクセスポイントは5GHzではなく**2.4GHz**に対応している必要があります.  
 また, 先ほど調べた接続先のPCのIPアドレスも記入します.  
   
-#### ESP32にスクリプトを書き込む  
+#### ESP32にソースコードを書き込む  
 ここで一度, 更新したファイルを**セーブしESP32に書き込みます**.  
   
 #### ESP32のIPアドレスを調べる  
@@ -141,8 +141,8 @@ wifi接続に成功すると
   
 と表示され, ESP32本体のIPアドレスが表示されます.このxxの番号をメモしておきます.  
   
-#### ESP32にスクリプトを書き込む  
-スクリプトにESP32のBluetooth Mac Addressを記入します.  
+#### ESP32にソースコードを書き込む  
+ソースコードにESP32のBluetooth Mac Addressを記入します.  
 更新したファイルをセーブし, ESP32に書き込みます.  
 　　
 #### platformio.ini  
@@ -154,7 +154,7 @@ wifi接続に成功すると
   
 #### 各種設定の確認    
 他にも, 接続するリモコンやシリアルモニタなどについての設定が可能です.  
-各スクリプト内のコメントを参考に適宜変更してください.  
+各ソースコード内のコメントを参考に適宜変更してください.  
   
 これでMeridian Board側の設定は完了です.  
   
@@ -172,7 +172,7 @@ $ CD ~/(Meridian_console.pyのあるディレクトリ)
 $ python Meridian_console.py  
   
 で実行し、画面が表示されれば成功です. Meridianボードを立ち上げると数秒で接続が確立し, 画面の数字がチラチラと動き始めます.  
-標準設定の通信速度はTeensy側で決定され、デフォルトでは100Hz, 1秒間に100回の往復通信を行います.  
+標準設定の通信速度はTeensy4.0側で決定され、デフォルトでは100Hz, 1秒間に100回の往復通信を行います.  
   
 MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画面のデータがチラチラと動きます.  
 起動時はロボットのサーボは脱力しており、サーボの角度を手で動かすとスライダーに反映されます.  
@@ -191,9 +191,9 @@ https://github.com/Ninagawa123/Meridian_core/tree/main/Unity_demo
 UnityHubを開き, ProjectsのADDで解凍済みの「Meridian_unity_demo_win_20220210」フォルダを指定します.  
 UnityHubに登録されたらプロジェクトを起動します.（Unityのバージョンは**2020.3.25f1(LTS)** です.） 
   
-###  UnityのスクリプトのIPアドレスを書き換える
+###  UnityのソースコードのIPアドレスを書き換える
 画面下の「Project」→「Assets」→「Script」よりUdp_handler_sendをダブルクリックして開きます（VScodeなどが立ち上がります）  
-スクリプト9行目のconst string HOST = "192.168.1.xx"; にESP32DevKitCのIPアドレスを記入し, セーブします.
+ソースコード9行目のconst string HOST = "192.168.1.xx"; にESP32DevKitCのIPアドレスを記入し, セーブします.
 
 ###  ESP32のIPアドレスを書き換える
 これまでの手順で設定済みの場合はそのままでOKです.
