@@ -85,7 +85,7 @@
 #define MSG_SIZE 90             // Meridim配列の長さ設定（デフォルトは90）
 bool UDP_SEND = true;           // PCへのデータ送信を行うか
 bool UDP_RESEIVE = true;        // PCからのデータ受信を行うか
-#define SERIAL_PC 500000        // ESP-PC間のシリアル速度（モニタリング表示用）
+#define SERIAL_PC 200000        // ESP-PC間のシリアル速度（モニタリング表示用）
 #define SEND_PORT 22222         // 送り先のポート番号
 #define RESV_PORT 22224         // このESP32のポート番号
 #define REMOVE_BONDED_DEVICES 0 // 0でバインドデバイス情報表示, 1でバインドデバイス情報クリア(BTリモコンがペアリング接続できない時に使用)
