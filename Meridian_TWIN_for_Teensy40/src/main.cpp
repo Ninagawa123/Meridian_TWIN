@@ -136,7 +136,7 @@
 #define EN_L_PIN 6                     // ICSサーボ信号の左系のENピン番号（固定）
 #define EN_R_PIN 5                     // ICSサーボ信号の右系のENピン番号（固定）
 #define EN_3_PIN 23                    // 半二重サーボ信号の3系のENピン番号（固定）
-#define SERIAL_PC 60000000             // PCとのシリアル速度（モニタリング表示用）
+#define SERIAL_PC 6000000              // PCとのシリアル速度（モニタリング表示用）
 #define SPI_CLOCK 6000000              // SPI通信の速度（6000000kHz推奨）
 #define BAUDRATE 1250000               // ICSサーボの通信速度1.25M
 #define TIMEOUT 2                      // ICS返信待ちのタイムアウト時間。通信できてないか確認する場合には1000ぐらいに設定するとよい
