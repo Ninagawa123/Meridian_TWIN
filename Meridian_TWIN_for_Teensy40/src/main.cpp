@@ -139,7 +139,7 @@
 #define SERIAL_PC 6000000              // PCとのシリアル速度（モニタリング表示用）
 #define SPI_CLOCK 6000000              // SPI通信の速度（6000000kHz推奨）
 #define BAUDRATE 1250000               // ICSサーボの通信速度1.25M
-#define TIMEOUT 2                      // ICS返信待ちのタイムアウト時間。通信できてないか確認する場合には1000ぐらいに設定するとよい
+#define TIMEOUT 3                      // ICS返信待ちのタイムアウト時間。通信できてないか確認する場合には1000ぐらいに設定するとよい
 const int MSG_BUFF = MSG_SIZE * 2;     // Meridim配列の長さ（byte換算）
 const int MSG_ERR = MSG_SIZE - 2;      // エラーフラグの格納場所（配列の末尾から2つめ）
 const int MSG_ERR_u = MSG_ERR * 2 + 1; // エラーフラグの格納場所（上位8ビット）
