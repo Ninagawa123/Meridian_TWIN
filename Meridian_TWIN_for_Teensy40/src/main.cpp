@@ -1,7 +1,10 @@
 
-// Meridian_TWIN_for_Teensy_20220721 By Izumi Ninagawa
+// Meridian_TWIN_for_Teensy_20220723 By Izumi Ninagawa
 // MIT Licenced.
-// Meridan TWIN Teensy4.0用スクリプト　20220721版
+// Meridan TWIN Teensy4.0用スクリプト　20220723版
+// 220723 内部計算時に degree*100 を単位として使用するように変更
+// 220723 センサーの関数を集約
+// 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
 
 //================================================================================================================
 //---- Teensy4.0 の 配 線 / ピンアサイン ----------------------------------------------------------------------------
@@ -105,7 +108,7 @@
 //================================================================================================================
 
 /* 頻繁に変更するであろう#DEFINE */
-#define VERSION "Meridian_TWIN_for_Teensy_2022.07.21" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2022.07.23" // バージョン表示
 #define FRAME_DURATION 10                             // 1フレームあたりの単位時間（単位ms）
 
 /* シリアルモニタリング切り替え */
@@ -133,7 +136,7 @@
 #define EN_L_PIN 6                     // ICSサーボ信号の左系のENピン番号（固定）
 #define EN_R_PIN 5                     // ICSサーボ信号の右系のENピン番号（固定）
 #define EN_3_PIN 23                    // 半二重サーボ信号の3系のENピン番号（固定）
-#define SERIAL_PC 6000000              // PCとのシリアル速度（モニタリング表示用）
+#define SERIAL_PC 60000000             // PCとのシリアル速度（モニタリング表示用）
 #define SPI_CLOCK 6000000              // SPI通信の速度（6000000kHz推奨）
 #define BAUDRATE 1250000               // ICSサーボの通信速度1.25M
 #define TIMEOUT 2                      // ICS返信待ちのタイムアウト時間。通信できてないか確認する場合には1000ぐらいに設定するとよい
@@ -150,6 +153,8 @@ const int MSG_ERR_l = MSG_ERR * 2;     // エラーフラグの格納場所（�
 #include <MPU6050_6Axis_MotionApps20.h> // MPU6050のライブラリ導入
 #include <IcsHardSerialClass.h>         // ICSサーボのライブラリ導入
 #include <MsTimer2.h>                   // タイマーのライブラリ導入
+#include <Adafruit_BNO055.h>            // 9軸センサBNO055用のライブラリ
+#include <TeensyThreads.h>              // マルチスレッド用のライブラリ
 
 /* 変数一般 */
 int spi_ok = 0;    // 通信のエラーカウント
@@ -228,6 +233,11 @@ VectorInt16 gyro;                                                       // [x, y
 VectorInt16 mag;                                                        // [x, y, z]            磁力センサの測定値
 long temperature;                                                       // センサの温度測定値
 
+/* BNO055用変数 */
+#define IMUAHRS_POLLING 10 // IMU,AHRSの問い合わせフレーム間隔
+Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire);
+float yaw_center = 0;
+
 /* ICSサーボのインスタンス設定 */
 IcsHardSerialClass krs_L(&Serial2, EN_L_PIN, BAUDRATE, TIMEOUT);
 IcsHardSerialClass krs_R(&Serial3, EN_R_PIN, BAUDRATE, TIMEOUT);
@@ -254,6 +264,80 @@ int idr_trim[15]; // R系統
 /* 各サーボのポジション値 */
 float idl_d[15]; // L系統
 float idr_d[15]; // R系統
+
+//================================================================================================================
+//---- コ マ ン ド 処 理 系 の 関 数 各 種 ---------------------------------------------------------------------------
+//================================================================================================================
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  trimadjustment()
+// +----------------------------------------------------------------------
+// | 機能     :  サーボトリム調整. サーボオンで直立静止状態を保つ.
+// +----------------------------------------------------------------------
+void trimadjustment()
+{
+    while (true)
+    {
+        for (int i = 0; i < 15; i++)
+        {
+            if (idl_mt[i] == 1)
+            {
+                krs_L.setPos(i, 7500 + (idl_trim[i] * idl_cw[i]));
+            }
+            if (idr_mt[i] == 1)
+            {
+                krs_R.setPos(i, 7500 + (idr_trim[i] * idr_cw[i]));
+            }
+            delayMicroseconds(2);
+        }
+        delay(100);
+        Serial.println("Trim adjst mode.");
+    }
+}
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  setyaw()
+// +----------------------------------------------------------------------
+// | 機能     :  ヨー軸の原点リセット. IMUAHRS_MOUNTで機種判別.
+// | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+// +----------------------------------------------------------------------
+void setyaw()
+{
+    if (IMUAHRS_MOUNT == 1) // MPU6050
+    {
+        YAW_ZERO = ypr[0] * 180 / M_PI;
+        s_spi_meridim.sval[0] = MSG_SIZE;
+    }
+    else if (IMUAHRS_MOUNT == 3) // BNO055
+    {
+    }
+}
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  servo_all_off()
+// +----------------------------------------------------------------------
+// | 機能     :  全サーボオフ
+// +----------------------------------------------------------------------
+void servo_all_off()
+{
+    for (int h = 0; h < 5; h++)
+    {
+        for (int i = 0; i < 15; i++)
+        {
+            if (idl_mt[i] == 1)
+            {
+                krs_L.setFree(i);
+            }
+            if (idr_mt[i] == 1)
+            {
+                krs_R.setFree(i);
+            }
+            delayMicroseconds(2);
+        }
+    }
+    delay(100);
+    Serial.println("All servos off.");
+}
 
 //================================================================================================================
 //---- 関 数 各 種  -----------------------------------------------------------------------------------------------
@@ -333,9 +417,9 @@ short float2HfShort(float val)
 // | 戻り値　　:  int型. KRS単位値（3500-11500）
 // | 備考　　　:  0.02度ぐらいからサーボ値には反映される(=0.59で1に繰り上がる)
 // +----------------------------------------------------------------------
-int HfDeg2Krs(int hfdegree, int n, int pn)
+int HfDeg2Krs(int hfdegree, int n, int cw)
 {
-    float x = 7500 + n + (hfdegree / 3.375 * pn); //
+    float x = 7500 + n + (hfdegree / 3.375 * cw); //
     if (x > 11500)                                // 上限を設定
     {
         x = 11500;
@@ -345,22 +429,6 @@ int HfDeg2Krs(int hfdegree, int n, int pn)
         x = 3500;
     }
     return int(x);
-}
-
-// ■ degreeをKRS値に変換 ----------------------------------------------------
-int Deg2Krs(float degree, int id_n)
-{                                               // degreeにはidl_d[i] * idl_cw[i]、id_nにはidl_trim[i]を入れる(左の場合は左半身系)
-    float x = 7500 + id_n + (degree / 0.03375); // floatの小数点以下を四捨五入して整数化
-    // ちなみにこの計算だと0.02度ぐらいからサーボ値には反映される(=0.59で1に繰り上がる)
-    if (x > 11500)
-    {
-        x = 11500;
-    }
-    else if (x < 3500)
-    {
-        x = 3500;
-    }
-    return x;
 }
 
 // +----------------------------------------------------------------------
@@ -378,179 +446,160 @@ int Krs2HfDeg(int krs, int n, int pn)
     return int(x);
 }
 
-// ■ KRSをdegree値に変換 -----------------------------------------------------
-float Krs2Deg(int krs, float n, float pn)
-{                                            // KRS値のほか idl_trim[i], idl_cw[i] を入れる(右の場合はidr系)
-    float x = (krs - 7500 - n) * 3.375 * pn; //新
-    x = x / 100;                             //小数点以下2桁で取得する　
-    return x;
-}
-
-// ■ IMU/AHRSの初期設定 ------------------------------------------------------------
-void setupMPU()
+// +----------------------------------------------------------------------
+// | 関数名　　:  setupIMUAHRS()
+// +----------------------------------------------------------------------
+// | 機能     :  MPU6050,BNO055等の初期設定を行う.　IMUAHRS_MOUNTで機種判別.
+// | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+// | 引数　　　:  なし.
+// | 戻り値　　:  なし.
+// +----------------------------------------------------------------------
+void setupIMUAHRS()
 {
-    Wire.begin();
-    Wire.setClock(I2C_CLOCK); // 400kHz I2C clock. Comment this line if having compilation difficulties
-    mpu.initialize();
-    devStatus = mpu.dmpInitialize();
-
-    // supply your own gyro offsets here, scaled for min sensitivity
-    mpu.setXAccelOffset(-1745);
-    mpu.setYAccelOffset(-1034);
-    mpu.setZAccelOffset(966);
-    mpu.setXGyroOffset(176);
-    mpu.setYGyroOffset(-6);
-    mpu.setZGyroOffset(-25);
-
-    // make sure it worked (returns 0 if so)
-    if (devStatus == 0)
+    if (IMUAHRS_MOUNT == 1) // MPU6050
     {
-        mpu.CalibrateAccel(6);
-        mpu.CalibrateGyro(6);
-        mpu.setDMPEnabled(true);
-        packetSize = mpu.dmpGetFIFOPacketSize();
+
+        Wire.begin();
+        Wire.setClock(I2C_CLOCK); // 400kHz I2C clock. Comment this line if having compilation difficulties
+        mpu.initialize();
+        devStatus = mpu.dmpInitialize();
+
+        // supply your own gyro offsets here, scaled for min sensitivity
+        mpu.setXAccelOffset(-1745);
+        mpu.setYAccelOffset(-1034);
+        mpu.setZAccelOffset(966);
+        mpu.setXGyroOffset(176);
+        mpu.setYGyroOffset(-6);
+        mpu.setZGyroOffset(-25);
+
+        // make sure it worked (returns 0 if so)
+        if (devStatus == 0)
+        {
+            mpu.CalibrateAccel(6);
+            mpu.CalibrateGyro(6);
+            mpu.setDMPEnabled(true);
+            packetSize = mpu.dmpGetFIFOPacketSize();
+        }
+        else
+        {
+            Serial.print("DMP Initialization failed.");
+        }
     }
-    else
+    else if (IMUAHRS_MOUNT == 3) // BNO055
     {
-        Serial.print("DMP Initialization failed.");
+        // BNO055の初期設定
     }
 }
 
-// ■ IMU/AHRSのDMP推定値取得 ----------------------------------------------------------
+// +----------------------------------------------------------------------
+// | 関数名　　:  IMUAHRS_getYawPitchRoll()
+// +----------------------------------------------------------------------
+// | 機能     :  MPU6050,BNO055等の値を格納する.　IMUAHRS_MOUNTで機種判別.
+// | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+// | 引数　　　:  なし.
+// | 戻り値　　:  なし.
+// +----------------------------------------------------------------------
 void IMUAHRS_getYawPitchRoll()
 {
-    if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
-    { // 最新のIMU/AHRS情報を取得
-        mpu.dmpGetQuaternion(&q, fifoBuffer);
-        mpu.dmpGetGravity(&gravity, &q);
-        mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    if (IMUAHRS_MOUNT == 1) // MPU6050
+    {
+        if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
+        { // 最新のIMU/AHRS情報を取得
+            mpu.dmpGetQuaternion(&q, fifoBuffer);
+            mpu.dmpGetGravity(&gravity, &q);
+            mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-        //加速度の値
-        mpu.dmpGetAccel(&aa, fifoBuffer);
-        mpu_read[0] = (float)aa.x;
-        mpu_read[1] = (float)aa.y;
-        mpu_read[2] = (float)aa.z;
+            //加速度の値
+            mpu.dmpGetAccel(&aa, fifoBuffer);
+            mpu_read[0] = (float)aa.x;
+            mpu_read[1] = (float)aa.y;
+            mpu_read[2] = (float)aa.z;
 
-        //ジャイロの値
-        mpu.dmpGetGyro(&gyro, fifoBuffer);
-        mpu_read[3] = (float)gyro.x;
-        mpu_read[4] = (float)gyro.y;
-        mpu_read[5] = (float)gyro.z;
+            //ジャイロの値
+            mpu.dmpGetGyro(&gyro, fifoBuffer);
+            mpu_read[3] = (float)gyro.x;
+            mpu_read[4] = (float)gyro.y;
+            mpu_read[5] = (float)gyro.z;
 
-        //磁力センサの値
-        mpu_read[6] = (float)mag.x;
-        mpu_read[7] = (float)mag.y;
-        mpu_read[8] = (float)mag.z;
+            //磁力センサの値
+            mpu_read[6] = (float)mag.x;
+            mpu_read[7] = (float)mag.y;
+            mpu_read[8] = (float)mag.z;
 
-        //重力DMP推定値
-        mpu_read[9] = gravity.x;
-        mpu_read[10] = gravity.y;
-        mpu_read[11] = gravity.z;
+            //重力DMP推定値
+            mpu_read[9] = gravity.x;
+            mpu_read[10] = gravity.y;
+            mpu_read[11] = gravity.z;
 
-        //相対方向DMP推定値
-        mpu_read[12] = ypr[2] * 180 / M_PI;              // DMP_ROLL推定値
-        mpu_read[13] = ypr[1] * 180 / M_PI;              // DMP_PITCH推定値
-        mpu_read[14] = (ypr[0] * 180 / M_PI) - YAW_ZERO; // DMP_YAW推定値
+            //相対方向DMP推定値
+            mpu_read[12] = ypr[2] * 180 / M_PI;              // DMP_ROLL推定値
+            mpu_read[13] = ypr[1] * 180 / M_PI;              // DMP_PITCH推定値
+            mpu_read[14] = (ypr[0] * 180 / M_PI) - YAW_ZERO; // DMP_YAW推定値
 
-        //温度
-        mpu_read[15] = 0; // fifoBufferからの温度取得方法が今のところ不明。
+            //温度
+            mpu_read[15] = 0; // fifoBufferからの温度取得方法が今のところ不明。
 
-        if (flag_sensor_IMUAHRS_writable)
-        {
-            memcpy(mpu_result, mpu_read, sizeof(float) * 16);
+            if (flag_sensor_IMUAHRS_writable)
+            {
+                memcpy(mpu_result, mpu_read, sizeof(float) * 16);
+            }
         }
     }
-}
-
-void IMUAHRS_moving_average()
-{ // IMU/AHRSデータの移動平均値の取得
-    // 二次元配列の0番から輪番で最新のデータを入れていく。指定個数を上回ったら0番に戻す
-    mpu_stock_count++;
-    if (mpu_stock_count > MPU_STOCK)
+    else if (IMUAHRS_MOUNT == 3) // BNO055
     {
-        mpu_stock_count = 0;
-    }
+        // 加速度センサ値の取得と表示 - VECTOR_ACCELEROMETER - m/s^2
+        imu::Vector<3> accelermetor = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+        mpu_read[0] = (float)accelermetor.x();
+        mpu_read[1] = (float)accelermetor.y();
+        mpu_read[2] = (float)accelermetor.z();
 
-    IMUAHRS_getYawPitchRoll(); // IMU/AHRSから最新データを取得
-    // 配列の輪番該当箇所に最新のデータを上書きする
-    memcpy(mpu_stock_data[mpu_stock_count], mpu_read, MPU_STOCK);
-    for (int i = 0; i < 16; i++)
-    {
-        mpu_ave_data[i] = 0.0;
-    }
+        // ジャイロセンサ値の取得 - VECTOR_GYROSCOPE - rad/s
+        imu::Vector<3> gyroscope = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+        mpu_read[3] = gyroscope.x();
+        mpu_read[4] = gyroscope.y();
+        mpu_read[5] = gyroscope.z();
 
-    // 値を合計していく
-    for (int i = 0; i < MPU_STOCK; i++)
-    {
-        for (int j = 0; j < 16; j++)
-        {
-            mpu_ave_data[j] += mpu_stock_data[i][j];
-        }
-    }
+        // 磁力センサ値の取得と表示  - VECTOR_MAGNETOMETER - uT
+        imu::Vector<3> magnetmetor = bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
+        mpu_read[6] = magnetmetor.x();
+        mpu_read[7] = magnetmetor.y();
+        mpu_read[8] = magnetmetor.z();
 
-    // 値を割る
-    for (int i = 0; i < 16; i++)
-    {
-        mpu_ave_data[i] = mpu_ave_data[i / MPU_STOCK];
-    }
-}
+        // センサフュージョンによる方向推定値の取得と表示 - VECTOR_EULER - degrees
+        imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+        mpu_read[12] = euler.y();                    // DMP_ROLL推定値
+        mpu_read[13] = euler.z();                    // DMP_PITCH推定値
+        mpu_read[14] = euler.x() - yaw_center - 180; // DMP_YAW推定値
 
-//-------------------------------------------------------------------------
-//---- コ マ ン ド 系 の 関 数 各 種  ----------------------------------------
-//-------------------------------------------------------------------------
+        /*
+          // センサフュージョンの方向推定値のクオータニオン
+          imu::Quaternion quat = bno.getQuat();
+          Serial.print("qW: "); Serial.print(quat.w(), 4);
+          Serial.print(" qX: "); Serial.print(quat.x(), 4);
+          Serial.print(" qY: "); Serial.print(quat.y(), 4);
+          Serial.print(" qZ: "); Serial.println(quat.z(), 4);
+        */
 
-// ■ サーボトリム調整 サーボオンで直立静止-------------------------------------
-void trimadjustment()
-{
-    while (true)
-    {
-        for (int i = 0; i < 15; i++)
-        {
-            if (idl_mt[i] == 1)
-            {
-                krs_L.setPos(i, 7500 + (idl_trim[i] * idl_cw[i]));
-            }
-            if (idr_mt[i] == 1)
-            {
-                krs_R.setPos(i, 7500 + (idr_trim[i] * idr_cw[i]));
-            }
-            delayMicroseconds(2);
-        }
-        delay(100);
-        Serial.println("Trim adjst mode.");
+        /*
+        // キャリブレーションのステータスの取得と表示
+        uint8_t system, gyro, accel, mag = 0;
+        bno.getCalibration(&system, &gyro, &accel, &mag);
+        Serial.print("CALIB Sys:"); Serial.print(system, DEC);
+        Serial.print(", Gy"); Serial.print(gyro, DEC);
+        Serial.print(", Ac"); Serial.print(accel, DEC);
+        Serial.print(", Mg"); Serial.println(mag, DEC);
+        */
+        threads.delay(IMUAHRS_POLLING);
     }
 }
 
-// ■ ヨー軸の原点リセット --------------------------------------------------------
-void setyaw()
-{
-    YAW_ZERO = ypr[0] * 180 / M_PI;
-    s_spi_meridim.sval[0] = MSG_SIZE;
-}
-
-// ■ 全サーボオフ ---------------------------------------------------------------
-void servo_all_off()
-{
-    for (int h = 0; h < 5; h++)
-    {
-        for (int i = 0; i < 15; i++)
-        {
-            if (idl_mt[i] == 1)
-            {
-                krs_L.setFree(i);
-            }
-            if (idr_mt[i] == 1)
-            {
-                krs_R.setFree(i);
-            }
-            delayMicroseconds(2);
-        }
-    }
-    delay(100);
-    Serial.println("All servos off.");
-}
-
-// ■ JOYPAD処理 ---------------------------------------------------------------
+// +----------------------------------------------------------------------
+// | 関数名　　:  joypad_read()
+// +----------------------------------------------------------------------
+// | 機能     :  Teensy4.0に接続されたJOYPADの値を読みとり、pad_btnに格納
+// | 　　　　　:  0:なしorESP32orPCで受信, 1:SBDBT, 2:KRC-5FH
+// | 戻り値　　:  なし.
+// +----------------------------------------------------------------------
 void joypad_read()
 {
     if (JOYPAD_MOUNT == 2)
@@ -592,7 +641,6 @@ void joypad_read()
 //================================================================================================================
 //---- セ ッ ト ア ッ プ -------------------------------------------------------------------------------------------
 //================================================================================================================
-
 void setup()
 {
     //-------------------------------------------------------------------------
@@ -790,10 +838,10 @@ void setup()
     }
     delay(100);
 
-    /* I2Cの設定 */
-    if (IMUAHRS_MOUNT == 1)
+    /* I2C接続センサーの設定 */
+    if (IMUAHRS_MOUNT == 1) //
     {
-        setupMPU();
+        setupIMUAHRS();
     }
 
     /* SPI通信用DMAの設定 */
@@ -809,9 +857,36 @@ void setup()
     memset(idl_d, 0, 15);                            //配列要素を0でリセット
     memset(idr_d, 0, 15);                            //配列要素を0でリセット
 
-    /* 割り込み処理系のセットIMU/AHRSのデータ取得 */
-    MsTimer2::set(10, IMUAHRS_getYawPitchRoll); // MPUの情報を取得 10msごとにチェック
-    MsTimer2::start();
+    /* I2Cに接続したIMU/AHRSセンサの設定 */
+    if (IMUAHRS_MOUNT == 1) // MPU6050の場合
+    {
+        /* MPU6050の割り込み設定 */
+        MsTimer2::set(10, IMUAHRS_getYawPitchRoll); // MPUの情報を取得 10msごとにチェック
+        MsTimer2::start();
+    }
+    else if (IMUAHRS_MOUNT == 3) // BNO055の場合
+    {
+        /* MPU6050の初期化 */
+        if (!bno.begin())
+        {
+            Serial.println("No BNO055 detected ... Check your wiring or I2C ADDR!");
+            // while (1)
+            //   ;
+        }
+        else
+        {
+            Serial.println("BNO055 mounted.");
+            delay(50);
+            bno.setExtCrystalUse(false);
+            delay(10);
+        }
+        // センサー用スレッド
+        delay(10);
+    }
+    else
+    {
+        Serial.println("No IMU/AHRS sensor mounted.");
+    }
 
     /* 変数の設定 */
     YAW_ZERO = 0;
@@ -981,11 +1056,22 @@ void loop()
     // @[7-2] 前回のラストに読み込んだサーボ位置をサーボ配列に書き込む
     for (int i = 0; i < 15; i++)
     {
-        s_servo_pos_L[i] = Deg2Krs(float(r_spi_meridim.sval[i * 2 + 21]) / 100 * idl_cw[i], idl_trim[i]); //
-        s_servo_pos_R[i] = Deg2Krs(r_spi_meridim.sval[i * 2 + 51] / 100 * idr_cw[i], idr_trim[i]);        //
+        s_servo_pos_L[i] = HfDeg2Krs(float(r_spi_meridim.sval[i * 2 + 21]), idl_trim[i], idl_cw[i]); //
+        s_servo_pos_R[i] = HfDeg2Krs(r_spi_meridim.sval[i * 2 + 51], idr_trim[i], idr_cw[i]);        //
     }
 
     // @[7-3] Teensyによる次回動作の計算
+
+    // リモコンの左十字キー左右で首を左右にふるサンプル
+    if (s_spi_meridim.sval[15] == 32)
+    {
+        s_servo_pos_R[0] = HfDeg2Krs(-3000, idr_trim[0], idr_cw[0]); //
+    }
+    else if (s_spi_meridim.sval[15] == 128)
+    {
+        s_servo_pos_R[0] = HfDeg2Krs(3000, idr_trim[0], idr_cw[0]); //
+    }
+    Serial.println(r_spi_meridim.sval[15]);
 
     // @[7-4] センサーデータによる動作へのフィードバック加味
 
