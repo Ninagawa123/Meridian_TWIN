@@ -1065,11 +1065,11 @@ void loop()
     // リモコンの左十字キー左右で首を左右にふるサンプル
     if (s_spi_meridim.sval[15] == 32)
     {
-        s_servo_pos_R[0] = HfDeg2Krs(-3000, idr_trim[0], idr_cw[0]); //
+        s_servo_pos_L[0] = HfDeg2Krs(-3000, idl_trim[0], idl_cw[0]); //
     }
     else if (s_spi_meridim.sval[15] == 128)
     {
-        s_servo_pos_R[0] = HfDeg2Krs(3000, idr_trim[0], idr_cw[0]); //
+        s_servo_pos_L[0] = HfDeg2Krs(3000, idl_trim[0], idl_cw[0]); //
     }
     Serial.println(r_spi_meridim.sval[15]);
 
