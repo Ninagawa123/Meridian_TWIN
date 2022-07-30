@@ -1,7 +1,7 @@
 
 // Meridian_TWIN_for_Teensy_20220730 By Izumi Ninagawa
 // MIT Licenced.
-// Meridan TWIN Teensy4.0用スクリプト　20220723版
+// Meridan TWIN Teensy4.0用スクリプト　20220730版
 // 220723 内部計算時に degree*100 を単位として使用するように変更
 // 220723 センサーの関数を集約
 // 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
@@ -109,7 +109,7 @@
 //================================================================================================================
 
 /* 頻繁に変更するであろう#DEFINE */
-#define VERSION "Meridian_TWIN_for_Teensy_2022.07.23" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2022.07.30" // バージョン表示
 #define FRAME_DURATION 10                             // 1フレームあたりの単位時間（単位ms）
 
 /* シリアルモニタリング切り替え */
