@@ -1,10 +1,11 @@
 
-// Meridian_TWIN_for_Teensy_20220723 By Izumi Ninagawa
+// Meridian_TWIN_for_Teensy_20220730 By Izumi Ninagawa
 // MIT Licenced.
 // Meridan TWIN Teensy4.0用スクリプト　20220723版
 // 220723 内部計算時に degree*100 を単位として使用するように変更
 // 220723 センサーの関数を集約
 // 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
+// 220730 PCからのリモコン受信が有効となるように調整
 
 //================================================================================================================
 //---- Teensy4.0 の 配 線 / ピンアサイン ----------------------------------------------------------------------------
@@ -1063,6 +1064,17 @@ void loop()
     // @[7-3] Teensyによる次回動作の計算
 
     // リモコンの左十字キー左右で首を左右にふるサンプル
+    if (r_spi_meridim.sval[15] == 32)
+    {
+        s_servo_pos_L[0] = HfDeg2Krs(-3000, idl_trim[0], idl_cw[0]); //
+    }
+    else if (r_spi_meridim.sval[15] == 128)
+    {
+        s_servo_pos_L[0] = HfDeg2Krs(3000, idl_trim[0], idl_cw[0]); //
+    }
+    Serial.println(r_spi_meridim.sval[15]);
+
+    /*
     if (s_spi_meridim.sval[15] == 32)
     {
         s_servo_pos_L[0] = HfDeg2Krs(-3000, idl_trim[0], idl_cw[0]); //
@@ -1072,7 +1084,7 @@ void loop()
         s_servo_pos_L[0] = HfDeg2Krs(3000, idl_trim[0], idl_cw[0]); //
     }
     Serial.println(r_spi_meridim.sval[15]);
-
+    */
     // @[7-4] センサーデータによる動作へのフィードバック加味
 
     // @[7-5] 移動時間の決定
