@@ -29,6 +29,8 @@
 # Sensor Monitor: MIUのデータを表示します。rol,pit,yawはセンサフュージョン値です。SetYawボタンでヨー軸の中央値をリセットできます
 # Axis Monitor: 各サーボの値です。パワーオン時にはスライダでサーボを動かすことができます
 # PS4リモコン接続時に受信スキップ回数が5%ほど検出されるのは、現在の仕様では正常な動作です
+# Button Input画面
+# コンソールからリモコンボタン押下情報を送信します
 
 from ast import Pass
 import numpy as np
@@ -48,7 +50,7 @@ import struct
 # from sensor_msgs.msg import JointState
 
 # 定数
-TITLE_VERSION="Meridian_Console_v22.0721" # DPGのウィンドウタイトル兼バージョン表示
+TITLE_VERSION="Meridian_Console_v22.0730" # DPGのウィンドウタイトル兼バージョン表示
 
 UDP_RESV_IP="192.168.1.xx" # このPCのIPアドレス
 UDP_RESV_PORT=22222       # 受信ポート
@@ -78,6 +80,7 @@ flag_demo_action = 0  # デモ/テスト用の計算モーション送信のオ�
 flag_ros1_pub = 0     # ROS1のjoint_statesのパブリッシュ
 flag_ros1_sub = 0     # ROS1のjoint_statesのサブスクライブ
 flag_ros1 = 0         # ROS1の起動init（初回のみ）
+pad_button_panel_short = np.array([0], dtype=np.uint16) # コンパネからのリモコン入力用
 
 # UDP用のsocket設定
 sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
@@ -196,6 +199,7 @@ def meridian_loop():
                 global flag_resv_data
                 global flag_ros1_pub
                 global flag_ros1_sub
+                global pad_button_panel_short
 
                 loop_count += 1 # このpythonを起動してからのフレーム数をカウントアップ
 
@@ -342,7 +346,10 @@ def meridian_loop():
 
 
                 # リモコンデータをリセットし、PCからのリモコン入力値を格納
-                s_meridim[15] =0 # ボタン
+                temp = np.array([0], dtype=np.int16)
+                temp[0] = 0
+                temp[0] = pad_button_panel_short[0] # ボタンのショート型変換
+                s_meridim[15] = temp[0] # ボタン
                 s_meridim[16] =0 # アナログ1
                 s_meridim[17] =0 # アナログ2
                 s_meridim[18] =0 # アナログ3
@@ -383,6 +390,15 @@ def cleanup():# ctrl+cで終了したときにも確実にソケットを閉じ�
     print("Meridan_console quited.")
 atexit.register(cleanup)# この行は機能しているかどうかわからない
 
+def pad_btn_panel_on(sender, app_data, user_data):# チェックボックスに従いサーボパワーオンフラグをオンオフ
+    global pad_button_panel_short
+    if (pad_button_panel_short[0] & user_data) == 0 :
+        pad_button_panel_short[0] = pad_button_panel_short[0] | user_data
+        print(f'Btn:{pad_button_panel_short[0]}')
+    else :
+        pad_button_panel_short[0] = pad_button_panel_short[0] ^ user_data
+        print(f'Btn:{pad_button_panel_short[0]}')
+        
 def set_servo_power():# チェックボックスに従いサーボパワーオンフラグをオンオフ
     global flag_servo_power
     if flag_servo_power == 0 :
@@ -494,6 +510,7 @@ def main():
         global error_count_esp_skip
         global error_count_pc_skip
         global start
+
         loop_count = 1
         error_count_pc_to_esp = 0
         error_count_esp_to_tsy = 0
@@ -508,9 +525,9 @@ def main():
         
         # dpg描画 ==================================================
         dpg.create_context()
-        dpg.create_viewport(title=TITLE_VERSION, width=617, height=560)
+        dpg.create_viewport(title=TITLE_VERSION, width=870, height=560)
 
-        # （画面左上）サーボ位置モニタリング用のウィンドウ ==================================================
+        # （画面上段左側）サーボ位置モニタリング用のウィンドウ ==================================================
         with dpg.window(label="Axis Monitor", width=250, height=350,pos=[5,5]):
             with dpg.group(label='RightSide'): 
                 for i in range(0, 15, 1):
@@ -519,7 +536,7 @@ def main():
                 for i in range(0, 15, 1):
                     dpg.add_slider_float(default_value=0, tag="ID L"+str(i),label="L"+str(i),max_value=100,min_value=-100,callback=set_servo_angle,pos=[135,35+i*20], width=80)
 
-        # （画面下段）メッセージ表示用ウィンドウ（アドレス・通信エラー等） ==================================================
+        # （画面下段左側）メッセージ表示用ウィンドウ（アドレス・通信エラー等） ==================================================
         with dpg.window(label="Messege", width=590, height=155,pos=[5,360]):
             dpg.add_button(label="ResetCounter",  callback=reset_counter, width =90, pos=[470,30])
             dpg.add_text(message0,tag="DispMessage0")
@@ -528,7 +545,7 @@ def main():
             dpg.add_text(message3,tag="DispMessage3")
             dpg.add_text(message4,tag="DispMessage4")
 
-        # （画面右側）センサー値モニタリング用ウィンドウ ==================================================
+        # （画面上段中央）センサー値モニタリング用ウィンドウ ==================================================
         with dpg.window(label="Sensor Monitor", width=335, height=175,pos=[260,5]):
             with dpg.group(label='LeftSide'): 
                 dpg.add_slider_float(default_value=0, tag="mpu0", label="ac_x",max_value=327,min_value=-327,pos=[10,35], width=60)
@@ -546,7 +563,27 @@ def main():
                 dpg.add_slider_float(default_value=0, tag="mpu12", label="yaw",max_value=327,min_value=-327,pos=[220,120], width=60)
                 dpg.add_button(label="SetYaw",  callback=set_yaw_center, width =50, pos=[270,148])
 
-        # （画面右側中央段）コマンド送信/リモコン値表示用ウィンドウ ==================================================
+        # （画面上段右側）リモコン入力コンパネ送信 ==================================================
+        with dpg.window(label="Button Input", width=248, height=155,pos=[600,5]):
+            #with dpg.group(label='LeftSide'): 
+            dpg.add_checkbox(tag="Btn_L2",  callback=pad_btn_panel_on, user_data=256, pos=[15,38])
+            dpg.add_checkbox(tag="Btn_L1",  callback=pad_btn_panel_on, user_data=1024, pos=[15,60])
+            dpg.add_checkbox(tag="Btn_L_UP",  callback=pad_btn_panel_on, user_data=16, pos=[42,80])
+            dpg.add_checkbox(tag="Btn_L_DOWN",  callback=pad_btn_panel_on, user_data=64, pos=[42,124])
+            dpg.add_checkbox(tag="Btn_L_LEFT",  callback=pad_btn_panel_on, user_data=128, pos=[20,102])
+            dpg.add_checkbox(tag="Btn_L_RIGHT",  callback=pad_btn_panel_on, user_data=32, pos=[64,102])
+
+            dpg.add_checkbox(tag="Btn_SELECT",  callback=pad_btn_panel_on, user_data=1, pos=[100,102])
+            dpg.add_checkbox(tag="Btn_START",  callback=pad_btn_panel_on, user_data=8, pos=[130,102])
+
+            dpg.add_checkbox(tag="Btn_R2",  callback=pad_btn_panel_on, user_data=512, pos=[215,38])
+            dpg.add_checkbox(tag="Btn_R1",  callback=pad_btn_panel_on, user_data=2048, pos=[215,60])
+            dpg.add_checkbox(tag="Btn_R_UP",  callback=pad_btn_panel_on, user_data=4096, pos=[188,80])
+            dpg.add_checkbox(tag="Btn_R_DOWN",  callback=pad_btn_panel_on, user_data=16384, pos=[188,124])
+            dpg.add_checkbox(tag="Btn_R_LEFT",  callback=pad_btn_panel_on, user_data=32768, pos=[166,102])
+            dpg.add_checkbox(tag="Btn_R_RIGHT",  callback=pad_btn_panel_on, user_data=8192, pos=[210,102])
+
+        # （画面中段中央）コマンド送信/リモコン値表示用ウィンドウ ==================================================
         with dpg.window(label="Command", width=335, height=170,pos=[260,185]):
             dpg.add_checkbox(label="Power", tag="Power",  callback=set_servo_power, pos=[8,50])
 
@@ -607,7 +644,7 @@ def main():
 
             # リモコンデータの表示更新
             pad_button_short = np.array([0], dtype=np.uint16)
-            pad_button_short[0] = r_meridim[15]
+            pad_button_short[0] = r_meridim[15] | pad_button_panel_short[0] # 受信値とコンソール入力値を合成 
             dpg.set_value("pad_button", str(pad_button_short[0]))
             dpg.set_value("pad_Lx", r_meridim_char[33])
             dpg.set_value("pad_Ly", r_meridim_char[32])
