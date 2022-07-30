@@ -679,12 +679,12 @@ void loop()
     {
       // @[5-2a] 受信成功ならUDP受信データをSPI送信データに上書き更新する.
       memcpy(s_spi_meridim.bval, r_udp_meridim.bval, MSG_BUFF + 4);
-      s_spi_meridim.bval[MSG_ERR_u] &= 0b10111111; // meridimの[MSG_ERR]番の14ビット目(ESPのUPD受信成否)のフラグをサゲる.
+      s_spi_meridim.bval[MSG_ERR_u] &= 0b10111111; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをサゲる.
     }
     else
     {
       // @[5-2b] 受信失敗なら今回の受信データを使わず、前回のSPI送信データにエラーフラグだけ上乗せする.
-      s_spi_meridim.bval[MSG_ERR_u] |= 0b01000000; // meridimの[MSG_ERR]番の14ビット目(ESPのUPD受信成否)のフラグをアゲる.
+      s_spi_meridim.bval[MSG_ERR_u] |= 0b01000000; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをアゲる.
     }
 
     // @[5-3] 連番スキップ検出
@@ -718,10 +718,11 @@ void loop()
     // → 今回はとくに何もしない.
 
     // @[6-2] リモコンデータの書き込み
-    s_spi_meridim.sval[15] = r_spi_meridim.sval[15] | pad_btn;
-    s_spi_meridim.sval[16] = r_spi_meridim.sval[16] | pad_stick_L;
-    s_spi_meridim.sval[17] = r_spi_meridim.sval[17] | pad_stick_R;
-    s_spi_meridim.sval[18] = r_spi_meridim.sval[18] | pad_stick_V;
+    s_spi_meridim.sval[15] = r_udp_meridim.sval[15] | pad_btn;
+    s_spi_meridim.sval[16] = r_udp_meridim.sval[16] | pad_stick_L;
+    s_spi_meridim.sval[17] = r_udp_meridim.sval[17] | pad_stick_R;
+    s_spi_meridim.sval[18] = r_udp_meridim.sval[18] | pad_stick_V;
+    
     // @[6-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）
     // → すでにPCから受け取った値がs_spi_meridim.sval[1]に入っているのでここでは何もしない.
 
