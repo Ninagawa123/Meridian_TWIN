@@ -1,13 +1,15 @@
-// Meridian_TWIN_for_ESP32_20220721 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20220730 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ　20220721版
+// Meridan TWIN ESP32用スケッチ　20220730版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.
 // 動作が大幅に安定し通信エラーはほぼゼロ。
-//
-// 【課題】2022.07.21
+// よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
+// PCからのリモコン受信をTeensyにも反映できるように調整
+
+// 【課題】2022.07.30
 // PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する.
 // Wiiリモコンを接続すると受信スキップは1%以下だが、最初のコネクション確立がしにくい.
 // よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
