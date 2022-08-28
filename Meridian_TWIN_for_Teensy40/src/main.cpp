@@ -1,11 +1,14 @@
 
-// Meridian_TWIN_for_Teensy_20220730 By Izumi Ninagawa
+// Meridian_TWIN_for_Teensy_20220828 By Izumi Ninagawa
 // MIT Licenced.
-// Meridan TWIN Teensy4.0用スクリプト　20220730版
+// Meridan TWIN Teensy4.0用スクリプト　20220828版
 // 220723 内部計算時に degree*100 を単位として使用するように変更
 // 220723 センサーの関数を集約
 // 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
 // 220730 PCからのリモコン受信が有効となるように調整
+// 220828 サーボからの受信が-1(タイムアウト)の時、前に取得した情報を使用する（データ飛びや表示のブレを防止）
+// 220828 SERVO_NUM_L, SERVO_NUM_R に左右の接続サーボ数の登録を設定
+// 220828 左右の接続サーボ数の多い方をservo_numとし、サーボ送信命令も左右交互に実行するよう改定
 
 //================================================================================================================
 //---- Teensy4.0 の 配 線 / ピンアサイン ----------------------------------------------------------------------------
@@ -125,6 +128,8 @@
 #define ICS3_MOUNT 0    // 半二重サーボ信号の3系のありなし
 #define SD_MOUNT 1      // SDカードリーダーのありなし. MeridianBoard Type.Kは有り
 #define CHIPSELECT_SD 9 // SDカードSPI通信用のChipSelectのピン番号
+#define SERVO_NUM_L 11  // L系統につないだサーボの数
+#define SERVO_NUM_R 11  // R系統につないだサーボの数
 
 /* マスターコマンド定義 */
 #define TRIM_ADJUST_MODE 0      // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
@@ -158,9 +163,10 @@ const int MSG_ERR_l = MSG_ERR * 2;     // エラーフラグの格納場所（�
 #include <TeensyThreads.h>              // マルチスレッド用のライブラリ
 
 /* 変数一般 */
-int spi_ok = 0;    // 通信のエラーカウント
-int spi_trial = 0; // 通信のエラーカウント
-int k;             // 各サーボの計算用変数
+int spi_ok = 0;                                // 通信のエラーカウント
+int spi_trial = 0;                             // 通信のエラーカウント
+int k;                                         // 各サーボの計算用変数
+int servo_num = max(SERVO_NUM_L, SERVO_NUM_R); // サーボ送受信のループ処理数（L系R系で多い方）
 
 /* フラグ用変数 */
 bool flag_sensor_IMUAHRS_writable = true; // メインが結果値を読み取る瞬間、サブスレッドによる書き込みをウェイト
@@ -254,7 +260,7 @@ int r_servo_pos_R[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // 15要素
 int idl_mt[15]; // L系統
 int idr_mt[15]; // R系統
 
-/* 各サーボの正逆方向補正用配列 */
+// (TS-6-9-4) 各サーボの正逆方向補正用配列
 float idl_cw[15]; // L系統
 float idr_cw[15]; // R系統
 
@@ -1099,36 +1105,52 @@ void loop()
 
     // @[8-3] サーボデータのICS送信および返り値を取得
 
-    for (int i = 0; i < 11; i++) // ICS_L系統の処理
-    {                            //接続したサーボの数だけ繰り返す。最大は15
+    for (int i = 0; i < servo_num; i++) // ICS_L系統の処理
+    {                                   //接続したサーボの数だけ繰り返す。最大は15
         idl_d[i] = 0;
-        if (idl_mt[i] == true)
+        if (idl_mt[i])
         {
             if (r_spi_meridim.sval[(i * 2) + 20] == 1) //受信配列のサーボコマンドが1ならPos指定
             {
                 k = krs_L.setPos(i, s_servo_pos_L[i]);
+                if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = s_servo_pos_L[i];
+                }
             }
             else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
             {
                 k = krs_L.setFree(i);
+                if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = s_servo_pos_L[i];
+                }
             }
             idl_d[i] = Krs2HfDeg(k, idl_trim[i], idl_cw[i]);
         }
         delayMicroseconds(2);
-    }
+        //}
 
-    for (int i = 0; i < 11; i++) // ICS_R系統の処理
-    {                            //接続したサーボの数だけ繰り返す。最大は15
+        // for (int i = 0; i < 11; i++) // ICS_R系統の処理
+        //{                            //接続したサーボの数だけ繰り返す。最大は15
         idr_d[i] = 0;
-        if (idr_mt[i] == true)
+        if (idr_mt[i])
         {
             if (r_spi_meridim.sval[(i * 2) + 50] == 1) //受信配列のサーボコマンドが1ならPos指定
             {
                 k = krs_R.setPos(i, s_servo_pos_R[i]);
+                if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = s_servo_pos_R[i];
+                }
             }
             else // 1以外ならとりあえずサーボを脱力し位置を取得
             {
                 k = krs_R.setFree(i);
+                if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = s_servo_pos_R[i];
+                }
             }
             idr_d[i] = Krs2HfDeg(k, idr_trim[i], idr_cw[i]);
         }
