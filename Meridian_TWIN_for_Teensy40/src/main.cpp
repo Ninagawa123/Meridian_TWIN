@@ -1031,13 +1031,16 @@ void loop()
     if (JOYPAD_MOUNT == 1)
     { // SBDBTが接続設定されていれば受信チェック（未実装）
         Serial.print("SBDBT connection has not been programmed yet.");
-    }
-    if (JOYPAD_MOUNT == 2)
+    }else if (JOYPAD_MOUNT == 2)
     { // KRC-5FH+KRR-5FHが接続設定されていれば受信チェック
         joypad_read();
         r_spi_meridim.sval[15] |= pad_btn;
         s_spi_meridim.sval[15] |= pad_btn;
+    }else
+    {
+      pad_btn = r_spi_meridim.sval[15]; //をセットする
     }
+
     //////// < 7 > Teensy 内 部 で 位 置 制 御 す る 場 合 の 処 理 /////////////////////////
 
     // @[7-1] マスターコマンドの判定によりこの工程の実行orスキップを分岐(デフォルトはMeridim配列数である90)
@@ -1063,8 +1066,8 @@ void loop()
     // @[7-2] 前回のラストに読み込んだサーボ位置をサーボ配列に書き込む
     for (int i = 0; i < 15; i++)
     {
-        s_servo_pos_L[i] = HfDeg2Krs(float(r_spi_meridim.sval[i * 2 + 21]), idl_trim[i], idl_cw[i]); //
-        s_servo_pos_R[i] = HfDeg2Krs(r_spi_meridim.sval[i * 2 + 51], idr_trim[i], idr_cw[i]);        //
+        s_servo_pos_L[i] = HfDeg2Krs(r_spi_meridim.sval[i * 2 + 21], idl_trim[i], idl_cw[i]); //
+        s_servo_pos_R[i] = HfDeg2Krs(r_spi_meridim.sval[i * 2 + 51], idr_trim[i], idr_cw[i]); //
     }
 
     // @[7-3] Teensyによる次回動作の計算
@@ -1178,7 +1181,7 @@ void loop()
         s_spi_meridim.sval[8] = float2HfShort(mpu_result[6]);   // IMU/AHRS_mag_x
         s_spi_meridim.sval[9] = float2HfShort(mpu_result[7]);   // IMU/AHRS_mag_y
         s_spi_meridim.sval[10] = float2HfShort(mpu_result[8]);  // IMU/AHRS_mag_z
-        s_spi_meridim.sval[11] = float2HfShort(mpu_result[15]); // tempreature
+        s_spi_meridim.sval[11] = float2HfShort(mpu_result[15]); // temperature
         s_spi_meridim.sval[12] = float2HfShort(mpu_result[12]); // DMP_ROLL推定値
         s_spi_meridim.sval[13] = float2HfShort(mpu_result[13]); // DMP_PITCH推定値
         s_spi_meridim.sval[14] = float2HfShort(mpu_result[14]); // DMP_YAW推定値
