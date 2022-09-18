@@ -161,28 +161,7 @@ wifi接続に成功すると
   
 #  Meridian consoleを実行する  
 Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.
-https://github.com/Ninagawa123/Meridian_TWIN/tree/main/Meridian_console
-  
-$ pip3 install dearpygui など, 必要なライブラリをインストールしてください.  
-ROS信号あり, ROS信号なしが選べるので, WinやMacで手軽にMeridianの通信をテストすることができます.   
-WinやMacなどROSのない環境で使用する場合は、47行目付近のROS用ライブラリのインポートをコメントアウトで不使用にしてください.  
-また, 53行目付近にPCとESP32のIPアドレスを設定する箇所があるので記入してください.  
-
-$ CD ~/(Meridian_console.pyのあるディレクトリ)  
-$ python Meridian_console.py  
-  
-で実行し、画面が表示されれば成功です. Meridianボードを立ち上げると数秒で接続が確立し, 画面の数字がチラチラと動き始めます.  
-標準設定の通信速度はTeensy4.0側で決定され、デフォルトでは100Hz, 1秒間に100回の往復通信を行います.  
-  
-MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画面のデータがチラチラと動きます.  
-起動時はロボットのサーボは脱力しており、サーボの角度を手で動かすとスライダーに反映されます.  
-  
-また, 「->ROS1」「->ESP32」のチェックをオフ, 「Power」「ESP32<-」「<-DEMO」のチェックをオンにすることで, ロボットのサーボにパワーが入り, サインカーブで構成されたダンスのデモを行います.  
-
-ROSがない環境で「->ROS1」「ROS1<-」にチェックを入れるとプログラムは異常終了します.  
-　　
-Teensy4.0側にはリモコンの左十字キーの左右の入力に応じて首を振る動作のサンプルを入れてあります。  
-リモコンが有効に接続され、なおかつMeridian consoleよりサーボのPowerをオンにすると動作します。  
+https://github.com/Ninagawa123/Meridian_console
   
 #  Unity版デモを実行する
 （※Mac/Winで動作を確認.Winではファイアーウォールの設定が必要です.）  
