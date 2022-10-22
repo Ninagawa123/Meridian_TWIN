@@ -57,7 +57,13 @@ PlatformIOで"MeridianTWIN_Teensy40"等の名前で新規プロジェクトを�
 - **MPU6050 by Electronic Cats** (PlatformIO上でインストール可)
 - **Adafruit BusIO** (PlatformIO上でインストール可)
 - **Adafruit Unified Sensor** (PlatformIO上でインストール可)
-- **IcsClass_V210** (ICS_Library_for_Arduino_V2_1.zipをDL, 解凍してプロジェクトのLibディレクトリに配置)
+- **IcsClass_V210** (詳細は下記)
+
+##### IcsClass_V210の導入について
+https://kondo-robot.com/faq/ics-library-a2  
+より, ICS_Library_for_Arduino_V2.1をDLします.  
+一度解凍すると中に IcsClass_V210.zip が現れるのでさらに解凍し,「IcsClass_V210」のフォルダ状態にします.  
+それを当プロジェクトのlibディレクトリに配置する. 配置はPlatformIO左側にあるエクスプローラーの該当箇所へのドラッグ＆ドロップで可能です.  
   
 #### サーボのマウントを設定する
 Teensy4.0ソースコードの サーボ設定 の項目で, 各サーボのマウントありなしを変更できます.  
