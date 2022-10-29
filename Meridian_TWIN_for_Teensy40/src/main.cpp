@@ -20,6 +20,7 @@
 // 221025 共用体のunsigned対応, 要素数の設定ミスを修正
 // 221025 シーケンシャルカウンタを0スタート、unsigned shortで60,000で0リセットに
 // 221025 ※よって、Teensy,ESP,Meridian Consoleをすべて最新版にアップデートする必要あり
+// 221028 KRC-5FHの外付けアナログパッドに対応するコードを追加 (+Hori)
 
 //================================================================================================================
 //---- Teensy4.0 の 配 線 / ピンアサイン ----------------------------------------------------------------------------
@@ -243,6 +244,7 @@ short stick_Ly = 0;          // 受信ジョイスティックデータLy
 short stick_Rx = 0;          // 受信ジョイスティックデータRx
 short stick_Ry = 0;          // 受信ジョイスティックデータRy
 unsigned short pad_btn = 0;  // ボタン変数一般化変換
+short pad_analog[4];         // アナログパッド用変数一般化変換
 
 // SDカードテスト用
 File sdFile;
@@ -703,9 +705,18 @@ void joypad_read()
         if (joypad_frame_count >= JOYPAD_FRAME)
         {
             unsigned short buttonData;
+#if 1
+            bool ret;
+            int joy_a[4];
+            ret = krs_R.getKrrAllData(&buttonData, joy_a); // +Hori 20221008
+            delayMicroseconds(2);
+            if (ret)
+#else
             buttonData = krs_R.getKrrButton();
             delayMicroseconds(2);
             if (buttonData != KRR_BUTTON_FALSE) // ボタンデータが受信できていたら
+#endif
+
             {
                 button_1 = buttonData;
                 pad_btn = 0;
@@ -727,6 +738,23 @@ void joypad_read()
                 }
                 // L1,L2,R1,R2
                 pad_btn += ((button_1 & 2048) >> 11) * 2048 + ((button_1 & 4096) >> 12) * 512 + ((button_1 & 512) >> 9) * 1024 + ((button_1 & 1024) >> 10) * 256;
+
+#if 1
+                if (joy_a[0] + joy_a[1] + joy_a[2] + joy_a[3])
+                {
+                    for (int i = 0; i < 4; i++)
+                    { // +Hori 20221008
+                        pad_analog[i] = (joy_a[i] - 62) << 2;
+                        pad_analog[i] = (pad_analog[i] < -127) ? -127 : pad_analog[i];
+                        pad_analog[i] = (pad_analog[i] > 127) ? 127 : pad_analog[i];
+                    }
+                }
+                else
+                    for (int i = 0; i < 4; i++)
+                    {
+                        pad_analog[i] = 0;
+                    }
+#endif
             }
             joypad_frame_count = 0;
         }
