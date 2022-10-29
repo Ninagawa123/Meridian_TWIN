@@ -12,8 +12,10 @@ Meridim配列を中間プロトコルとして既存のシステムの間に挟�
 Meridianは今後も用途に応じて様々なハードウェア, ソフトウェアに対応させていく予定です.  
   
 [![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)  
+100Hzデータリンクのデモ動画
   
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
+100Hzダンスのデモ動画
   
 # 開発資料  
   
