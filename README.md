@@ -11,6 +11,7 @@ Meridim配列を中間プロトコルとして既存のシステムの間に挟�
 また, ESP32DeckitC単体で動作する簡易バージョンのMeridian_LITE（対応ボードはMeridian Board -LITE-）も開発済みです.  
 Meridianは今後も用途に応じて様々なハードウェア, ソフトウェアに対応させていく予定です.  
   
+https://youtu.be/4ymSV_Dot-U
   
 # 開発資料  
   
