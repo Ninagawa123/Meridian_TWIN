@@ -1,20 +1,26 @@
-// Meridian_TWIN_for_ESP32_20220730 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20221028 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ　20220730版
+// Meridan TWIN ESP32用スケッチ　20221028版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.
-// 動作が大幅に安定し通信エラーはほぼゼロ。
+// 動作が大幅に安定し通信エラーはほぼゼロ.
 // よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
 // PCからのリモコン受信をTeensyにも反映できるように調整
 
-// 【課題】2022.07.30
-// PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する.
-// Wiiリモコンを接続すると受信スキップは1%以下だが、最初のコネクション確立がしにくい.
-// よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
+//【課題】
+// PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する. 2022.07.30
+// Wiiリモコンを接続すると受信スキップは1%以下だが、最初のコネクション確立がしにくい. 2022.07.30
+// よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい. 2022.07.30
+// BNO055をオンにすると若干delayが発生する不具合が未解決 2022.10.28
 
-#define VERSION "Meridian_TWIN_for_ESP32_20220730." // バージョン表示
+//【更新情報】
+// 221025 シーケンス番号をunsigned shortとし, 0~59,999とした.
+// 221025 Meridimの共用体にunsigned shortのusvalを追加した.
+// 221025 ※よって、Teensy,ESP,Meridian Consoleをすべて最新版にアップデートする必要あり
+
+#define VERSION "Meridian_TWIN_for_ESP32_20221028." // バージョン表示
 
 //================================================================================================================
 //---- E S P 3 2 の 配 線  ----------------------------------------------------------------------------------------
@@ -69,21 +75,20 @@
 /* 頻繁に変更するであろう変数 #DEFINE */
 #define FRAME_DURATION 10               // 1フレームあたりの単位時間（単位ms）
 #define UDP_TIMEOUT 4                   // UDPの待受タイムアウト（単位ms）
-#define AP_SSID "xxxxxxxx"             // アクセスポイントのAP_SSID
-#define AP_PASS "xxxxxxxx"              // アクセスポイントのパスワード
-#define SEND_IP "192.168.1.xx"           // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
-#define BT_MAC_ADDR "xx:xx:xx:xx:xx:xx" // ESP32自身のBluetoothMACアドレス（本プログラムを実行しシリアルモニタで確認）
-// IPを固定する場合は下記の4項目を設定し, (ES-4-1) WiFi.configを有効にする 固定しない場合はコメントアウト必須
+#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID
+#define AP_PASS "xxxxxx"              // アクセスポイントのパスワード
+#define SEND_IP "192.168.1.11"          // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
+#define BT_MAC_ADDR "9c:9c:1f:cf:fb:be" // ESP32自身のBluetoothMACアドレス（本プログラムを実行しシリアルモニタで確認）// IPを固定する場合は下記の4項目を設定し, (ES-4-1) WiFi.configを有効にする 固定しない場合はコメントアウト必須
 // IPAddress ip(192,168,xx,xx);//ESP32のIPアドレスを固定する場合のアドレス
 // IPAddress subnet(255,255,255,0);//ESP32のIPアドレス固定する場合のサブネット
 // IPAddress gateway(192,168,xx,xx);//ルーターのゲートウェイを入れる
 // IPAddress DNS(8,8,8,8);//DNSサーバーの設定（使用せず）
 
 /* 各種設定 #DEFINE */
-#define JOYPAD_MOUNT 4          // ジョイパッドの搭載 (※KRC-5FHはTeensy側に接続)
+#define JOYPAD_MOUNT 0          // ジョイパッドの搭載 (※KRC-5FHはTeensy側に接続)
                                 // 0:なし, 1:SBDBT(未), 2:KRC-5FH, 3:PS3(未), 4:PS4 ,5:Wii_yoko, 6:Wii+Nun(未), 7:WiiPRO(未), 8:Xbox(未)
 #define JOYPAD_POLLING 10       // ジョイパッドの問い合わせフレーム間隔(PSは10)
-#define FLOW_MONITOR 0          // シリアルモニタでフローを表示するかの設定（0:OFF, 1:ON）
+#define FLOW_MONITOR 1          // シリアルモニタでフローを表示するかの設定（0:OFF, 1:ON）
 #define MSG_SIZE 90             // Meridim配列の長さ設定（デフォルトは90）
 bool UDP_SEND = true;           // PCへのデータ送信を行うか
 bool UDP_RESEIVE = true;        // PCからのデータ受信を行うか
@@ -125,17 +130,18 @@ uint8_t *r_spi_meridim_dma; // DMA用
 TaskHandle_t thp[4];        //マルチスレッドのタスクハンドル格納用
 
 /* フラグ関連変数 */
-bool spi_ready_flag = true;         // SPI送信の順番制御用
-bool udp_rsvd_flag = true;          // UDPスレッドでの受信完了フラグ
-bool udp_busy_flag = false;         // UDPスレッドでの受信中フラグ（送信抑制）
-short frame_sync_r_expect = -30000; // フレーム毎に前回受信値に+１として受信値と比較（-30000~29999)
-int udp_resv_timeout = 0;           // UPD受信のタイムアウト
+bool spi_ready_flag = true;             // SPI送信の順番制御用
+bool udp_rsvd_flag = true;              // UDPスレッドでの受信完了フラグ
+bool udp_busy_flag = false;             // UDPスレッドでの受信中フラグ（送信抑制）
+unsigned short frame_sync_r_expect = 0; // シーケンス番号確認用.フレーム毎に前回受信値に+1して受信値と比較（0~59999)
+int udp_resv_timeout = 0;               // UPD受信のタイムアウト
 
 /* Meridim配列用の共用体の設定 */
 typedef union
 {
-  short sval[MSG_SIZE + 2];
-  uint8_t bval[MSG_BUFF + 4];
+  short sval[MSG_SIZE + 2];           // short型で90個の配列データを持つ
+  unsigned short usval[MSG_SIZE + 2]; // 上記のunsigned short型
+  uint8_t bval[MSG_BUFF + 4];         // 1バイト単位で180個の配列データを持つ
 } UnionData;
 UnionData s_spi_meridim; // SPI受信用共用体
 UnionData r_spi_meridim; // SPI受信用共用体
@@ -655,11 +661,9 @@ void loop()
       short udp_packet = udp.parsePacket();
       if (udp_packet >= MSG_BUFF)
       {
-        // Serial.print(udp_packet);
         udp.read(r_udp_meridim.bval, MSG_BUFF); // データの受信
         udp_rsvd_flag = true;
         flow_monitor("!"); // 動作チェック用シリアル表示
-        // Serial.println(r_udp_meridim.sval[1]); // ★このシーケンシャルカウンタは動作OK??
       }
       if (udp_resv_timeout > UDP_TIMEOUT) // UDPの受信待ちのタイムアウト
       {
@@ -691,23 +695,24 @@ void loop()
 
     // @[5-3] 連番スキップ検出
 
-    // @[5-3-1] シーケンシャルカウンタ予想値の生成
-    frame_sync_r_expect++;           // フレームカウント予想値を加算
-    if (frame_sync_r_expect > 29999) // 予想値が29,999以上ならカウントを-30000に戻す
-    {
-      frame_sync_r_expect = -30000;
-    }
+    // @[5-3-1] シーケンス番号の予想値を生成
+    // frame_sync_r_expect++;           // フレームカウント予想値を加算
+    // if (frame_sync_r_expect > 59999) // 予想値が29,999以上ならカウントを-30000に戻す
+    //{
+    // frame_sync_r_expect = 0;
+    //}
 
-    // @[5-3-2] シーケンシャルカウンタチェック
-    if (frame_sync_r_expect == s_spi_meridim.sval[1]) // 受信シーケンシャルカウンタの値が予想通りなら,
-    {
-      s_spi_meridim.bval[MSG_ERR_u] &= 0b11111011; // エラーフラグ10番(ESP受信のスキップ検出)をサゲる.
-    }
-    else // 受信シーケンシャルカウンタの値が予想と違ったら,
-    {
-      frame_sync_r_expect = s_spi_meridim.sval[1]; // 現在の受信値を予想結果としてキープ
-      s_spi_meridim.bval[MSG_ERR_u] |= 0b00000100; // エラーフラグ10番(ESP受信のスキップ検出)をアゲる.
-    }
+    // @[5-3-2] シーケンス番号のチェック
+    // if (frame_sync_r_expect == s_spi_meridim.usval[1]) // 受信シーケンス番号の値が予想通りなら,
+    //{
+    // s_spi_meridim.bval[MSG_ERR_u] &= 0b11111011; // エラーフラグ10番(ESP受信のスキップ検出)をサゲる.
+    //}
+    // else // 受信シーケンス番号の値が予想と違ったら,
+    //{
+    // frame_sync_r_expect = s_spi_meridim.usval[1]; // 現在の受信値を予想結果としてキープ
+    // s_spi_meridim.bval[MSG_ERR_u] |= 0b00000100;  // エラーフラグ10番(ESP受信のスキップ検出)をアゲる.
+    //}
+
     // [check!] ここで s_spi_meridim にはチェック済みの r_udp_meridim が転記され, ESP32UDP受信エラーフラグも入った状態.
 
     //------------------------------------------------------------------------
@@ -724,7 +729,7 @@ void loop()
     s_spi_meridim.sval[16] = r_udp_meridim.sval[16] | pad_stick_L;
     s_spi_meridim.sval[17] = r_udp_meridim.sval[17] | pad_stick_R;
     s_spi_meridim.sval[18] = r_udp_meridim.sval[18] | pad_stick_V;
-    
+
     // @[6-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）
     // → すでにPCから受け取った値がs_spi_meridim.sval[1]に入っているのでここでは何もしない.
 
