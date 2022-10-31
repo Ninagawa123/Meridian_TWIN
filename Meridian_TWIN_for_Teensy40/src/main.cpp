@@ -1235,8 +1235,11 @@ void loop()
         {
             frame_sync_r_expect = 0;
         }
+      
+        // @[1-3-2] 受信シーケンス番号のデータ格納
+        frame_sync_r_resv = r_spi_meridim.usval[1];
 
-        // @[1-3-2] シーケンス番号チェック
+        // @[1-3-3] シーケンス番号チェック
         if (frame_sync_r_expect == r_spi_meridim.usval[1]) // 受信シーケンス番号の値が予想通りなら,
         {
             r_spi_meridim.bval[MSG_ERR_u] &= 0b11111101; // Meridim[MSG_ERR] 9番ビット:Teensy受信のスキップ検出をサゲる.
