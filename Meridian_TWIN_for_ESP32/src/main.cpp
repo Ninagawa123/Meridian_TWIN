@@ -638,7 +638,7 @@ void loop()
     flow_monitor("[3]"); // 動作チェック用シリアル表示
 
     udp_busy_flag = true; // UDP使用中のフラグをアゲる
-    // @[3-1] SPI送受信の実行
+    // @[3-1] UDP送受信の実行
     sendUDP(); // UDP送信を実行
     // delayMicroseconds(1);
 
