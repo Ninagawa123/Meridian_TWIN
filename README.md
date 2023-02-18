@@ -60,6 +60,7 @@ PlatformIOで"MeridianTWIN_Teensy40"等の名前で新規プロジェクトを�
 #### ライブラリを導入する
 - **TsyDMASPI by hideakitai** (PlatformIO上でインストール可)
 - **MPU6050 by Electronic Cats** (PlatformIO上でインストール可)
+- **Adafruit_BNO055** (PlatformIO上でインストール可)
 - **Adafruit BusIO** (PlatformIO上でインストール可)
 - **Adafruit Unified Sensor** (PlatformIO上でインストール可)
 - **IcsClass_V210** (詳細は下記)
