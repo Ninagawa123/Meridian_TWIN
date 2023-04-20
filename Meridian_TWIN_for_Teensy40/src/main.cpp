@@ -1,7 +1,7 @@
 
 // Meridian_TWIN_for_Teensy_20220828 By Izumi Ninagawa
 // MIT Licenced.
-// Meridan TWIN Teensy4.0用スクリプト　20220828版
+// Meridan TWIN Teensy4.0用スクリプト　20230420版
 // 220723 内部計算時に degree*100 を単位として使用するように変更
 // 220723 センサーの関数を集約
 // 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
@@ -9,6 +9,8 @@
 // 220828 サーボからの受信が-1(タイムアウト)の時、前に取得した情報を使用する（データ飛びや表示のブレを防止）
 // 220828 SERVO_NUM_L, SERVO_NUM_R に左右の接続サーボ数の登録を設定
 // 220828 左右の接続サーボ数の多い方をservo_numとし、サーボ送信命令も左右交互に実行するよう改定
+// 230420 起動時にSDカードの動作チェックを行えるようにした。
+// 230420 起動時のメッセージ表記の順番やテキストを若干変更。
 
 //================================================================================================================
 //---- Teensy4.0 の 配 線 / ピンアサイン ----------------------------------------------------------------------------
@@ -112,7 +114,7 @@
 //================================================================================================================
 
 /* 頻繁に変更するであろう#DEFINE */
-#define VERSION "Meridian_TWIN_for_Teensy_2022.08.28" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2023.04.20" // バージョン表示
 #define FRAME_DURATION 10                             // 1フレームあたりの単位時間（単位ms）
 
 /* シリアルモニタリング切り替え */
@@ -123,10 +125,11 @@
 #define ESP32_MOUNT 1   // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
 #define IMUAHRS_MOUNT 1 // IMU/AHRSの搭載状況 0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
 #define IMUAHRS_FREQ 10 // IMU/AHRSのセンサの読み取り間隔(ms)
-#define JOYPAD_MOUNT 2  // ジョイパッドの搭載 0:なしorESP32orPCで受信, 1:SBDBT, 2:KRC-5FH (※2のみ実装済,MeridianBoardではICS_R系に接続)
+#define JOYPAD_MOUNT 0  // ジョイパッドの搭載 0:なしorESP32orPCで受信, 1:SBDBT, 2:KRC-5FH (※2のみ実装済,MeridianBoardではICS_R系に接続)
 #define JOYPAD_FRAME 4  // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
 #define ICS3_MOUNT 0    // 半二重サーボ信号の3系のありなし
 #define SD_MOUNT 1      // SDカードリーダーのありなし. MeridianBoard Type.Kは有り
+#define SD_RWCHECK 0    // 起動時のSDカードリーダーの読み書きチェック
 #define CHIPSELECT_SD 9 // SDカードSPI通信用のChipSelectのピン番号
 #define SERVO_NUM_L 11  // L系統につないだサーボの数
 #define SERVO_NUM_R 11  // R系統につないだサーボの数
@@ -167,6 +170,7 @@ int spi_ok = 0;                                // 通信のエラーカウント
 int spi_trial = 0;                             // 通信のエラーカウント
 int k;                                         // 各サーボの計算用変数
 int servo_num = max(SERVO_NUM_L, SERVO_NUM_R); // サーボ送受信のループ処理数（L系R系で多い方）
+File myFile;                                   // SDカード用
 
 /* フラグ用変数 */
 bool flag_sensor_IMUAHRS_writable = true; // メインが結果値を読み取る瞬間、サブスレッドによる書き込みをウェイト
@@ -431,7 +435,7 @@ int HfDeg2Krs(int hfdegree, int n, int cw)
     {
         x = 11500;
     }
-    else if (x < 3500) //下限を設定
+    else if (x < 3500) // 下限を設定
     {
         x = 3500;
     }
@@ -489,7 +493,7 @@ void setupIMUAHRS()
         }
         else
         {
-            Serial.print("DMP Initialization failed.");
+            Serial.println("IMU/AHRS DMP Initialization FAILED!");
         }
     }
     else if (IMUAHRS_MOUNT == 3) // BNO055
@@ -516,34 +520,34 @@ void IMUAHRS_getYawPitchRoll()
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-            //加速度の値
+            // 加速度の値
             mpu.dmpGetAccel(&aa, fifoBuffer);
             mpu_read[0] = (float)aa.x;
             mpu_read[1] = (float)aa.y;
             mpu_read[2] = (float)aa.z;
 
-            //ジャイロの値
+            // ジャイロの値
             mpu.dmpGetGyro(&gyro, fifoBuffer);
             mpu_read[3] = (float)gyro.x;
             mpu_read[4] = (float)gyro.y;
             mpu_read[5] = (float)gyro.z;
 
-            //磁力センサの値
+            // 磁力センサの値
             mpu_read[6] = (float)mag.x;
             mpu_read[7] = (float)mag.y;
             mpu_read[8] = (float)mag.z;
 
-            //重力DMP推定値
+            // 重力DMP推定値
             mpu_read[9] = gravity.x;
             mpu_read[10] = gravity.y;
             mpu_read[11] = gravity.z;
 
-            //相対方向DMP推定値
+            // 相対方向DMP推定値
             mpu_read[12] = ypr[2] * 180 / M_PI;              // DMP_ROLL推定値
             mpu_read[13] = ypr[1] * 180 / M_PI;              // DMP_PITCH推定値
             mpu_read[14] = (ypr[0] * 180 / M_PI) - YAW_ZERO; // DMP_YAW推定値
 
-            //温度
+            // 温度
             mpu_read[15] = 0; // fifoBufferからの温度取得方法が今のところ不明。
 
             if (flag_sensor_IMUAHRS_writable)
@@ -792,7 +796,7 @@ void setup()
     Serial.print("I2C IMU/AHRS Sensor mounted: ");
     if (IMUAHRS_MOUNT == 0)
     {
-        Serial.println("None. ");
+        Serial.print("None. ");
     }
     else if (IMUAHRS_MOUNT == 1)
     {
@@ -812,30 +816,6 @@ void setup()
         Serial.println(IMUAHRS_FREQ);
     }
 
-    Serial.print("Controll Pad Receiver mounted: ");
-    if (JOYPAD_MOUNT == 0)
-    {
-        Serial.print("None. ");
-    }
-    else if (JOYPAD_MOUNT == 1)
-    {
-        Serial.print("SBDBT ");
-    }
-    else if (JOYPAD_MOUNT == 2)
-    {
-        Serial.print("KRC-5FH ");
-    }
-    else if (JOYPAD_MOUNT == 3)
-    {
-        Serial.print("Merimote PICO ");
-    }
-    if (JOYPAD_MOUNT != 0)
-    {
-        Serial.print("  freq: ");
-        Serial.println(JOYPAD_FRAME);
-    }
-    delay(100);
-
     /* サーボ用シリアル設定 */
     krs_L.begin(); // サーボモータの通信初期設定。Serial2
     krs_R.begin(); // サーボモータの通信初期設定。Serial3
@@ -851,18 +831,105 @@ void setup()
         setupIMUAHRS();
     }
 
+    Serial.print("Controll Pad Receiver mounted: ");
+    if (JOYPAD_MOUNT == 0)
+    {
+        Serial.println("None. ");
+    }
+    else if (JOYPAD_MOUNT == 1)
+    {
+        Serial.println("SBDBT ");
+    }
+    else if (JOYPAD_MOUNT == 2)
+    {
+        Serial.println("KRC-5FH ");
+    }
+    else if (JOYPAD_MOUNT == 3)
+    {
+        Serial.println("Merimote PICO ");
+    }
+    if (JOYPAD_MOUNT != 0)
+    {
+        Serial.print("  freq: ");
+        Serial.println(JOYPAD_FRAME);
+    }
+    delay(100);
+
+    // SDカードの初期化と読み書きテスト
+    if (SD_MOUNT)
+    {
+        Serial.print("SD card check...");
+        delay(100);
+        if (!SD.begin(CHIPSELECT_SD))
+        {
+            Serial.println(" initialization FALIED!");
+            delay(500);
+        }
+        else
+        {
+            Serial.println(" OK.");
+        }
+
+        if (SD_RWCHECK)
+        {
+            // open the file.
+            myFile = SD.open("/tmp.txt", FILE_WRITE);
+            delayMicroseconds(1); // SPI安定化検証用
+
+            // if the file opened okay, write to it:
+            if (myFile)
+            {
+                Serial.print("SD card r/w check...");
+                // SD書き込みテスト用のランダムな4桁の数字を生成
+                randomSeed(long(analogRead(A0) + analogRead(A1) * 2 + analogRead(A2) * 3 + analogRead(A3) * 100 + analogRead(A4) * 103 + analogRead(A5) * 105 + analogRead(A6) * 1000 + analogRead(A7) * 1001 + analogRead(A8) * 1007 + analogRead(A9) * 10000 + analogRead(A10) * 10001 + analogRead(A11) * 10005 + analogRead(A12) * 10007 + analogRead(A13) * 10009)); // 未接続ピンのノイズを利用
+                int randNumber = random(1000, 9999);
+
+                Serial.print(" write code ");
+                Serial.print(randNumber);
+                myFile.println(randNumber);
+                delayMicroseconds(1); // SPI安定化検証用
+                // close the file:
+                myFile.close();
+                Serial.print(" and");
+                delayMicroseconds(10); // SPI安定化検証用
+                // re-open the file for reading:
+                myFile = SD.open("/tmp.txt");
+                if (myFile)
+                {
+                    Serial.print(" read code ");
+                    while (myFile.available())
+                    {
+                        Serial.write(myFile.read());
+                    }
+                    // close the file:
+                    myFile.close();
+                }
+                SD.remove("/tmp.txt");
+                // Serial.println("SD /tmp.txt file removed.");
+                delay(10);
+            }
+            else
+            {
+                // if the file didn't open, print an error:
+                Serial.println("Could not open SD test file.");
+            }
+        }
+    }
+    else
+    {
+        Serial.println("No SD reader/writer mounted.");
+    }
+
     /* SPI通信用DMAの設定 */
     TsyDMASPI0.begin(SS, SPISettings(SPI_CLOCK, MSBFIRST, SPI_MODE3));
 
-    /* SDカードの初期化 */
-
     /* 配列のリセット */
-    memset(s_spi_meridim.bval, 0, MSG_BUFF + 4);     //配列要素を0でリセット
-    memset(r_spi_meridim.bval, 0, MSG_BUFF + 4);     //配列要素を0でリセット
-    memset(s_spi_meridim_dma.bval, 0, MSG_BUFF + 4); //配列要素を0でリセット
-    memset(r_spi_meridim_dma.bval, 0, MSG_BUFF + 4); //配列要素を0でリセット
-    memset(idl_d, 0, 15);                            //配列要素を0でリセット
-    memset(idr_d, 0, 15);                            //配列要素を0でリセット
+    memset(s_spi_meridim.bval, 0, MSG_BUFF + 4);     // 配列要素を0でリセット
+    memset(r_spi_meridim.bval, 0, MSG_BUFF + 4);     // 配列要素を0でリセット
+    memset(s_spi_meridim_dma.bval, 0, MSG_BUFF + 4); // 配列要素を0でリセット
+    memset(r_spi_meridim_dma.bval, 0, MSG_BUFF + 4); // 配列要素を0でリセット
+    memset(idl_d, 0, 15);                            // 配列要素を0でリセット
+    memset(idr_d, 0, 15);                            // 配列要素を0でリセット
 
     /* I2Cに接続したIMU/AHRSセンサの設定 */
     if (IMUAHRS_MOUNT == 1) // MPU6050の場合
@@ -901,8 +968,8 @@ void setup()
 
     /* 起動時のディレイ用mercちょい足し */
     merc = merc + 3500;
-    Serial.println();
     Serial.println("Ready. ");
+    Serial.println();
 }
 
 //================================================================================================================
@@ -929,11 +996,11 @@ void loop()
                 r_spi_meridim.sval[i] = r_spi_meridim_dma.sval[i];
             }
             spi_ok++;
-            r_spi_meridim.bval[MSG_ERR_u] &= B11011111; //エラーフラグ13番(TeensyのESPからのSPI受信エラー検出)をオフ
+            r_spi_meridim.bval[MSG_ERR_u] &= B11011111; // エラーフラグ13番(TeensyのESPからのSPI受信エラー検出)をオフ
         }
         else
         {
-            r_spi_meridim.bval[MSG_ERR_u] |= B00100000; //エラーフラグ13番(TeensyのESPからのSPI受信エラー検出)をオン
+            r_spi_meridim.bval[MSG_ERR_u] |= B00100000; // エラーフラグ13番(TeensyのESPからのSPI受信エラー検出)をオン
         }
 
         // @[1-3-1] シーケンシャルカウンタ予想値の生成
@@ -1031,14 +1098,16 @@ void loop()
     if (JOYPAD_MOUNT == 1)
     { // SBDBTが接続設定されていれば受信チェック（未実装）
         Serial.print("SBDBT connection has not been programmed yet.");
-    }else if (JOYPAD_MOUNT == 2)
+    }
+    else if (JOYPAD_MOUNT == 2)
     { // KRC-5FH+KRR-5FHが接続設定されていれば受信チェック
         joypad_read();
         r_spi_meridim.sval[15] |= pad_btn;
         s_spi_meridim.sval[15] |= pad_btn;
-    }else
+    }
+    else
     {
-      pad_btn = r_spi_meridim.sval[15]; //をセットする
+        pad_btn = r_spi_meridim.sval[15]; // をセットする
     }
 
     //////// < 7 > Teensy 内 部 で 位 置 制 御 す る 場 合 の 処 理 /////////////////////////
@@ -1081,7 +1150,7 @@ void loop()
     {
         s_servo_pos_L[0] = HfDeg2Krs(3000, idl_trim[0], idl_cw[0]); //
     }
-    Serial.println(r_spi_meridim.sval[15]);
+    // Serial.println(r_spi_meridim.sval[15]);
 
     /*
     if (s_spi_meridim.sval[15] == 32)
@@ -1109,11 +1178,11 @@ void loop()
     // @[8-3] サーボデータのICS送信および返り値を取得
 
     for (int i = 0; i < servo_num; i++) // ICS_L系統の処理
-    {                                   //接続したサーボの数だけ繰り返す。最大は15
+    {                                   // 接続したサーボの数だけ繰り返す。最大は15
         idl_d[i] = 0;
         if (idl_mt[i])
         {
-            if (r_spi_meridim.sval[(i * 2) + 20] == 1) //受信配列のサーボコマンドが1ならPos指定
+            if (r_spi_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
                 k = krs_L.setPos(i, s_servo_pos_L[i]);
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
@@ -1139,7 +1208,7 @@ void loop()
         idr_d[i] = 0;
         if (idr_mt[i])
         {
-            if (r_spi_meridim.sval[(i * 2) + 50] == 1) //受信配列のサーボコマンドが1ならPos指定
+            if (r_spi_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
                 k = krs_R.setPos(i, s_servo_pos_R[i]);
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
@@ -1225,7 +1294,7 @@ void loop()
     curr = (long)millis(); // 現在時刻を更新
     if (curr > merc)
     {                              // 現在時刻がフレーム管理時計を超えていたらアラートを出す
-        Serial.print("* delay: "); //シリアルに遅延msを表示
+        Serial.print("* delay: "); // シリアルに遅延msを表示
         Serial.println(curr - merc);
         digitalWrite(ERR_LED, HIGH); // 処理落ちが発生していたらLEDを点灯
     }
