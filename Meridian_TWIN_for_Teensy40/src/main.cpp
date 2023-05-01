@@ -12,6 +12,7 @@
 // 220828 左右の接続サーボ数の多い方をservo_numとし、サーボ送信命令も左右交互に実行するよう改定
 // 230420 起動時にSDカードの動作チェックを行えるようにした。
 // 230420 起動時のメッセージ表記の順番やテキストを若干変更。
+// 230430 内部計算時の単位をdegree*100からdegreeに変更
 // 230430 いくつかの基本的な関数をMeridianのライブラリに移動
 // 230430 サーボの直立ポーズトリム値をdegreeに変更
 // 230430 フローの見通しをよくする目的でsetup()やmain()関数内の処理の多くをローカル関数化
@@ -194,7 +195,7 @@ void setup()
     delay(100);
 
     /* I2C接続センサーの設定 */
-    if (IMUAHRS_MOUNT == 1) //
+    if (IMUAHRS_MOUNT == 1) // MPU6050
     {
         setupIMUAHRS();
     }
@@ -225,7 +226,7 @@ void setup()
     s_spi_meridim.sval[0] = MSG_SIZE; // (マスターコマンド）
 
     /* 起動時のディレイ用mercちょい足し */
-    merc = merc + 1700;
+    merc = merc + 2800;
     Serial.println("Ready. ");
     Serial.println();
 }
@@ -326,6 +327,8 @@ void loop()
     //////// < 7 > Teensy 内 部 で 位 置 制 御 す る 場 合 の 処 理 /////////////////////////
 
     // @[7-1] マスターコマンドの判定によりこの工程の実行orスキップを分岐(デフォルトはMeridim配列数である90)
+
+    execute_MasterCommand();
 
     // コマンド[90]: サーボオン 通常動作
 
@@ -437,7 +440,7 @@ void loop()
     // s_spi_meridim.sval[1] = 10 ;//(移動時間）
 
     // @[9-3] センサー値を配列に格納
-    void imuahrs_store();
+    imuahrs_store();
 
     // @[9-4] サーボIDごとにの現在位置もしくは計算結果を配列に格納
     for (int i = 0; i < 15; i++)
@@ -604,6 +607,7 @@ void IMUAHRS_getYawPitchRoll()
             {
                 memcpy(mpu_result, mpu_read, sizeof(float) * 16);
             }
+            // Serial.println(mpu_result[12]);
         }
     }
     else if (IMUAHRS_MOUNT == 3) // BNO055
@@ -916,7 +920,7 @@ void imuahrs_start()
     if (IMUAHRS_MOUNT == 1) // MPU6050の場合
     {
         /* MPU6050の割り込み設定 */
-        MsTimer2::set(10, IMUAHRS_getYawPitchRoll); // MPUの情報を取得 10msごとにチェック
+        MsTimer2::set(IMUAHRS_POLLING, IMUAHRS_getYawPitchRoll); // MPUの情報を取得 10msごとにチェック
         MsTimer2::start();
     }
     else if (IMUAHRS_MOUNT == 3) // BNO055の場合
@@ -947,10 +951,9 @@ void imuahrs_start()
 // +----------------------------------------------------------------------
 // | 機能     :  imu/ahrsのセンサー値を配列に格納する
 // +----------------------------------------------------------------------
-
-// @[9-3] センサー値を配列に格納
 void imuahrs_store()
 {
+    Serial.println("store");
     if (IMUAHRS_MOUNT == 1)
     {
         flag_sensor_IMUAHRS_writable = false;
@@ -968,5 +971,33 @@ void imuahrs_store()
         s_spi_meridim.sval[13] = mrd.float2HfShort(mpu_result[13]); // DMP_PITCH推定値
         s_spi_meridim.sval[14] = mrd.float2HfShort(mpu_result[14]); // DMP_YAW推定値
         flag_sensor_IMUAHRS_writable = true;
+        Serial.println(s_spi_meridim.sval[12]);
+    }
+}
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  imuahrs_store()
+// +----------------------------------------------------------------------
+// | 機能     :  imu/ahrsのセンサー値を配列に格納する
+// +----------------------------------------------------------------------
+
+void execute_MasterCommand()
+{
+    // コマンド[90]: サーボオン 通常動作
+
+    // コマンド[0]: 全サーボ脱力
+
+    // コマンド[1]: サーボオン 通常動作
+
+    // コマンド[2]: IMU/AHRSのヨー軸リセット
+    if (r_spi_meridim.sval[0] == UPDATE_YAW_CENTER)
+    {
+        setyaw();
+    }
+
+    // コマンド[3]: トリムモードがオンもしくはコマンド3の時はループ
+    if ((trim_adjust == 1) or (r_spi_meridim.sval[0] == ENTER_TRIM_MODE))
+    {
+        trimadjustment();
     }
 }
