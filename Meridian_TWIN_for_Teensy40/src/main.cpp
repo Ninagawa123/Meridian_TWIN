@@ -326,27 +326,9 @@ void loop()
 
     //////// < 7 > Teensy 内 部 で 位 置 制 御 す る 場 合 の 処 理 /////////////////////////
 
-    // @[7-1] マスターコマンドの判定によりこの工程の実行orスキップを分岐(デフォルトはMeridim配列数である90)
+    // @[7-1] マスターコマンドの判定により工程の実行orスキップを分岐(マスターコマンドのデフォルトはMeridim配列数である90)
 
     execute_MasterCommand();
-
-    // コマンド[90]: サーボオン 通常動作
-
-    // コマンド[0]: 全サーボ脱力
-
-    // コマンド[1]: サーボオン 通常動作
-
-    // コマンド[2]: IMU/AHRSのヨー軸リセット
-    if (r_spi_meridim.sval[0] == UPDATE_YAW_CENTER)
-    {
-        setyaw();
-    }
-
-    // コマンド[3]: トリムモードがオンもしくはコマンド3の時はループ
-    if ((trim_adjust == 1) or (r_spi_meridim.sval[0] == ENTER_TRIM_MODE))
-    {
-        trimadjustment();
-    }
 
     // @[7-2] 前回のラストに読み込んだサーボ位置をサーボ配列に書き込む
     for (int i = 0; i < 15; i++)
@@ -607,7 +589,6 @@ void IMUAHRS_getYawPitchRoll()
             {
                 memcpy(mpu_result, mpu_read, sizeof(float) * 16);
             }
-            // Serial.println(mpu_result[12]);
         }
     }
     else if (IMUAHRS_MOUNT == 3) // BNO055
@@ -829,7 +810,6 @@ void sd_check()
                     myFile.close();
                 }
                 SD.remove("/tmp.txt");
-                // Serial.println("SD /tmp.txt file removed.");
                 delay(10);
             }
             else
