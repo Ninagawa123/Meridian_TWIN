@@ -32,7 +32,7 @@
 /* ライブラリ導入 */
 #include <Meridian.h>                   // Meridianのライブラリ導入
 MERIDIANFLOW::Meridian mrd;             // ライブラリのクラスを mrdという名前でインスタンス化
-#include <Wire.h>                       // MPU-6050のライブラリ導入
+#include <Wire.h>                       // I2Cのライブラリ導入
 #include <SPI.h>                        // SDカード用のライブラリ導入
 #include <SD.h>                         // SDカード用のライブラリ導入
 #include <TsyDMASPI.h>                  // SPI Master用のライブラリを導入
