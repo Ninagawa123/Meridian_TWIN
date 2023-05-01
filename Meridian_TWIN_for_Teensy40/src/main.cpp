@@ -1,4 +1,4 @@
-#define VERSION "Meridian_TWIN_for_Teensy_2023.04.30" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2023.05.01" // バージョン表示
 
 // Meridian_TWIN_for_Teensy_20220430 By Izumi Ninagawa
 // MIT Licenced.
