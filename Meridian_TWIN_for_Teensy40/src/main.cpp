@@ -1,4 +1,4 @@
-#define VERSION "Meridian_TWIN_for_Teensy_2023.05.01" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2023.05.02" // バージョン表示
 
 // Meridian_TWIN_for_Teensy_20220430 By Izumi Ninagawa
 // MIT Licenced.
@@ -8,7 +8,7 @@
 // 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
 // 220730 PCからのリモコン受信が有効となるように調整
 // 220828 サーボからの受信が-1(タイムアウト)の時、前に取得した情報を使用する（データ飛びや表示のブレを防止）
-// 220828 SERVO_NUM_L, SERVO_NUM_R に左右の接続サーボ数の登録を設定
+// 220828 MOUNT_SERVO_NUM_L, MOUNT_SERVO_NUM_R に左右の接続サーボ数の登録を設定
 // 220828 左右の接続サーボ数の多い方をservo_numとし、サーボ送信命令も左右交互に実行するよう改定
 // 230420 起動時にSDカードの動作チェックを行えるようにした。
 // 230420 起動時のメッセージ表記の順番やテキストを若干変更。
@@ -43,15 +43,15 @@ MERIDIANFLOW::Meridian mrd;             // ライブラリのクラスを mrdと
 #include <TeensyThreads.h>              // マルチスレッド用のライブラリ
 
 /* 変数一般 */
-const int MSG_BUFF = MSG_SIZE * 2;             // Meridim配列の長さ（byte換算）
-const int MSG_ERR = MSG_SIZE - 2;              // エラーフラグの格納場所（配列の末尾から2つめ）
-const int MSG_ERR_u = MSG_ERR * 2 + 1;         // エラーフラグの格納場所（上位8ビット）
-const int MSG_ERR_l = MSG_ERR * 2;             // エラーフラグの格納場所（下位8ビット）
-int spi_ok = 0;                                // 通信のエラーカウント
-int spi_trial = 0;                             // 通信のエラーカウント
-int k;                                         // 各サーボの計算用変数
-int servo_num = max(SERVO_NUM_L, SERVO_NUM_R); // サーボ送受信のループ処理数（L系R系で多い方）
-File myFile;                                   // SDカード用
+const int MSG_BUFF = MSG_SIZE * 2;                         // Meridim配列の長さ（byte換算）
+const int MSG_ERR = MSG_SIZE - 2;                          // エラーフラグの格納場所（配列の末尾から2つめ）
+const int MSG_ERR_u = MSG_ERR * 2 + 1;                     // エラーフラグの格納場所（上位8ビット）
+const int MSG_ERR_l = MSG_ERR * 2;                         // エラーフラグの格納場所（下位8ビット）
+int spi_ok = 0;                                            // 通信のエラーカウント
+int spi_trial = 0;                                         // 通信のエラーカウント
+int k;                                                     // 各サーボの計算用変数
+int servo_num = max(MOUNT_SERVO_NUM_L, MOUNT_SERVO_NUM_R); // サーボ送受信のループ処理数（L系R系で多い方）
+File myFile;                                               // SDカード用
 
 /* フラグ用変数 */
 bool flag_sensor_IMUAHRS_writable = true; // メインが結果値を読み取る瞬間、サブスレッドによる書き込みをウェイト
@@ -116,7 +116,7 @@ float mpu_read[16];                                                     // mpu�
 float mpu_zeros[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // リセット用
 float mpu_ave_data[16];                                                 // 上記の移動平均値を入れる
 float mpu_result[16];                                                   // 加工後の最新のmpuデータ（二次データ）
-float mpu_stock_data[MPU_STOCK][16];                                    // 上記の移動平均値計算用のデータストック
+float mpu_stock_data[IMUAHRS_STOCK][16];                                // 上記の移動平均値計算用のデータストック
 int mpu_stock_count = 0;                                                // 上記の移動平均値計算用のデータストックを輪番させる時の変数
 VectorInt16 aa;                                                         // [x, y, z]            加速度センサの測定値
 VectorInt16 gyro;                                                       // [x, y, z]            角速度センサの測定値
@@ -128,9 +128,9 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire);
 float yaw_center = 0;
 
 /* ICSサーボのインスタンス設定 */
-IcsHardSerialClass krs_L(&Serial2, EN_L_PIN, BAUDRATE, TIMEOUT);
-IcsHardSerialClass krs_R(&Serial3, EN_R_PIN, BAUDRATE, TIMEOUT);
-IcsHardSerialClass krs_3(&Serial1, EN_3_PIN, BAUDRATE, TIMEOUT); // 3系もICSの場合
+IcsHardSerialClass krs_L(&Serial2, PIN_EN_L, ICS_BAUDRATE, ICS_TIMEOUT);
+IcsHardSerialClass krs_R(&Serial3, PIN_EN_R, ICS_BAUDRATE, ICS_TIMEOUT);
+IcsHardSerialClass krs_3(&Serial1, PIN_EN_3, ICS_BAUDRATE, ICS_TIMEOUT); // 3系もICSの場合
 
 /* サーボのポジション用配列.*/                                       // 100倍したdegreeが入る
 int s_servo_pos_L[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // 15要素
@@ -170,10 +170,10 @@ void setup()
     //-------------------------------------------------------------------------
 
     /* 入出力ピンのモード設定 */
-    pinMode(ERR_LED, OUTPUT); // 通信ディレイが生じたら点灯するLED（デフォルトはT2ピン）
+    pinMode(PIN_ERR_LED, OUTPUT); // 通信ディレイが生じたら点灯するLED（デフォルトはT2ピン）
 
     /* シリアル設定 */
-    Serial.begin(SERIAL_PC); // シリアルモニター表示
+    Serial.begin(SERIAL_PC_BPS); // シリアルモニター表示
     delay(100);
 
     /* 起動時のインフォメーション表示表示(シリアルモニタ) */
@@ -183,29 +183,29 @@ void setup()
     mrd.print_servo_mounts(idl_mount, idr_mount);
 
     /* IMU/AHRSタイプの表示 */
-    mrd.print_imuahrs(IMUAHRS_MOUNT, IMUAHRS_POLLING);
+    mrd.print_imuahrs(MOUNT_IMUAHRS, IMUAHRS_POLLING);
 
     /* サーボ用シリアル設定 */
     krs_L.begin(); // サーボモータの通信初期設定。Serial2
     krs_R.begin(); // サーボモータの通信初期設定。Serial3
-    if (ICS3_MOUNT)
+    if (MOUNT_ICS3)
     {
         krs_3.begin(); // サーボモータの通信初期設定。Serial1
     }
     delay(100);
 
     /* I2C接続センサーの設定 */
-    if (IMUAHRS_MOUNT == 1) // MPU6050
+    if (MOUNT_IMUAHRS == 1) // MPU6050
     {
         setupIMUAHRS();
     }
 
     /* コントロールパッドの種類を表示 */
-    mrd.print_controlpad(JOYPAD_MOUNT, JOYPAD_FRAME);
+    mrd.print_controlpad(MOUNT_JOYPAD, JOYPAD_FRAME);
     delay(100);
 
     /* SDカードの初期化と読み書きテスト */
-    sd_check();
+    check_sd();
 
     /* SPI通信用DMAの設定 */
     TsyDMASPI0.begin(SS, SPISettings(SPI_SPEED, MSBFIRST, SPI_MODE3));
@@ -240,7 +240,7 @@ void loop()
     //////// < 1 > E S P 3 2 と の S P I に よ る 送 受 信 処 理  /////////////////////////
 
     // @[1-1] ESP32とのSPI送受信の実行
-    if (ESP32_MOUNT)
+    if (MOUNT_ESP32)
     {
         TsyDMASPI0.transfer(s_spi_meridim_dma.bval, r_spi_meridim_dma.bval, MSG_BUFF + 4);
 
@@ -309,11 +309,11 @@ void loop()
 
     //////// < 6 > コ ン ト ロ ー ラ の 読 み 取 り　///////////////////////////////////////
     //[6-1] コントローラの値を取得
-    if (JOYPAD_MOUNT == 1)
+    if (MOUNT_JOYPAD == 1)
     { // SBDBTが接続設定されていれば受信チェック（未実装）
         Serial.print("SBDBT connection has not been programmed yet.");
     }
-    else if (JOYPAD_MOUNT == 2)
+    else if (MOUNT_JOYPAD == 2)
     { // KRC-5FH+KRR-5FHが接続設定されていれば受信チェック
         joypad_read();
         r_spi_meridim.sval[15] |= pad_btn;
@@ -335,8 +335,8 @@ void loop()
     {
         s_servo_pos_L[i] = r_spi_meridim.sval[i * 2 + 21]; // 100倍したdegreeが入る
         s_servo_pos_R[i] = r_spi_meridim.sval[i * 2 + 51]; // 100倍したdegreeが入る
-        // idl_diff[i] = s_servo_pos_L[i] * 0.01;             // 通常のdegreeが一旦入る
-        // idr_diff[i] = s_servo_pos_R[i] * 0.01;             // 通常のdegreeが一旦入る
+        idl_diff[i] = s_servo_pos_L[i] * 0.01;             // 通常のdegreeが一旦入る
+        idr_diff[i] = s_servo_pos_R[i] * 0.01;             // 通常のdegreeが一旦入る
     }
 
     // @[7-3] Teensyによる次回動作の計算
@@ -367,12 +367,13 @@ void loop()
     // void move_servos_krs(); // KRSサーボをICS_L,ICS_Rより制御し、返り値degreeをidl_diff,idr_diffに格納する
     for (int i = 0; i < servo_num; i++) // ICS_L系統の処理
     {                                   // 接続したサーボの数だけ繰り返す。最大は15
-        idl_diff[i] = 0;
+        // idl_diff[i] = 0;
         if (idl_mount[i])
         {
             if (r_spi_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
-                k = krs_L.setPos(i, mrd.HfDeg2Krs(s_servo_pos_L[i], idl_trim[i], idl_cw[i]));
+                // k = krs_L.setPos(i, mrd.HfDeg2Krs(s_servo_pos_L[i], idl_trim[i], idl_cw[i]));
+                k = krs_L.setPos(i, mrd.Deg2Krs(idl_diff[i], idl_trim[i], idl_cw[i]));
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
                 {
                     k = s_servo_pos_L[i];
@@ -390,12 +391,13 @@ void loop()
         }
         delayMicroseconds(2);
 
-        idr_diff[i] = 0;
+        // idr_diff[i] = 0;
         if (idr_mount[i])
         {
             if (r_spi_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
-                k = krs_R.setPos(i, mrd.HfDeg2Krs(s_servo_pos_R[i], idr_trim[i], idr_cw[i]));
+                // k = krs_R.setPos(i, mrd.HfDeg2Krs(s_servo_pos_R[i], idr_trim[i], idr_cw[i]));
+                k = krs_R.setPos(i, mrd.Deg2Krs(idr_diff[i], idr_trim[i], idr_cw[i]));
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
                 {
                     k = s_servo_pos_R[i];
@@ -463,11 +465,11 @@ void loop()
     {                              // 現在時刻がフレーム管理時計を超えていたらアラートを出す
         Serial.print("* delay: "); // シリアルに遅延msを表示
         Serial.println(curr - merc);
-        digitalWrite(ERR_LED, HIGH); // 処理落ちが発生していたらLEDを点灯
+        digitalWrite(PIN_ERR_LED, HIGH); // 処理落ちが発生していたらLEDを点灯
     }
     else
     {
-        digitalWrite(ERR_LED, LOW); // 処理が収まっていればLEDを消灯
+        digitalWrite(PIN_ERR_LED, LOW); // 処理が収まっていればLEDを消灯
     }
 
     // @[11-2] この時点で時間が余っていたら時間消化。時間がオーバーしていたらこの処理を自然と飛ばす。
@@ -495,14 +497,14 @@ void loop()
 // +----------------------------------------------------------------------
 // | 関数名　　:  setupIMUAHRS()
 // +----------------------------------------------------------------------
-// | 機能     :  MPU6050,BNO055等の初期設定を行う.　IMUAHRS_MOUNTで機種判別.
+// | 機能     :  MPU6050,BNO055等の初期設定を行う.　MOUNT_IMUAHRSで機種判別.
 // | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
 // | 引数　　　:  なし.
 // | 戻り値　　:  なし.
 // +----------------------------------------------------------------------
 void setupIMUAHRS()
 {
-    if (IMUAHRS_MOUNT == 1) // MPU6050
+    if (MOUNT_IMUAHRS == 1) // MPU6050
     {
 
         Wire.begin();
@@ -531,7 +533,7 @@ void setupIMUAHRS()
             Serial.println("IMU/AHRS DMP Initialization FAILED!");
         }
     }
-    else if (IMUAHRS_MOUNT == 3) // BNO055
+    else if (MOUNT_IMUAHRS == 3) // BNO055
     {
         // BNO055の初期設定
     }
@@ -540,14 +542,14 @@ void setupIMUAHRS()
 // +----------------------------------------------------------------------
 // | 関数名　　:  IMUAHRS_getYawPitchRoll()
 // +----------------------------------------------------------------------
-// | 機能     :  MPU6050,BNO055等の値を格納する.　IMUAHRS_MOUNTで機種判別.
+// | 機能     :  MPU6050,BNO055等の値を格納する.　MOUNT_IMUAHRSで機種判別.
 // | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
 // | 引数　　　:  なし.
 // | 戻り値　　:  なし.
 // +----------------------------------------------------------------------
 void IMUAHRS_getYawPitchRoll()
 {
-    if (IMUAHRS_MOUNT == 1) // MPU6050
+    if (MOUNT_IMUAHRS == 1) // MPU6050
     {
         if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
         { // 最新のIMU/AHRS情報を取得
@@ -591,7 +593,7 @@ void IMUAHRS_getYawPitchRoll()
             }
         }
     }
-    else if (IMUAHRS_MOUNT == 3) // BNO055
+    else if (MOUNT_IMUAHRS == 3) // BNO055
     {
         // 加速度センサ値の取得と表示 - VECTOR_ACCELEROMETER - m/s^2
         imu::Vector<3> accelermetor = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
@@ -648,7 +650,7 @@ void IMUAHRS_getYawPitchRoll()
 // +----------------------------------------------------------------------
 void joypad_read()
 {
-    if (JOYPAD_MOUNT == 2)
+    if (MOUNT_JOYPAD == 2)
     { // KRR5FH(KRC-5FH)をICS_R系に接続している場合
         joypad_frame_count++;
         if (joypad_frame_count >= JOYPAD_FRAME)
@@ -713,17 +715,17 @@ void trimadjustment()
 // +----------------------------------------------------------------------
 // | 関数名　　:  setyaw()
 // +----------------------------------------------------------------------
-// | 機能     :  ヨー軸の原点リセット. IMUAHRS_MOUNTで機種判別.
+// | 機能     :  ヨー軸の原点リセット. MOUNT_IMUAHRSで機種判別.
 // | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
 // +----------------------------------------------------------------------
 void setyaw()
 {
-    if (IMUAHRS_MOUNT == 1) // MPU6050
+    if (MOUNT_IMUAHRS == 1) // MPU6050
     {
         yaw_zero = ypr[0] * 180 / M_PI;
         s_spi_meridim.sval[0] = MSG_SIZE;
     }
-    else if (IMUAHRS_MOUNT == 3) // BNO055
+    else if (MOUNT_IMUAHRS == 3) // BNO055
     {
     }
 }
@@ -755,17 +757,17 @@ void servo_all_off()
 }
 
 // +----------------------------------------------------------------------
-// | 関数名　　:  sd_check()
+// | 関数名　　:  check_sd()
 // +----------------------------------------------------------------------
 // | 機能     :  SDカードの初期化と読み書きテスト
 // +----------------------------------------------------------------------
-void sd_check()
+void check_sd()
 {
-    if (SD_MOUNT)
+    if (MOUNT_SD)
     {
         Serial.print("SD card check...");
         delay(100);
-        if (!SD.begin(CHIPSELECT_SD))
+        if (!SD.begin(PIN_CHIPSELECT_SD))
         {
             Serial.println(" initialization FALIED!");
             delay(500);
@@ -775,7 +777,7 @@ void sd_check()
             Serial.println(" OK.");
         }
 
-        if (SD_RWCHECK)
+        if (CHECK_SD_RW)
         {
             // open the file.
             myFile = SD.open("/tmp.txt", FILE_WRITE);
@@ -897,13 +899,13 @@ void countup_errors()
 // +----------------------------------------------------------------------
 void imuahrs_start()
 {
-    if (IMUAHRS_MOUNT == 1) // MPU6050の場合
+    if (MOUNT_IMUAHRS == 1) // MPU6050の場合
     {
         /* MPU6050の割り込み設定 */
         MsTimer2::set(IMUAHRS_POLLING, IMUAHRS_getYawPitchRoll); // MPUの情報を取得 10msごとにチェック
         MsTimer2::start();
     }
-    else if (IMUAHRS_MOUNT == 3) // BNO055の場合
+    else if (MOUNT_IMUAHRS == 3) // BNO055の場合
     {
         /* BNO055の初期化 */
         if (!bno.begin())
@@ -933,8 +935,7 @@ void imuahrs_start()
 // +----------------------------------------------------------------------
 void imuahrs_store()
 {
-    Serial.println("store");
-    if (IMUAHRS_MOUNT == 1)
+    if (MOUNT_IMUAHRS == 1)
     {
         flag_sensor_IMUAHRS_writable = false;
         s_spi_meridim.sval[2] = mrd.float2HfShort(mpu_result[0]);   // IMU/AHRS_acc_x
@@ -951,7 +952,6 @@ void imuahrs_store()
         s_spi_meridim.sval[13] = mrd.float2HfShort(mpu_result[13]); // DMP_PITCH推定値
         s_spi_meridim.sval[14] = mrd.float2HfShort(mpu_result[14]); // DMP_YAW推定値
         flag_sensor_IMUAHRS_writable = true;
-        Serial.println(s_spi_meridim.sval[12]);
     }
 }
 
@@ -970,13 +970,13 @@ void execute_MasterCommand()
     // コマンド[1]: サーボオン 通常動作
 
     // コマンド[2]: IMU/AHRSのヨー軸リセット
-    if (r_spi_meridim.sval[0] == UPDATE_YAW_CENTER)
+    if (r_spi_meridim.sval[0] == MCMD_UPDATE_YAW_CENTER)
     {
         setyaw();
     }
 
     // コマンド[3]: トリムモードがオンもしくはコマンド3の時はループ
-    if ((trim_adjust == 1) or (r_spi_meridim.sval[0] == ENTER_TRIM_MODE))
+    if ((trim_adjust == 1) or (r_spi_meridim.sval[0] == MCMD_ENTER_TRIM_MODE))
     {
         trimadjustment();
     }
