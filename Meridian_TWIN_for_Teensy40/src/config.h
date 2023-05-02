@@ -99,39 +99,47 @@
 #define MSG_SIZE 90       // Meridim配列の長さ設定（デフォルトは90）
 #define FRAME_DURATION 10 // 1フレームあたりの単位時間（単位ms）
 
-/* シリアルモニタリング、動作チェックモード */
+/* シリアルモニタリング */
 #define MONITOR_ALL_ERROR 0 // Teensyでのシリアル表示:全経路の受信エラー率
 #define MONITOR_JOYPAD 0    // Teensyでのシリアル表示:リモコンのデータ
-#define SD_RWCHECK 0        // 起動時のSDカードリーダーの読み書きチェック
 
-/* 各種ハードウェアのマウント有無とアクセス頻度の設定 */
-#define SERIAL_PC 6000000  // PCとのシリアル速度（モニタリング表示用）
-#define ESP32_MOUNT 1      // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
-#define SD_MOUNT 1         // SDカードリーダーのありなし. MeridianBoard Type.Kは有り
-#define SPI_SPEED 6000000  // SPI通信の速度（6000000kHz推奨）
-#define IMUAHRS_MOUNT 1    // IMU/AHRSの搭載状況 0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
-#define IMUAHRS_POLLING 10 // IMU/AHRSのセンサの読み取り間隔(ms)
-#define JOYPAD_MOUNT 0     // ジョイパッドの搭載 0:なしorESP32orPCで受信, 1:SBDBT, 2:KRC-5FH (※2のみ実装済,MeridianBoardではICS_R系に接続)
-#define JOYPAD_FRAME 4     // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define ICS3_MOUNT 0       // 半二重サーボ信号の3系のありなし
-#define SERVO_NUM_L 11     // L系統につないだサーボの数
-#define SERVO_NUM_R 11     // R系統につないだサーボの数
-#define BAUDRATE 1250000   // ICSサーボの通信速度1.25M
-#define TIMEOUT 3          // ICS返信待ちのタイムアウト時間。通信できてないか確認する場合には1000ぐらいに設定するとよい
+/* 動作チェックモード */
+#define CHECK_SD_RW 0 // 起動時のSDカードリーダーの読み書きチェック
+
+/* 各種ハードウェアのマウント有無 */
+#define MOUNT_ESP32 1        // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
+#define MOUNT_SD 1           // SDカードリーダーのありなし. MeridianBoard Type.Kは有り
+#define MOUNT_IMUAHRS 1      // IMU/AHRSの搭載状況 0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+#define MOUNT_ICS3 0         // 半二重サーボ信号の3系のありなし
+#define MOUNT_JOYPAD 2       // ジョイパッドの搭載 0:なしorESP32orPCで受信, 1:SBDBT, 2:KRC-5FH (※2のみ実装済,MeridianBoardではICS_R系に接続)
+#define MOUNT_SERVO_NUM_L 11 // L系統につないだサーボの総数
+#define MOUNT_SERVO_NUM_R 11 // R系統につないだサーボの総数
+#define MOUNT_SERVO_NUM_3 0  // 3系統につないだサーボの総数
+// PC接続関連設定
+#define SERIAL_PC_BPS 6000000 // PCとのシリアル速度（モニタリング表示用）
+// SPI設定
+#define SPI_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
+// I2C設定, I2Cセンサ関連設定
 #define I2C_SPEED 400000   // I2Cの速度（400kHz推奨）
-#define MPU_STOCK 4        // MPUで移動平均を取る際の元にする時系列データの個数
+#define IMUAHRS_POLLING 10 // IMU/AHRSのセンサの読み取り間隔(ms)
+#define IMUAHRS_STOCK 4    // MPUで移動平均を取る際の元にする時系列データの個数
+// サーボ関連設定
+#define ICS_BAUDRATE 1250000 // ICSサーボの通信速度1.25M
+#define ICS_TIMEOUT 3        // ICS返信待ちのタイムアウト時間。通信できてないか確認する場合には1000ぐらいに設定するとよい
+// JOYPAD関連設定
+#define JOYPAD_FRAME 4 // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
 
 /* 固定値, マスターコマンド定義 */
-#define TRIM_ADJUST_MODE 0      // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
-#define UPDATE_YAW_CENTER 10002 // センサの推定ヨー軸を現在値センターとしてリセット
-#define ENTER_TRIM_MODE 10003   // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
+#define TRIM_ADJUST_MODE 0           // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
+#define MCMD_UPDATE_YAW_CENTER 10002 // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_ENTER_TRIM_MODE 10003   // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
 
 /* ピンアサイン */
-#define ERR_LED 2       // LED用 処理が時間内に収まっていない場合に点灯
-#define EN_L_PIN 6      // ICSサーボ信号の左系のENピン番号（固定）
-#define EN_R_PIN 5      // ICSサーボ信号の右系のENピン番号（固定）
-#define EN_3_PIN 23     // 半二重サーボ信号の3系のENピン番号（固定）
-#define CHIPSELECT_SD 9 // SDカードSPI通信用のChipSelectのピン番号
+#define PIN_ERR_LED 2       // LED用 処理が時間内に収まっていない場合に点灯
+#define PIN_EN_L 6          // ICSサーボ信号の左系のENピン番号（固定）
+#define PIN_EN_R 5          // ICSサーボ信号の右系のENピン番号（固定）
+#define PIN_EN_3 23         // 半二重サーボ信号の3系のENピン番号（固定）
+#define PIN_CHIPSELECT_SD 9 // SDカードSPI通信用のChipSelectのピン番号
 
 //-------------------------------------------------------------------------
 //---- サ ー ボ 設 定  -----------------------------------------------------
