@@ -32,10 +32,13 @@ namespace arduino
           int Deg2RSxx(float degree, float trim, int cw);
           int RSxx2HfDeg(int rsxx, float trim, int cw);
           int HfDeg2RSxx(int degree, float trim, int cw);
-          void print_hello_tsy(String version, int spi_speed, int i2c_speed);
+          void print_hello(String version, int spi_speed, int i2c_speed);
           void print_servo_mounts(int idl_svmt[], int idr_svmt[]);
           void print_controlpad(int pad_mount, int pad_freq);
           void print_imuahrs(int imuahrs_mount, int imuahrs_freq);
+          int increase_seq_num(int previous_seq_num);
+          int predict_seq_num(int previous_seq_num);
+          bool predict_seq_nums(int predict_seq_num, int received_seq_num);
         };
 
       } // Meridian
