@@ -233,7 +233,7 @@ int Meridian::HfDeg2RSxx(int degree, float trim, int cw)
 }
 
 // +----------------------------------------------------------------------
-// | func name : print_hello_tsy(String version,int imuahrs_mount, int imuahrs_freq)
+// | func name : print_hello(String version,int imuahrs_mount, int imuahrs_freq)
 // +----------------------------------------------------------------------
 // | function  : print version, I2C speed, SPI speed.
 // | argument1 : String version.
@@ -241,7 +241,7 @@ int Meridian::HfDeg2RSxx(int degree, float trim, int cw)
 // | argument2 : int, I2C speeed.
 // | return    : none.
 // +----------------------------------------------------------------------
-void Meridian::print_hello_tsy(String version, int spi_speed, int i2c_speed)
+void Meridian::print_hello(String version, int spi_speed, int i2c_speed)
 {
     Serial.println();
     Serial.print("Hi, This is ");
@@ -362,4 +362,61 @@ void Meridian::print_imuahrs(int imuahrs_mount, int imuahrs_freq)
     }
 }
 
+// +----------------------------------------------------------------------
+// | func name : increase_seq_num(int previous_seq_num)
+// +----------------------------------------------------------------------
+// | function  : Increase sequence number from imput.
+// |           : range 0 to 59,999
+// | argument  : int, previous sequence number.
+// | return    : int, expected sequence number.
+// +----------------------------------------------------------------------
+int Meridian::increase_seq_num(int previous_seq_num)
+{
+    int x = previous_seq_num;
+    x++;
+    if (x > 59999) // 予想値が59,999以上ならカウントを0に戻す
+    {
+        x = 0;
+    }
+    return x;
+}
+
+// +----------------------------------------------------------------------
+// | func name : predict_seq_num(int previous_seq_num)
+// +----------------------------------------------------------------------
+// | function  : Generate expected sequence number from imput.
+// |           : range 0 to 59,999
+// | argument  : int, previous sequence number.
+// | return    : int, expected sequence number.
+// +----------------------------------------------------------------------
+int Meridian::predict_seq_num(int previous_seq_num)
+{
+    int x = previous_seq_num;
+    x++;
+    if (x > 59999) // 予想値が59,999以上ならカウントを0に戻す
+    {
+        x = 0;
+    }
+    return x;
+}
+
+// +----------------------------------------------------------------------
+// | func name : compare_seq_nums(int previous_seq_num)
+// +----------------------------------------------------------------------
+// | function  : Generate expected sequence number from imput.
+// |           : range 0 to 600,000
+// | argument  : int, previous sequence number.
+// | return    : bool
+// +----------------------------------------------------------------------
+bool Meridian::predict_seq_nums(int predict_seq_num, int received_seq_num)
+{
+    if (predict_seq_num == received_seq_num)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_END
