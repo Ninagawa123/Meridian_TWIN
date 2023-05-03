@@ -177,7 +177,7 @@ void setup()
     delay(100);
 
     /* 起動時のインフォメーション表示表示(シリアルモニタ) */
-    mrd.print_hello(VERSION, SPI_SPEED, I2C_SPEED);
+    mrd.print_hello_tsy(VERSION, SPI_SPEED, I2C_SPEED);
 
     /* マウント設定されたサーボのIDを表示 */
     mrd.print_servo_mounts(idl_mount, idr_mount);
