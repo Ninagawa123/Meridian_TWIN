@@ -233,7 +233,7 @@ int Meridian::HfDeg2RSxx(int degree, float trim, int cw)
 }
 
 // +----------------------------------------------------------------------
-// | func name : print_hello(String version,int imuahrs_mount, int imuahrs_freq)
+// | func name : print_hello_tsy(String version,int imuahrs_mount, int imuahrs_freq)
 // +----------------------------------------------------------------------
 // | function  : print version, I2C speed, SPI speed.
 // | argument1 : String version.
@@ -241,7 +241,7 @@ int Meridian::HfDeg2RSxx(int degree, float trim, int cw)
 // | argument2 : int, I2C speeed.
 // | return    : none.
 // +----------------------------------------------------------------------
-void Meridian::print_hello(String version, int spi_speed, int i2c_speed)
+void Meridian::print_hello_tsy(String version, int spi_speed, int i2c_speed)
 {
     Serial.println();
     Serial.print("Hi, This is ");
