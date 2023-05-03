@@ -14,6 +14,7 @@
 // | 機能     :  MONITOR_FLOWがtrueの時, strの文字列を表示する. デバグ用.
 // | 引数　　　:  String str
 // +----------------------------------------------------------------------
+// void monitor_check_flow(String text);
 void monitor_check_flow(const String &text);
 
 // +----------------------------------------------------------------------
