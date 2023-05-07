@@ -103,6 +103,12 @@ https://github.com/Ninagawa123/Meridian_TWIN/tree/main/Meridian_TWIN_for_Teensy4
 ## ESP32DevkitCの準備
 PlatformIOで"MeridianTWIN_ESP32"等の名前で新規プロジェクトを作成し, BoardはEspressif ESP32 Dev Module, FrameWorkにはArduinoを選択します.  
   
+#### ESP32書き込み用のCP210ドライバを導入する
+すでにお手元でESP32 DevkitCに書き込みを行ったことのあるPCであれば問題ないですが、
+初めての場合、「CP210x USB - UART ブリッジ VCP ドライバ」が必要になる場合があります。
+未導入の方は下記サイトより適切なものをインストールをしてください。
+https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
+  
 #### ESP32にライブラリを導入し、修正する
 - **ESP32DMASPI by hideakitai バージョン0.1.2**  
 アリマーク→QUICK ACCESS→ PIO Home → Open → Libraries の検索窓で「ESP32DMASPI」  
