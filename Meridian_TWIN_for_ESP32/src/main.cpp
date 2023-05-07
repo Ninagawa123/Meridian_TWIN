@@ -1,7 +1,7 @@
-// Meridian_TWIN_for_ESP32_20230503 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20230506 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ　202503版
+// Meridan TWIN ESP32用スケッチ　202506版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.
@@ -11,6 +11,7 @@
 // 2023.05.03 各種設定はconfig.hからまとめて行えるようにした.
 // 2023.05.03 シーケンス番号を0-60000に設定, udp受信値についてチェック.
 // 2023.05.03 固定IPアドレスが設定可能.
+// 2023.05.06 起動メッセージ時,Wifiが接続できていないときはSearching WIFIで止まるようにした.
 
 // 【課題】2022.07.30
 // PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する.
@@ -119,15 +120,18 @@ void setup()
     delay(1); // 接続が完了するまでループで待つ
   }
 
-  /* シリアルモニタ表示 */
+  /* シリアルモニタ表示1 */
   Serial.begin(SERIAL_PC_BPS);
   delay(120); // シリアルの開始を待ち安定化させるためのディレイ（ほどよい）
-  print_hello_esp();
+  print_hello_esp1();
   // mrd.print_hello_esp(VERSION, MODE_FIXED_IP, String(FIXED_IP_ADDR), String(WiFi.localIP()), String(WIFI_AP_SSID), String(WIFI_SEND_IP));
 
   /* UDP通信の開始 */
   udp.begin(UDP_RESV_PORT);
   delay(100);
+
+  /* シリアルモニタ表示2 */
+  print_hello_esp2();
 
   /* Bluetoothリモコン関連の処理 */
   bt_settings();
@@ -632,19 +636,30 @@ void monitor_check_flow(const String &text)
 }
 
 // +----------------------------------------------------------------------
-// | func name : print_hello_esp()
+// | func name : print_hello_esp1()
 // +----------------------------------------------------------------------
 // | function  : 起動時にステータスをシリアルモニタに出力する.
 // | return    : none.
 // +----------------------------------------------------------------------
-void print_hello_esp()
+void print_hello_esp1()
 {
   Serial.println();
   Serial.println("Hello, This is " + String(VERSION)); // バージョン表示
   delay(100);
   Serial.println("PC Serial Speed : " + String(SERIAL_PC_BPS) + " bps"); // PCシリアル速度
-  Serial.println("WiFi connected to => " + String(WIFI_AP_SSID));        // WiFi接続完了通知
-  Serial.println("PC's IP address is  => " + String(WIFI_SEND_IP));      // 送信先PCのIPアドレスの表示
+  Serial.println("Searching WiFi ... ");                                 // WiFi接続完了通知
+}
+
+// +----------------------------------------------------------------------
+// | func name : print_hello_esp2()
+// +----------------------------------------------------------------------
+// | function  : 起動時にステータスをシリアルモニタに出力する.
+// | return    : none.
+// +----------------------------------------------------------------------
+void print_hello_esp2()
+{
+  Serial.println("WiFi connected to => " + String(WIFI_AP_SSID));   // WiFi接続完了通知
+  Serial.println("PC's IP address is  => " + String(WIFI_SEND_IP)); // 送信先PCのIPアドレスの表示
   if (MODE_FIXED_IP)
   {
     Serial.println("ESP32's IP address is  => " + String(FIXED_IP_ADDR) + " (*Fixed)"); // ESP32自身のIPアドレスの表示
