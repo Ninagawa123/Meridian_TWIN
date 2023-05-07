@@ -1,8 +1,8 @@
-#define VERSION "Meridian_TWIN_for_Teensy_2023.05.03" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2023.05.06" // バージョン表示
 
-// Meridian_TWIN_for_Teensy_20220503 By Izumi Ninagawa
+// Meridian_TWIN_for_Teensy_20220506 By Izumi Ninagawa
 // MIT Licenced.
-// Meridan TWIN Teensy4.0用スクリプト　20230420版
+// Meridan TWIN Teensy4.0用スクリプト　20230506版
 // 220723 内部計算時に degree*100 を単位として使用するように変更
 // 220723 センサーの関数を集約
 // 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
@@ -16,8 +16,13 @@
 // 230430 いくつかの基本的な関数をMeridianのライブラリに移動
 // 230430 サーボの直立ポーズトリム値をdegreeに変更
 // 230430 フローの見通しをよくする目的でsetup()やmain()関数内の処理の多くをローカル関数化
-// 230430 変数名 idl_d,idr_dをidl_diff,idr_diffにした。
-// 230430 変数名 idl_mt,idl_mtをidl_mount,idl_mountにした。
+// 230430 変数名 idl_d,idr_dをidl_diff,idr_diffにした
+// 230430 変数名 idl_mt,idl_mtをidl_mount,idl_mountにした
+// 230503 Meridim[1]のシーケンス番号を0~59,999とした.
+// 230506 サーボエラーの場合,1フレーム前の正常値を送信し,以下のエラーメッセージも合わせて送信するようにした.
+// 230506 サーボからの返信がない場合,Meridim[MSG_SIZE - 2]の下位8ビットにエラーのあったサーボIDを格納するようにした.
+//        (0-99:左サーボid0~99, 100-199:右サーボid0~99)
+// 230506 サーボからの返信がない場合,シリアルモニタにそのサーボIDを表示するようにした.
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
@@ -153,8 +158,10 @@ float idl_trim[15] = {IDL_TRIM0, IDL_TRIM1, IDL_TRIM2, IDL_TRIM3, IDL_TRIM4, IDL
 float idr_trim[15] = {IDR_TRIM0, IDR_TRIM1, IDR_TRIM2, IDR_TRIM3, IDR_TRIM4, IDR_TRIM5, IDR_TRIM6, IDR_TRIM7, IDR_TRIM8, IDR_TRIM9, IDR_TRIM10, IDR_TRIM11, IDR_TRIM12, IDR_TRIM13, IDR_TRIM14}; // R系統
 
 /* 各サーボのポジション値 */
-float idl_diff[15]; // L系統
-float idr_diff[15]; // R系統
+float idl_diff[15];      // L系統
+float idr_diff[15];      // R系統
+float idl_diff_past[15]; // L系統の前回の値
+float idr_diff_past[15]; // R系統の前回の値
 
 //================================================================================================================
 //---- セ ッ ト ア ッ プ -------------------------------------------------------------------------------------------
@@ -237,7 +244,6 @@ void setup()
 //================================================================================================================
 void loop()
 {
-
     //////// < 1 > E S P 3 2 と の S P I に よ る 送 受 信 処 理  /////////////////////////
 
     // @[1-1] ESP32とのSPI送受信の実行
@@ -284,7 +290,6 @@ void loop()
             err_tsy_skip++;
             // Serial.print(" ng.");
         }
-        Serial.println();
 
         // [1-4] 通信エラー処理(エラーカウンタへの反映)
         countup_errors();
@@ -370,18 +375,23 @@ void loop()
 
     // @[8-3] サーボデータのICS送信および返り値を取得
     // void move_servos_krs(); // KRSサーボをICS_L,ICS_Rより制御し、返り値degreeをidl_diff,idr_diffに格納する
-    for (int i = 0; i < servo_num; i++) // ICS_L系統の処理
-    {                                   // 接続したサーボの数だけ繰り返す。最大は15
-        // idl_diff[i] = 0;
+    s_spi_meridim.bval[MSG_ERR_l] &= 0b00000000; // Meridim[MSG_ERR] サーボ受信失敗の検出を一旦サゲる.
+    for (int i = 0; i < servo_num; i++)          // ICS_L系統の処理
+    {                                            // 接続したサーボの数だけ繰り返す。最大は15
         if (idl_mount[i])
         {
+            idl_diff_past[i] = idl_diff[i];
+            idr_diff_past[i] = idr_diff[i];
             if (r_spi_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
                 // k = krs_L.setPos(i, mrd.HfDeg2Krs(s_servo_pos_L[i], idl_trim[i], idl_cw[i]));
                 k = krs_L.setPos(i, mrd.Deg2Krs(idl_diff[i], idl_trim[i], idl_cw[i]));
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
                 {
-                    k = s_servo_pos_L[i];
+                    k = mrd.Deg2Krs(idl_diff_past[i], idl_trim[i], idl_cw[i]);
+                    s_spi_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
+                    Serial.print("Servo error : L");
+                    Serial.println(i);
                 }
             }
             else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
@@ -389,12 +399,15 @@ void loop()
                 k = krs_L.setFree(i);
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
                 {
-                    k = s_servo_pos_L[i];
+                    k = mrd.Deg2Krs(idl_diff_past[i], idl_trim[i], idl_cw[i]);
+                    s_spi_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L50]まで）
+                    Serial.print("Servo error : L");
+                    Serial.println(i);
                 }
             }
             idl_diff[i] = mrd.Krs2Deg(k, idl_trim[i]);
         }
-        delayMicroseconds(2);
+        // delayMicroseconds(2);
 
         // idr_diff[i] = 0;
         if (idr_mount[i])
@@ -405,7 +418,10 @@ void loop()
                 k = krs_R.setPos(i, mrd.Deg2Krs(idr_diff[i], idr_trim[i], idr_cw[i]));
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
                 {
-                    k = s_servo_pos_R[i];
+                    k = mrd.Deg2Krs(idr_diff_past[i], idr_trim[i], idr_cw[i]);
+                    s_spi_meridim.bval[MSG_ERR_l] = char(100 + i); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R50]まで）
+                    Serial.print("Servo error : R");
+                    Serial.println(i);
                 }
             }
             else // 1以外ならとりあえずサーボを脱力し位置を取得
@@ -413,7 +429,10 @@ void loop()
                 k = krs_R.setFree(i);
                 if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
                 {
-                    k = s_servo_pos_R[i];
+                    k = mrd.Deg2Krs(idr_diff_past[i], idr_trim[i], idr_cw[i]);
+                    s_spi_meridim.bval[MSG_ERR_l] = char(100 + i); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
+                    Serial.print("Servo error : R");
+                    Serial.println(i);
                 }
             }
             idr_diff[i] = mrd.Krs2Deg(k, idr_trim[i]);
