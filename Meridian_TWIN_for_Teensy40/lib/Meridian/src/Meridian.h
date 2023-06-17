@@ -1,74 +1,88 @@
-/*Meridian.h
-  This is a library to drive a communication system for humanoid robots.
-  It operates numerous servo motors and 9-axis sensors at 100 Hz and links status information with a PC in real time.
-  Created by Ninagawa123. October 30, 2022.
-  MIT license.*/
 
-#ifndef Meridian_h
-#define Meridian_h
-#include "Arduino.h"
+#ifndef __MERIDIAN_LOCAL_FUNC__
+#define __MERIDIAN_LOCAL_FUNC__
 
-namespace arduino
-{
-  namespace robotics
-  {
-    namespace espteensy
-    {
-      namespace meridian
-      {
+// +----------------------------------------------------------------------
+// | 関数名　　:  setupIMUAHRS()
+// +----------------------------------------------------------------------
+// | 機能     :  MPU6050,BNO055等の初期設定を行う.　MOUNT_IMUAHRSで機種判別.
+// | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+// | 引数　　　:  なし.
+// | 戻り値　　:  なし.
+// +----------------------------------------------------------------------
+void setupIMUAHRS();
 
-        class Meridian
-        {
-        public:
-          short cksm_val(short arr[], int len);
-          bool cksm_rslt(short arr[], int len);
-          short float2HfShort(float val);
-          float HfShort2float(short val);
-          int Deg2Krs(float degree, float trim, int cw);
-          float Krs2Deg(int krs, float trim);
-          int HfDeg2Krs(int hfdegree, float trim, int cw);
-          int Krs2HfDeg(int krs, float trim, int cw);
-          float RSxx2Deg(int rsxx, float trim, int cw);
-          int Deg2RSxx(float degree, float trim, int cw);
-          int RSxx2HfDeg(int rsxx, float trim, int cw);
-          int HfDeg2RSxx(int degree, float trim, int cw);
-          void print_tsy_hello(String version, int spi_speed, int i2c_speed);
-          void print_servo_mounts(int idl_svmt[], int idr_svmt[]);
-          void print_controlpad(int pad_mount, int pad_freq);
-          void print_imuahrs(int imuahrs_mount, int imuahrs_freq);
-          int increase_seq_num(int previous_seq_num);
-          int predict_seq_num(int previous_seq_num);
-          bool compare_seq_nums(int predict_seq_num, int received_seq_num);
-          void print_esp_hello_start(String version, String serial_pc_bps, String wifi_ap_ssid);
-          void print_esp_hello_ip(String wifi_send_ip, String wifi_localip, String fixed_ip_addr, bool mode_fixed_ip);
-          void monitor_check_flow(const String &text, bool monitor_flow);
-        };
+// +----------------------------------------------------------------------
+// | 関数名　　:  joypad_read()
+// +----------------------------------------------------------------------
+// | 機能     :  Teensy4.0に接続されたJOYPADの値を読みとり、pad_btnに格納
+// | 　　　　　:  0:なしorESP32orPCで受信, 1:SBDBT, 2:KRC-5FH
+// | 戻り値　　:  なし.
+// +----------------------------------------------------------------------
+void joypad_read();
 
-      } // Meridian
-    }   // espteensy
-  }     // robotics
-} // arduino
+// +----------------------------------------------------------------------
+// | 関数名　　:  trimadjustment()
+// +----------------------------------------------------------------------
+// | 機能     :  サーボトリム調整. サーボオンで直立静止状態を保つ.
+// +----------------------------------------------------------------------
+void trimadjustment();
 
-#ifndef ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_BEGIN
-#define ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_BEGIN \
-  namespace arduino                                         \
-  {                                                         \
-    namespace robotics                                      \
-    {                                                       \
-      namespace espteensy                                   \
-      {                                                     \
-        namespace meridian                                  \
-        {
+// +----------------------------------------------------------------------
+// | 関数名　　:  setyaw()
+// +----------------------------------------------------------------------
+// | 機能     :  ヨー軸の原点リセット. MOUNT_IMUAHRSで機種判別.
+// | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+// +----------------------------------------------------------------------
+void setyaw();
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  servo_all_off()
+// +----------------------------------------------------------------------
+// | 機能     :  全サーボオフ
+// +----------------------------------------------------------------------
+void servo_all_off();
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  check_sd()
+// +----------------------------------------------------------------------
+// | 機能     :  SDカードの初期化と読み書きテスト
+// +----------------------------------------------------------------------
+void check_sd();
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  print_error_monitor()
+// +----------------------------------------------------------------------
+// | 機能     :  エラー検出数をTeensyのシリアルに表示する
+// +----------------------------------------------------------------------
+void print_error_monitor();
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  countup_errors()
+// +----------------------------------------------------------------------
+// | 機能     :  通信エラー検出数をカウントアップする
+// +----------------------------------------------------------------------
+void countup_errors();
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  imuahrs_start()
+// +----------------------------------------------------------------------
+// | 機能     :  imu/ahrsを開始する
+// +----------------------------------------------------------------------
+void imuahrs_start();
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  imuahrs_store()
+// +----------------------------------------------------------------------
+// | 機能     :  imu/ahrsのセンサー値を配列に格納する
+// +----------------------------------------------------------------------
+void imuahrs_store();
+
+// +----------------------------------------------------------------------
+// | 関数名　　:  execute_MasterCommand()
+// +----------------------------------------------------------------------
+// | 機能     :  マスターコマンドの命令ごとの処理
+// +----------------------------------------------------------------------
+void execute_MasterCommand();
+
 #endif
-
-#ifndef ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_END
-#define ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_END \
-  }                                                       \
-  }                                                       \
-  }                                                       \
-  }
-#endif
-
-namespace MERIDIANFLOW = arduino::robotics::espteensy::meridian;
-
-#endif // Meridian_h
