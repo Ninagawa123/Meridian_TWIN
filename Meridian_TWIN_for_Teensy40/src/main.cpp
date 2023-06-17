@@ -381,7 +381,6 @@ void loop()
         if (idl_mount[i])
         {
             idl_diff_past[i] = idl_diff[i];
-            idr_diff_past[i] = idr_diff[i];
             if (r_spi_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
                 // k = krs_L.setPos(i, mrd.HfDeg2Krs(s_servo_pos_L[i], idl_trim[i], idl_cw[i]));
@@ -412,6 +411,7 @@ void loop()
         // idr_diff[i] = 0;
         if (idr_mount[i])
         {
+            idr_diff_past[i] = idr_diff[i];
             if (r_spi_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
                 // k = krs_R.setPos(i, mrd.HfDeg2Krs(s_servo_pos_R[i], idr_trim[i], idr_cw[i]));
