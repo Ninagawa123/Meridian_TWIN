@@ -1,7 +1,7 @@
-// Meridian_TWIN_for_ESP32_20230507 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20230617 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ　202507版
+// Meridan TWIN ESP32用スケッチ　20230617版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.
@@ -11,7 +11,8 @@
 // 2023.05.03 各種設定はconfig.hからまとめて行えるようにした.
 // 2023.05.03 シーケンス番号を0-60000に設定, udp受信値についてチェック.
 // 2023.05.03 固定IPアドレスが設定可能.
-// 2023.05.07 起動メッセージ時,Wifiが接続できていないときはSearching WIFIで止まるようにした.
+// 2023.06.17 起動メッセージをwifi検出前から出るように変更.
+// 2023.06.17 フローモニタ（MONITOR_FLOWでオンオフ）, 起動メッセージをライブラリ関数化.
 
 // 【課題】2022.07.30
 // PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する.
@@ -19,7 +20,7 @@
 // よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
 // I2C経由の無線でさまざまなコントローラーに接続できるものを開発中。
 
-#define VERSION "Meridian_TWIN_for_ESP32_20230507." // バージョン表示
+#define VERSION "Meridian_TWIN_for_ESP32_20230617." // バージョン表示
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
@@ -105,11 +106,21 @@ void setup()
   //-------------------------------------------------------------------------
   //---- 起 動 時 設 定  -----------------------------------------------------
   //-------------------------------------------------------------------------
+
+  /* シリアルモニタ表示 */
+  Serial.begin(SERIAL_PC_BPS);
+  delay(120); // シリアルの開始を待ち安定化させるためのディレイ（ほどよい）
+  // Serial.println("TEST");
+  // print_esp_hello_start();
+  mrd.print_esp_hello_start(String(VERSION), String(SERIAL_PC_BPS), String(WIFI_AP_SSID));
+
+  // mrd.print_esp_hello_start(VERSION, MODE_FIXED_IP, String(FIXED_IP_ADDR), String(WiFi.localIP()), String(WIFI_AP_SSID), String(WIFI_SEND_IP));
+
   /* WiFiの初期化と開始 */
   WiFi.disconnect(true, true); // WiFi接続をリセット
   if (MODE_FIXED_IP)           // 固定IP設定の場合には以下を実行
   {
-    if (!WiFi.config(mrd.makeIPAddress(FIXED_IP_ADDR), mrd.makeIPAddress(FIXED_IP_GATEWAY), mrd.makeIPAddress(FIXED_IP_SUBNET)))
+    if (!WiFi.config(makeIPAddress(FIXED_IP_ADDR), makeIPAddress(FIXED_IP_GATEWAY), makeIPAddress(FIXED_IP_SUBNET)))
     {
       Serial.println("Wifi Fixed IP failed to configure!");
     }
@@ -119,19 +130,11 @@ void setup()
   {           // https://www.arduino.cc/en/Reference/WiFiStatus 返り値一覧
     delay(1); // 接続が完了するまでループで待つ
   }
-
-  /* シリアルモニタ表示1 */
-  Serial.begin(SERIAL_PC_BPS);
-  delay(120); // シリアルの開始を待ち安定化させるためのディレイ（ほどよい）
-  print_hello_esp1();
-  // mrd.print_hello_esp(VERSION, MODE_FIXED_IP, String(FIXED_IP_ADDR), String(WiFi.localIP()), String(WIFI_AP_SSID), String(WIFI_SEND_IP));
+  mrd.print_esp_hello_ip(WIFI_SEND_IP, String(WiFi.localIP()), FIXED_IP_ADDR, MODE_FIXED_IP);
 
   /* UDP通信の開始 */
   udp.begin(UDP_RESV_PORT);
   delay(100);
-
-  /* シリアルモニタ表示2 */
-  print_hello_esp2();
 
   /* Bluetoothリモコン関連の処理 */
   bt_settings();
@@ -164,6 +167,8 @@ void setup()
   //  xTaskCreatePinnedToCore(Core1_SPI, "Core1_SPI", 4096, NULL, 15, &thp[0], 1);
   //  xTaskCreatePinnedToCore(Core0_UDP, "Core0_UDP", 4096, NULL, 10, &thp[1], 0);
   xTaskCreatePinnedToCore(Core0_BT_r, "Core0_BT_r", 4096, NULL, 5, &thp[2], 0);
+
+  Serial.println("-) Meridian TWIN system on side ESP32 now flows. (-"); //
 }
 
 //================================================================================================================
@@ -181,7 +186,7 @@ void loop()
   {
     if (spi_ready_flag) // SPI送信データの作成が完了しているか
     {
-      monitor_check_flow("[1]"); // 動作チェック用シリアル表示
+      mrd.monitor_check_flow("[1]", MONITOR_FLOW); // 動作チェック用シリアル表示
       slave.queue(r_spi_meridim_dma, s_spi_meridim_dma, MSG_BUFF + 4);
       spi_ready_flag = false;
     }
@@ -198,7 +203,7 @@ void loop()
     //------------------------------------------------------------------------
     // [ 2 ]  U D P 送 信 デ ー タ 作 成
     //------------------------------------------------------------------------
-    monitor_check_flow("[2]"); // 動作チェック用シリアル表示
+    mrd.monitor_check_flow("[2]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     // → ここでチェックサムを行ってもよい.
     // → Teensyからのリモコン値はここでのみ補足可能.
@@ -207,7 +212,7 @@ void loop()
     //------------------------------------------------------------------------
     // [ 3 ]  U D P 送 信 実 行
     //------------------------------------------------------------------------
-    monitor_check_flow("[3]"); // 動作チェック用シリアル表示
+    mrd.monitor_check_flow("[3]", MONITOR_FLOW); // 動作チェック用シリアル表示
     /* @[3-1] UDP送受信の実行 */
     udp_busy_flag = true; // UDP使用中のフラグをアゲる
     sendUDP();            // UDP送受信の実行
@@ -215,7 +220,7 @@ void loop()
     //------------------------------------------------------------------------
     // [ 4 ]  U D P 受 信 待 受 ル ー プ
     //------------------------------------------------------------------------
-    monitor_check_flow("[4]"); // 動作チェック用シリアル表示
+    mrd.monitor_check_flow("[4]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[4-1] UDP受信の待受 */
     udp_rsvd_flag = false;
@@ -227,11 +232,11 @@ void loop()
       {
         udp.read(r_udp_meridim.bval, MSG_BUFF); // データの受信
         udp_rsvd_flag = true;
-        monitor_check_flow("UdpRsvd"); // 動作チェック用シリアル表示
+        mrd.monitor_check_flow("UdpRsvd", MONITOR_FLOW); // 動作チェック用シリアル表示
       }
       if (udp_time_count > UDP_TIMEOUT) // UDPの受信待ちのタイムアウト
       {
-        monitor_check_flow("*UdpResvTimeOut"); // 動作チェック用シリアル表示
+        mrd.monitor_check_flow("*UdpResvTimeOut", MONITOR_FLOW); // 動作チェック用シリアル表示
         break;
       }
       udp_time_count++;
@@ -242,7 +247,7 @@ void loop()
     //------------------------------------------------------------------------
     // [ 5 ]  U D P 受 信 品 質 チ ェ ッ ク
     //------------------------------------------------------------------------
-    monitor_check_flow("[5]"); // 動作チェック用シリアル表示
+    mrd.monitor_check_flow("[5]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[5-1] UDP受信データ r_udp_meridim のチェックサムを確認. */
     if (mrd.cksm_rslt(r_udp_meridim.sval, MSG_SIZE))
@@ -270,7 +275,7 @@ void loop()
     }
 
     /* @[5-3-2] シーケンス番号予想値と受信値が合致しているかのチェック */
-    if (mrd.predict_seq_nums(frame_sync_r_expect, int(r_udp_meridim.usval[1]))) // 受信シーケンス番号の値が予想通りなら,
+    if (mrd.compare_seq_nums(frame_sync_r_expect, int(r_udp_meridim.usval[1]))) // 受信シーケンス番号の値が予想通りなら,
     {
       s_spi_meridim.bval[MSG_ERR_u] &= 0b11111011; // エラーフラグ10番(ESP受信のスキップ検出)をサゲる.
       if (MONITOR_SEQ)
@@ -293,7 +298,7 @@ void loop()
     //------------------------------------------------------------------------
     // [ 6 ]  S P I 送 信 デ ー タ 作 成
     //------------------------------------------------------------------------
-    monitor_check_flow("[6]\n"); // 動作チェック用シリアル表示
+    mrd.monitor_check_flow("[6]\n", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[6-1] ユーザー定義の送信データの書き込み */
     // Teensyへ送るデータをこのパートで作成, 書き込み  → 今回はとくに何もしない.
@@ -321,6 +326,20 @@ void loop()
 //================================================================================================================
 //---- 関 数 各 種  -----------------------------------------------------------------------------------------------
 //================================================================================================================
+
+// +----------------------------------------------------------------------
+// | func name : makeIPAddress(const char *ip_str)
+// +----------------------------------------------------------------------
+// | function  : Convert a period-separated IP address string to an IPAddress object.
+// | argument  : const char*, period-separated IP address string.
+// | return    : IPAddress object.
+// +----------------------------------------------------------------------
+IPAddress makeIPAddress(const char *ip_str)
+{
+  int a, b, c, d;
+  sscanf(ip_str, "%d.%d.%d.%d", &a, &b, &c, &d);
+  return IPAddress(a, b, c, d);
+}
 
 // +----------------------------------------------------------------------
 // | 関数名　　:  initBluetooth()
@@ -616,58 +635,6 @@ void bt_settings()
     // wiimote.addFilter(ACTION_IGNORE, FILTER_NUNCHUK_ACCEL);
     Serial.println("Wiimote connecting...");
     joypad_search = 3;
-  }
-}
-
-// +----------------------------------------------------------------------
-// | 関数名　　:  monitor_check_flow(String str)
-// +----------------------------------------------------------------------
-// | 機能     :  MONITOR_FLOWがtrueの時, strの文字列を表示する. デバグ用.
-// | 引数　　　:  String str
-// +----------------------------------------------------------------------
-void monitor_check_flow(const String &text)
-// void monitor_check_flow(String text)
-{
-  if (MONITOR_FLOW)
-  {
-    String tmp = text;
-    Serial.print(String(text));
-  }
-}
-
-// +----------------------------------------------------------------------
-// | func name : print_hello_esp1()
-// +----------------------------------------------------------------------
-// | function  : 起動時にステータスをシリアルモニタに出力する.
-// | return    : none.
-// +----------------------------------------------------------------------
-void print_hello_esp1()
-{
-  Serial.println();
-  Serial.println("Hello, This is " + String(VERSION)); // バージョン表示
-  delay(100);
-  Serial.println("PC Serial Speed : " + String(SERIAL_PC_BPS) + " bps"); // PCシリアル速度
-  Serial.println("Searching WiFi ... ");                                 // WiFi接続完了通知
-}
-
-// +----------------------------------------------------------------------
-// | func name : print_hello_esp2()
-// +----------------------------------------------------------------------
-// | function  : 起動時にステータスをシリアルモニタに出力する.
-// | return    : none.
-// +----------------------------------------------------------------------
-void print_hello_esp2()
-{
-  Serial.println("WiFi connected to => " + String(WIFI_AP_SSID));   // WiFi接続完了通知
-  Serial.println("PC's IP address is  => " + String(WIFI_SEND_IP)); // 送信先PCのIPアドレスの表示
-  if (MODE_FIXED_IP)
-  {
-    Serial.println("ESP32's IP address is  => " + String(FIXED_IP_ADDR) + " (*Fixed)"); // ESP32自身のIPアドレスの表示
-  }
-  else
-  {
-    Serial.print("ESP32's IP address is  => "); // ESP32自身のIPアドレスの表示
-    Serial.println(WiFi.localIP());
   }
 }
 
