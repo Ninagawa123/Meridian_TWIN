@@ -106,12 +106,12 @@ float Meridian::Krs2Deg(int krs, float trim)
 // +----------------------------------------------------------------------
 int Meridian::Deg2Krs(float degree, float trim, int cw)
 {
-    float x = 7500 + (trim * 29.6296) + (degree * 29.6296 * cw); //
-    if (x > 11500)                                               // 上限を設定
+    float x = 7500 + (trim * 29.6296) + (degree * 29.6296 * cw); 
+    if (x > 11500)                                               // max limit
     {
         x = 11500;
     }
-    else if (x < 3500) // 下限を設定
+    else if (x < 3500) // min limit
     {
         x = 3500;
     }
@@ -129,12 +129,12 @@ int Meridian::Deg2Krs(float degree, float trim, int cw)
 // +----------------------------------------------------------------------
 int Meridian::HfDeg2Krs(int hfdegree, float trim, int cw)
 {
-    float x = 7500 + (trim * 29.6296) + (hfdegree * 0.296296 * cw); //
-    if (x > 11500)                                                  // 上限を設定
+    float x = 7500 + (trim * 29.6296) + (hfdegree * 0.296296 * cw); 
+    if (x > 11500)                                                  // max limit
     {
         x = 11500;
     }
-    else if (x < 3500) // 下限を設定
+    else if (x < 3500) // min limit
     {
         x = 3500;
     }
@@ -197,12 +197,12 @@ int Meridian::RSxx2HfDeg(int rsxx, float trim, int cw)
 // +----------------------------------------------------------------------
 int Meridian::Deg2RSxx(float degree, float trim, int cw)
 {
-    float x = (degree + trim) * 10 * cw; //
-    if (x > 1600)                        // 上限を設定
+    float x = (degree + trim) * 10 * cw; 
+    if (x > 1600)                        // max limit
     {
         x = 1600;
     }
-    else if (x < -1600) // 下限を設定
+    else if (x < -1600) // min limit
     {
         x = -1600;
     }
@@ -220,12 +220,12 @@ int Meridian::Deg2RSxx(float degree, float trim, int cw)
 // +----------------------------------------------------------------------
 int Meridian::HfDeg2RSxx(int degree, float trim, int cw)
 {
-    float x = (degree + trim) * 0.1 * cw; //
-    if (x > 1600)                         // 上限を設定
+    float x = (degree + trim) * 0.1 * cw; 
+    if (x > 1600)                         // max limit
     {
         x = 1600;
     }
-    else if (x < -1600) // 下限を設定
+    else if (x < -1600) // min limit
     {
         x = -1600;
     }
@@ -233,7 +233,7 @@ int Meridian::HfDeg2RSxx(int degree, float trim, int cw)
 }
 
 // +----------------------------------------------------------------------
-// | func name : print_hello(String version,int imuahrs_mount, int imuahrs_freq)
+// | func name : print_tsy_hello(String version,int imuahrs_mount, int imuahrs_freq)
 // +----------------------------------------------------------------------
 // | function  : print version, I2C speed, SPI speed.
 // | argument1 : String version.
@@ -241,7 +241,7 @@ int Meridian::HfDeg2RSxx(int degree, float trim, int cw)
 // | argument2 : int, I2C speeed.
 // | return    : none.
 // +----------------------------------------------------------------------
-void Meridian::print_hello(String version, int spi_speed, int i2c_speed)
+void Meridian::print_tsy_hello(String version, int spi_speed, int i2c_speed)
 {
     Serial.println();
     Serial.print("Hi, This is ");
@@ -374,7 +374,7 @@ int Meridian::increase_seq_num(int previous_seq_num)
 {
     int x = previous_seq_num;
     x++;
-    if (x > 59999) // 予想値が59,999以上ならカウントを0に戻す
+    if (x > 59999) // reset counter
     {
         x = 0;
     }
@@ -393,7 +393,7 @@ int Meridian::predict_seq_num(int previous_seq_num)
 {
     int x = previous_seq_num;
     x++;
-    if (x > 59999) // 予想値が59,999以上ならカウントを0に戻す
+    if (x > 59999) // reset counter
     {
         x = 0;
     }
@@ -401,14 +401,15 @@ int Meridian::predict_seq_num(int previous_seq_num)
 }
 
 // +----------------------------------------------------------------------
-// | func name : compare_seq_nums(int previous_seq_num)
+// | func name : compare_seq_nums(int previous_seq_num, int received_seq_num)
 // +----------------------------------------------------------------------
-// | function  : Generate expected sequence number from imput.
+// | function  : Compare expected seq number and received seq number.
 // |           : range 0 to 600,000
-// | argument  : int, previous sequence number.
+// | argument1 : int, previous sequence number.
+// | argument2 : int, received sequence number.
 // | return    : bool
 // +----------------------------------------------------------------------
-bool Meridian::predict_seq_nums(int predict_seq_num, int received_seq_num)
+bool Meridian::compare_seq_nums(int predict_seq_num, int received_seq_num)
 {
     if (predict_seq_num == received_seq_num)
     {
@@ -419,4 +420,60 @@ bool Meridian::predict_seq_nums(int predict_seq_num, int received_seq_num)
         return false;
     }
 }
+
+// +----------------------------------------------------------------------
+// | func name : monitor_check_flow(const String &text, bool monitor_flow)
+// +----------------------------------------------------------------------
+// | function  : Show text massage if monitor_flow is true. This is for debagging.
+// | argument1 : String, text message to display.
+// | argument2 : bool, 0:off, 1:on
+// +----------------------------------------------------------------------
+void Meridian::monitor_check_flow(const String &text, bool monitor_flow)
+// void monitor_check_flow(String text)
+{
+    if (monitor_flow)
+    {
+        String tmp = text;
+        Serial.print(String(text));
+    }
+}
+
+// +----------------------------------------------------------------------
+// | func name : print_esp_hello_start()
+// +----------------------------------------------------------------------
+// | function  : Show status on serial monitor at booting. Before conecting wifi.
+// | return    : none.
+// +----------------------------------------------------------------------
+void Meridian::print_esp_hello_start(String version, String serial_pc_bps, String wifi_ap_ssid)
+{
+    Serial.println();
+    Serial.println("Hello, This is " + version);
+    delay(100);
+    Serial.println("PC Serial Speed : " + serial_pc_bps + " bps");
+    Serial.println("WiFi connecting to => " + wifi_ap_ssid);
+
+
+// +----------------------------------------------------------------------
+// | func name : print_esp_hello_ip()
+// +----------------------------------------------------------------------
+// | function  : Show status on serial monitor at booting. After conecting wifi.
+// | return    : none.
+// +----------------------------------------------------------------------
+
+void Meridian::print_esp_hello_ip(String wifi_send_ip, String wifi_localip, String fixed_ip_addr, bool mode_fixed_ip)
+{
+    Serial.println("WiFi successfully connected.");                          
+    Serial.println("PC's IP address target is  => " + String(wifi_send_ip)); 
+
+    if (mode_fixed_ip)
+    {
+        Serial.println("ESP32's IP address is  => " + String(fixed_ip_addr) + " (*Fixed)"); 
+    }
+    else
+    {
+        Serial.print("ESP32's IP address is  => "); 
+        Serial.println(wifi_localip);
+    }
+}
+
 ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_END
