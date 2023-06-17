@@ -32,13 +32,16 @@ namespace arduino
           int Deg2RSxx(float degree, float trim, int cw);
           int RSxx2HfDeg(int rsxx, float trim, int cw);
           int HfDeg2RSxx(int degree, float trim, int cw);
-          void print_hello_tsy(String version, int spi_speed, int i2c_speed, int pcserial_speed);
+          void print_tsy_hello(String version, int spi_speed, int i2c_speed);
           void print_servo_mounts(int idl_svmt[], int idr_svmt[]);
           void print_controlpad(int pad_mount, int pad_freq);
           void print_imuahrs(int imuahrs_mount, int imuahrs_freq);
+          int increase_seq_num(int previous_seq_num);
           int predict_seq_num(int previous_seq_num);
-          bool predict_seq_nums(int predict_seq_num, int received_seq_num);
-          IPAddress makeIPAddress(const char *ip_str);
+          bool compare_seq_nums(int predict_seq_num, int received_seq_num);
+          void print_esp_hello_start(String version, String serial_pc_bps, String wifi_ap_ssid);
+          void print_esp_hello_ip(String wifi_send_ip, String wifi_localip, String fixed_ip_addr, bool mode_fixed_ip);
+          void monitor_check_flow(const String &text, bool monitor_flow);
         };
 
       } // Meridian
@@ -57,6 +60,7 @@ namespace arduino
         namespace meridian                                  \
         {
 #endif
+
 #ifndef ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_END
 #define ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_END \
   }                                                       \
