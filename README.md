@@ -124,7 +124,7 @@ https://github.com/hrgraf/ESP32Wiimote
 を前述のPS4リモコンと同様に導入しますが, 階層構造が違うので変更します.  
 解凍してできた「ESP32Wiimote-master」をlibに格納し,  
 その「ESP32Wiimote-master」の中に「src」というディレクトリを作り,  
-ESP32Wiimote.cpp, ESP32Wiimote.h, TinyWiimote.cpp, TinyWiimote.h  
+ESP32Wiimote.cpp, ESP32Wiimote.h, TinyWiimote.cpp, TinyWiimote.h, library.properties  
 を格納します.  
   
 #### ソースコードを修正する
