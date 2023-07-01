@@ -384,6 +384,11 @@ bool initBluetooth()
 /**
  * @brief Get a Bluetooth pairing address.
  *
+ * @param bda A pointer that points to the Bluetooth Device Address (BDA).
+ *            The BDA is represented as a 6-byte array of bytes.
+ * @param str A pointer to store the converted result string.
+ * @param size The size of the str buffer.
+ * @return char*
  */
 char *bda2str(const uint8_t *bda, char *str, size_t size)
 {
