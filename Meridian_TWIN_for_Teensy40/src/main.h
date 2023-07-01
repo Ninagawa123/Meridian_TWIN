@@ -1,88 +1,81 @@
-
 #ifndef __MERIDIAN_LOCAL_FUNC__
 #define __MERIDIAN_LOCAL_FUNC__
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  setupIMUAHRS()
-// +----------------------------------------------------------------------
-// | 機能     :  MPU6050,BNO055等の初期設定を行う.　MOUNT_IMUAHRSで機種判別.
-// | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
-// | 引数　　　:  なし.
-// | 戻り値　　:  なし.
-// +----------------------------------------------------------------------
+#include <cstdint>
+
+/**
+ * @brief Initialize sensors like MPU6050, BNO055, and others.
+ *        Use MOUNT_IMUAHRS for device model detection.
+ *        0:none, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+ */
 void setupIMUAHRS();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  joypad_read()
-// +----------------------------------------------------------------------
-// | 機能     :  Teensy4.0に接続されたJOYPADの値を読みとり、pad_btnに格納
-// | 　　　　　:  0:なしorESP32orPCで受信, 1:SBDBT, 2:KRC-5FH
-// | 戻り値　　:  なし.
-// +----------------------------------------------------------------------
-void joypad_read();
+/**
+ * @brief Store values for MPU6050, BNO055, and other sensors.
+ *        Use MOUNT_IMUAHRS for device model detection.
+ *        0:none, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+ */
+void IMUAHRS_getYawPitchRoll();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  trimadjustment()
-// +----------------------------------------------------------------------
-// | 機能     :  サーボトリム調整. サーボオンで直立静止状態を保つ.
-// +----------------------------------------------------------------------
-void trimadjustment();
+/**
+ * @brief Receive input data from the gamepad and return it in PS2/3 gamepad array format.
+ *
+ * @param mount_joypad  Gamepad type (currently only 2: KRC-5FH).
+ * @param pre_val Previous received value (8 bytes, assuming union data).
+ * @param polling Frame count for inquiry frequency.
+ * @param joypad_reflesh 1:To reset the JOYPAD's received button data to 0 with this device
+ *                       0:perform logical addition without resetting .(usually 1)
+ * @return uint64_t
+ */
+uint64_t joypad_read(int mount_joypad, uint64_t pre_val, int polling, bool joypad_reflesh);
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  setyaw()
-// +----------------------------------------------------------------------
-// | 機能     :  ヨー軸の原点リセット. MOUNT_IMUAHRSで機種判別.
-// | 　　　　　:  0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
-// +----------------------------------------------------------------------
-void setyaw();
-
-// +----------------------------------------------------------------------
-// | 関数名　　:  servo_all_off()
-// +----------------------------------------------------------------------
-// | 機能     :  全サーボオフ
-// +----------------------------------------------------------------------
-void servo_all_off();
-
-// +----------------------------------------------------------------------
-// | 関数名　　:  check_sd()
-// +----------------------------------------------------------------------
-// | 機能     :  SDカードの初期化と読み書きテスト
-// +----------------------------------------------------------------------
+/**
+ * @brief Initializing and performing read/write tests for an SD card.
+ *
+ */
 void check_sd();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  print_error_monitor()
-// +----------------------------------------------------------------------
-// | 機能     :  エラー検出数をTeensyのシリアルに表示する
-// +----------------------------------------------------------------------
+/**
+ * @brief Displaying the error detection count on Teensy's serial interface.
+ *
+ */
 void print_error_monitor();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  countup_errors()
-// +----------------------------------------------------------------------
-// | 機能     :  通信エラー検出数をカウントアップする
-// +----------------------------------------------------------------------
+/**
+ * @brief Counting up the communication error detection count.
+ *
+ */
 void countup_errors();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  imuahrs_start()
-// +----------------------------------------------------------------------
-// | 機能     :  imu/ahrsを開始する
-// +----------------------------------------------------------------------
+/**
+ * @brief Starting the IMU sensor or AHRS sensor.
+ *
+ */
 void imuahrs_start();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  imuahrs_store()
-// +----------------------------------------------------------------------
-// | 機能     :  imu/ahrsのセンサー値を配列に格納する
-// +----------------------------------------------------------------------
+/**
+ * @brief Storing the values of the IMU sensor and AHRS sensor in an array.
+ *
+ */
 void imuahrs_store();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  execute_MasterCommand()
-// +----------------------------------------------------------------------
-// | 機能     :  マスターコマンドの命令ごとの処理
-// +----------------------------------------------------------------------
+/**
+ * @brief Execute mastercommands.
+ *
+ */
 void execute_MasterCommand();
+
+/**
+ * @brief Resetting the origin of the yaw axis.
+ *        Use MOUNT_IMUAHRS for device model detection.
+ *        0:none, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+ */
+void setyaw();
+
+/**
+ * @brief Powering off all servos.
+ *
+ */
+void servo_all_off();
 
 #endif
