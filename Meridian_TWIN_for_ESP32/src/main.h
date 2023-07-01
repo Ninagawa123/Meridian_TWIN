@@ -5,81 +5,72 @@
 #include <Arduino.h>
 
 //================================================================================================================
-//---- 関 数 各 種  -----------------------------------------------------------------------------------------------
+//---- Functions -------------------------------------------------------------------------------------------------
 //================================================================================================================
 
-// +----------------------------------------------------------------------
-// | func name : makeIPAddress(const char *ip_str)
-// +----------------------------------------------------------------------
-// | function  : Convert a period-separated IP address string to an IPAddress object.
-// | argument  : const char*, period-separated IP address string.
-// | return    : IPAddress object.
-// +----------------------------------------------------------------------
+/**
+ * @brief Convert a period-separated IP address string to an IPAddress object.
+ *
+ * @param ip_str const char*, period-separated IP address string.
+ * @return IPAddress
+ */
 IPAddress makeIPAddress(const char *ip_str);
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  *bda2str(const uint8_t* bda, char *str, size_t size)
-// +----------------------------------------------------------------------
-// | 機能     :  Bluetoothペアリングアドレスを取得する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
+/**
+ * @brief Get a Bluetooth pairing address.
+ *
+ * @param bda A pointer that points to the Bluetooth Device Address (BDA).
+ *            The BDA is represented as a 6-byte array of bytes.
+ * @param str A pointer to store the converted result string.
+ * @param size The size of the str buffer.
+ * @return char*
+ */
 char *bda2str(const uint8_t *bda, char *str, size_t size);
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  initBluetooth()
-// +----------------------------------------------------------------------
-// | 機能     :  Bluetoothペアリングを設定する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
+/**
+ * @brief Pairing Bluetooth.
+ *
+ */
 bool initBluetooth();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  PS4pad_receive()
-// +----------------------------------------------------------------------
-// | 機能     :  PS4リモコンの入力値を受信し, 以下に値を格納する
-// | 　　        pad_btn, pad_L2_val, pad_R2_val, pad_stick_L , pad_stick_R, pad_stick_V
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void PS4pad_receive();
+/**
+ * @brief Receive input values from the PS4 remote control
+ *        and store them in the following variables:
+ *        pad_btn, pad_L2_val, pad_R2_val, pad_stick_L, pad_stick_R, pad_stick_V
+ */
+void pad_ps4_receive();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  Wiipad_receive_h()
-// +----------------------------------------------------------------------
-// | 機能     :  Wiiコントローラ(横持ち・横持ち+ヌンチャク)の入力値を受信し, 以下に値を格納する
-// | 　　        pad_btn, pad_stick_L
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void Wiipad_receive_h();
+/**
+ * @brief Receive input values from the wiimote
+ *        and store them in the following variables:
+ *        pad_btn
+ */
+void pad_wiimote_receive();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  sendUDP()
-// +----------------------------------------------------------------------
-// | 機能     :  共用体s_udp_meridimをUDP通信で送信する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void sendUDP();
+/**
+ * @brief Send s_udp_meridim to UDP
+ *
+ */
+void udp_send();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  receiveUDP()
-// +----------------------------------------------------------------------
-// | 機能     :  UDP通信の受信パケットを確認する.
-// | 　　        受信完了を検出したら共用体 r_udp_meridim に値を格納し,
-// | 　　        udp_rsvd_flag のフラグをtrueにする
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void receiveUDP();
+/**
+ * @brief Check Check received UDP packets.
+ *  　　　　When a reception is complete, store the values in the union r_udp_meridim
+ *  　　　　and set the flag_udp_rsvd flag to true.
+ */
+void udp_receive();
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  bt_settings()
-// +----------------------------------------------------------------------
-// | 機能     :  Bluttooth接続リモコン (PS4,wiimote)関連の設定
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
+/**
+ * @brief Setting for PS4 Bluetooth.
+ *
+ */
 void bt_settings();
 
-//================================================================================================================
-//---- Bluetooth 用 ス レ ッ ド -----------------------------------------------------------------------------------
-//================================================================================================================
+/**
+ * @brief Thread for Bluetooth communication processing.
+ *
+ * @param args ?
+ */
 void Core0_BT_r(void *args);
 
 #endif
