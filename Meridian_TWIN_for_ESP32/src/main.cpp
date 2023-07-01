@@ -13,6 +13,10 @@
 // 2023.05.03 固定IPアドレスが設定可能.
 // 2023.06.17 起動メッセージをwifi検出前から出るように変更.
 // 2023.06.17 フローモニタ（MONITOR_FLOWでオンオフ）, 起動メッセージをライブラリ関数化.
+// 2023.06.30 ライブラリ、変数の整合
+// 2023.07.01 処理順についての日本語コメントの整理
+// 2023.07.01 関数コメントの整理
+// 2023.07.01 リモコン関連の調整
 
 // 【課題】2022.07.30
 // PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する.
@@ -20,7 +24,7 @@
 // よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
 // I2C経由の無線でさまざまなコントローラーに接続できるものを開発中。
 
-#define VERSION "Meridian_TWIN_for_ESP32_20230617." // バージョン表示
+#define VERSION "Meridian_TWIN_for_ESP32_20230701." // バージョン表示
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
@@ -67,10 +71,10 @@ uint8_t *r_spi_meridim_dma; // DMA用
 TaskHandle_t thp[4];        // マルチスレッドのタスクハンドル格納用
 
 /* フラグ関連変数 */
-bool spi_ready_flag = true;  // SPI送信の順番制御用
-bool udp_rsvd_flag = true;   // UDPスレッドでの受信完了フラグ
-bool udp_busy_flag = false;  // UDPスレッドでの受信中フラグ（送信抑制）
-int frame_sync_r_expect = 0; // フレーム毎に前回受信値に+１として受信値と比較（-30000~29999)
+bool flag_spi_ready = true; // SPI送信の順番制御用
+bool flag_udp_rsvd = true;  // UDPスレッドでの受信完了フラグ
+bool flag_udp_busy = false; // UDPスレッドでの受信中フラグ（送信抑制）
+int mrd_seq_r_expect = 0;   // フレーム毎に前回受信値に+１として受信値と比較（-30000~29999)
 
 /* Meridim配列用の共用体の設定 */
 typedef union
@@ -86,17 +90,29 @@ UnionData r_udp_meridim; // UDP受信用共用体
 // UnionData pad_bt_meridim; // リモコンのBT受信用共用体のインスタンスを宣言
 
 /* リモコン用変数 */
-int joypad_search = 3;
+// int joypad_search = 3;
+typedef union
+{
+  short sval[4];       // short型で4個の配列データを持つ
+  uint16_t usval[4];   // 上記のunsigned short型
+  int8_t bval[8];      // 上記のbyte型
+  uint8_t ubval[8];    // 上記のunsigned byte型
+  uint64_t ui64val[1]; // 上記のunsigned int16型
+                       // button, pad_stick_L_x:pad_stick_L_y,
+                       // pad_stick_R_x:pad_stick_R_y, pad_L2_val:pad_R2_val
+} UnionPad;
+UnionPad pad_array = {0}; // リモコン値格納用の配列
+
 unsigned short pad_btn = 0;
-short pad_stick_R = 0;
-short pad_stick_R_x = 0;
-short pad_stick_R_y = 0;
-short pad_stick_L = 0;
-short pad_stick_L_x = 0;
-short pad_stick_L_y = 0;
-short pad_stick_V = 0;
-short pad_R2_val = 0;
-short pad_L2_val = 0;
+int pad_stick_R = 0;
+int pad_stick_R_x = 0;
+int pad_stick_R_y = 0;
+int pad_stick_L = 0;
+int pad_stick_L_x = 0;
+int pad_stick_L_y = 0;
+int pad_stick_V = 0;
+int pad_R2_val = 0;
+int pad_L2_val = 0;
 
 //================================================================================================================
 //---- セ ッ ト ア ッ プ -------------------------------------------------------------------------------------------
@@ -110,11 +126,7 @@ void setup()
   /* シリアルモニタ表示 */
   Serial.begin(SERIAL_PC_BPS);
   delay(120); // シリアルの開始を待ち安定化させるためのディレイ（ほどよい）
-  // Serial.println("TEST");
-  // print_esp_hello_start();
   mrd.print_esp_hello_start(String(VERSION), String(SERIAL_PC_BPS), String(WIFI_AP_SSID));
-
-  // mrd.print_esp_hello_start(VERSION, MODE_FIXED_IP, String(FIXED_IP_ADDR), String(WiFi.localIP()), String(WIFI_AP_SSID), String(WIFI_SEND_IP));
 
   /* WiFiの初期化と開始 */
   WiFi.disconnect(true, true); // WiFi接続をリセット
@@ -130,7 +142,7 @@ void setup()
   {           // https://www.arduino.cc/en/Reference/WiFiStatus 返り値一覧
     delay(1); // 接続が完了するまでループで待つ
   }
-  mrd.print_esp_hello_ip(WIFI_SEND_IP, String(WiFi.localIP()), FIXED_IP_ADDR, MODE_FIXED_IP);
+  mrd.print_esp_hello_ip(WIFI_SEND_IP, WiFi.localIP(), FIXED_IP_ADDR, MODE_FIXED_IP);
 
   /* UDP通信の開始 */
   udp.begin(UDP_RESV_PORT);
@@ -184,11 +196,11 @@ void loop()
   /* @[1-1] SPI通信のトランザクションがなければデータをキューに補充 */
   if (slave.remained() == 0)
   {
-    if (spi_ready_flag) // SPI送信データの作成が完了しているか
+    if (flag_spi_ready) // SPI送信データの作成が完了しているか
     {
       mrd.monitor_check_flow("[1]", MONITOR_FLOW); // 動作チェック用シリアル表示
       slave.queue(r_spi_meridim_dma, s_spi_meridim_dma, MSG_BUFF + 4);
-      spi_ready_flag = false;
+      flag_spi_ready = false;
     }
   }
 
@@ -205,17 +217,20 @@ void loop()
     //------------------------------------------------------------------------
     mrd.monitor_check_flow("[2]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
-    // → ここでチェックサムを行ってもよい.
-    // → Teensyからのリモコン値はここでのみ補足可能.
-    // → 今回は特になにもなし.
+    /* @[2-1] このESP32内で計算処理したデータをMeridimに格納する */
+    // ・Teensy→ESP32→PCという経路.
+    // ・Teensyからのリモコン値はここでのみ補足可能.
+    // ・ここでチェックサムを行ってもよい.
+    // ・今回は特になにもなし.
 
     //------------------------------------------------------------------------
     // [ 3 ]  U D P 送 信 実 行
     //------------------------------------------------------------------------
     mrd.monitor_check_flow("[3]", MONITOR_FLOW); // 動作チェック用シリアル表示
+
     /* @[3-1] UDP送受信の実行 */
-    udp_busy_flag = true; // UDP使用中のフラグをアゲる
-    sendUDP();            // UDP送受信の実行
+    flag_udp_busy = true; // UDP使用中のフラグをアゲる
+    udp_send();           // UDP送受信の実行
 
     //------------------------------------------------------------------------
     // [ 4 ]  U D P 受 信 待 受 ル ー プ
@@ -223,15 +238,15 @@ void loop()
     mrd.monitor_check_flow("[4]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[4-1] UDP受信の待受 */
-    udp_rsvd_flag = false;
+    flag_udp_rsvd = false;
     int udp_time_count = 0;
-    while (!udp_rsvd_flag) // データの受信バッファ確認
+    while (!flag_udp_rsvd) // データの受信バッファ確認
     {
       short udp_packet = udp.parsePacket();
       if (udp_packet >= MSG_BUFF)
       {
         udp.read(r_udp_meridim.bval, MSG_BUFF); // データの受信
-        udp_rsvd_flag = true;
+        flag_udp_rsvd = true;
         mrd.monitor_check_flow("UdpRsvd", MONITOR_FLOW); // 動作チェック用シリアル表示
       }
       if (udp_time_count > UDP_TIMEOUT) // UDPの受信待ちのタイムアウト
@@ -242,7 +257,7 @@ void loop()
       udp_time_count++;
       delay(1);
     }
-    udp_busy_flag = false; // UDP使用中のフラグをサゲる
+    flag_udp_busy = false; // UDP使用中のフラグをサゲる
 
     //------------------------------------------------------------------------
     // [ 5 ]  U D P 受 信 品 質 チ ェ ッ ク
@@ -252,30 +267,29 @@ void loop()
     /* @[5-1] UDP受信データ r_udp_meridim のチェックサムを確認. */
     if (mrd.cksm_rslt(r_udp_meridim.sval, MSG_SIZE))
     {
-      /* @[5-2a] 受信成功ならUDP受信データをSPI送信データに上書き更新する.*/
+      /* @[5-1a] 受信成功ならUDP受信データをSPI送信データに上書き更新する.*/
       memcpy(s_spi_meridim.bval, r_udp_meridim.bval, MSG_BUFF + 4);
       s_spi_meridim.bval[MSG_ERR_u] &= 0b10111111; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをサゲる.
     }
     else
     {
-      /* @[5-2b] 受信失敗なら今回の受信データを使わず、前回のSPI送信データにエラーフラグだけ上乗せする.*/
+      /* @[5-1b] 受信失敗なら今回の受信データを使わず、前回のSPI送信データにエラーフラグだけ上乗せする.*/
       s_spi_meridim.bval[MSG_ERR_u] |= 0b01000000; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをアゲる.
     }
 
-    /* @[5-3] 連番スキップ検出 */
-    /* @[5-3-1] シーケンス番号の予想値の生成 */
-    frame_sync_r_expect = mrd.predict_seq_num(frame_sync_r_expect);
-
+    /* @[5-2] 連番スキップ検出 */
+    /* @[5-2-1] シーケンス番号の予想値の生成 */
+    mrd_seq_r_expect = mrd.seq_predict_num(mrd_seq_r_expect);
     if (MONITOR_SEQ)
     {
       Serial.print("SeqNum exp: ");
-      Serial.print(frame_sync_r_expect);
+      Serial.print(mrd_seq_r_expect);
       Serial.print(" / udp_rsvd: ");
       Serial.print(int(r_udp_meridim.usval[1]));
     }
 
-    /* @[5-3-2] シーケンス番号予想値と受信値が合致しているかのチェック */
-    if (mrd.compare_seq_nums(frame_sync_r_expect, int(r_udp_meridim.usval[1]))) // 受信シーケンス番号の値が予想通りなら,
+    /* @[5-2-2] シーケンス番号予想値と受信値が合致しているかのチェック */
+    if (mrd.seq_compare_nums(mrd_seq_r_expect, int(r_udp_meridim.usval[1]))) // 受信シーケンス番号の値が予想通りなら,
     {
       s_spi_meridim.bval[MSG_ERR_u] &= 0b11111011; // エラーフラグ10番(ESP受信のスキップ検出)をサゲる.
       if (MONITOR_SEQ)
@@ -285,8 +299,8 @@ void loop()
     }
     else // 受信シーケンシャルカウンタの値が予想と違ったら,
     {
-      frame_sync_r_expect = int(r_udp_meridim.usval[1]); // 現在の受信値を予想結果としてキープ
-      s_spi_meridim.bval[MSG_ERR_u] |= 0b00000100;       // エラーフラグ10番(ESP受信のスキップ検出)をアゲる.
+      mrd_seq_r_expect = int(r_udp_meridim.usval[1]); // 現在の受信値を予想結果としてキープ
+      s_spi_meridim.bval[MSG_ERR_u] |= 0b00000100;    // エラーフラグ10番(ESP受信のスキップ検出)をアゲる.
       if (MONITOR_SEQ)
       {
         Serial.println(" *NG*");
@@ -301,13 +315,14 @@ void loop()
     mrd.monitor_check_flow("[6]\n", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[6-1] ユーザー定義の送信データの書き込み */
-    // Teensyへ送るデータをこのパートで作成, 書き込み  → 今回はとくに何もしない.
+    // ・Teensyへ送るデータをこのパートで作成, 書き込み.
+    // ・今回はとくに何もしない.
 
     /* @[6-2] リモコンデータの書き込み */
-    s_spi_meridim.sval[15] = r_udp_meridim.sval[15] | pad_btn;
-    s_spi_meridim.sval[16] = r_udp_meridim.sval[16] | pad_stick_L;
-    s_spi_meridim.sval[17] = r_udp_meridim.sval[17] | pad_stick_R;
-    s_spi_meridim.sval[18] = r_udp_meridim.sval[18] | pad_stick_V;
+    for (int i = 0; i < 4; i++)
+    { // Meridim配列のリモコン該当箇所に、ESPで受信したリモコン値を加算する
+      s_spi_meridim.sval[i + 15] = r_udp_meridim.sval[i + 15] | pad_array.usval[i];
+    }
 
     /* @[6-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）*/
     // → すでにPCから受け取った値がs_spi_meridim.sval[1]に入っているのでここでは何もしない.
@@ -318,8 +333,8 @@ void loop()
 
     /* @[6-5] 完成したSPI送信データをDMAに転記*/
     memcpy(s_spi_meridim_dma, s_spi_meridim.bval, MSG_BUFF + 4);
-    spi_ready_flag = true; // SPI送信の順番制御用
-    // [check!] この時点で 次回のSPI送受信に備え、DMAにデータが格納された状態.
+    flag_spi_ready = true; // SPI送信の順番制御用
+                           // [check!] この時点で 次回のSPI送受信に備え、DMAにデータが格納された状態.
   }
 }
 
@@ -327,26 +342,23 @@ void loop()
 //---- 関 数 各 種  -----------------------------------------------------------------------------------------------
 //================================================================================================================
 
-// +----------------------------------------------------------------------
-// | func name : makeIPAddress(const char *ip_str)
-// +----------------------------------------------------------------------
-// | function  : Convert a period-separated IP address string to an IPAddress object.
-// | argument  : const char*, period-separated IP address string.
-// | return    : IPAddress object.
-// +----------------------------------------------------------------------
+/**
+ * @brief Convert a period-separated IP address string to an IPAddress object.
+ *
+ * @param ip_str const char*, period-separated IP address string.
+ * @return IPAddress
+ */
 IPAddress makeIPAddress(const char *ip_str)
 {
-  int a, b, c, d;
-  sscanf(ip_str, "%d.%d.%d.%d", &a, &b, &c, &d);
-  return IPAddress(a, b, c, d);
+  int _a, _b, _c, _d;
+  sscanf(ip_str, "%d.%d.%d.%d", &_a, &_b, &_c, &_d);
+  return IPAddress(_a, _b, _c, _d);
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  initBluetooth()
-// +----------------------------------------------------------------------
-// | 機能     :  Bluetoothペアリングを設定する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
+/**
+ * @brief Pairing Bluetooth.
+ *
+ */
 bool initBluetooth()
 {
   if (!btStart())
@@ -369,12 +381,10 @@ bool initBluetooth()
   return true;
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  *bda2str(const uint8_t* bda, char *str, size_t size)
-// +----------------------------------------------------------------------
-// | 機能     :  Bluetoothペアリングアドレスを取得する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
+/**
+ * @brief Get a Bluetooth pairing address.
+ *
+ */
 char *bda2str(const uint8_t *bda, char *str, size_t size)
 {
   if (bda == NULL || str == NULL || size < 18)
@@ -386,20 +396,23 @@ char *bda2str(const uint8_t *bda, char *str, size_t size)
   return str;
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  PS4pad_receive()
-// +----------------------------------------------------------------------
-// | 機能     :  PS4リモコンの入力値を受信し, 以下に値を格納する
-// | 　　        pad_btn, pad_L2_val, pad_R2_val, pad_stick_L , pad_stick_R, pad_stick_V
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void PS4pad_receive()
+/**
+ * @brief Receive input values from the PS4 remote control
+ *        and store them in the following variables:
+ *        pad_btn, pad_L2_val, pad_R2_val, pad_stick_L, pad_stick_R, pad_stick_V
+ */
+void pad_ps4_receive()
 {
   // Below has all accessible outputs from the controller
   if (PS4.isConnected())
   {
+    static bool isFirstCall = true; // 初回の呼び出しフラグ
+    if (isFirstCall)
+    {
+      Serial.println("PS4 controller successfully connected. ");
+      isFirstCall = false; // 初回の呼び出しフラグをオフにする
+    }
     pad_btn = 0;
-
     if (PS4.Right())
       pad_btn |= (0b00000000 * 256) + 0b00100000;
     if (PS4.Down())
@@ -474,24 +487,29 @@ void PS4pad_receive()
       pad_stick_R_y = constrain(PS4.RStickY(), -127, 127);
     }
 
-    pad_stick_L = pad_stick_L_x * 256 + pad_stick_L_y;
-    pad_stick_R = pad_stick_R_x * 256 + pad_stick_R_y;
-    pad_stick_V = pad_L2_val * 256 + pad_R2_val;
+    pad_array.usval[0] = pad_btn;                            // short型で4個の配列データを持つ
+    pad_array.sval[1] = pad_stick_L_x * 256 + pad_stick_L_y; // short型で4個の配列データを持つ
+    pad_array.sval[2] = pad_stick_R_x * 256 + pad_stick_R_y; // short型で4個の配列データを持つ
+    pad_array.sval[3] = pad_L2_val * 256 + pad_R2_val;       // short型で4個の配列データを持つ
   }
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  Wiipad_receive_h()
-// +----------------------------------------------------------------------
-// | 機能     :  Wiiコントローラ(横持ち・横持ち+ヌンチャク)の入力値を受信し, 以下に値を格納する
-// | 　　        pad_btn, pad_stick_L
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void Wiipad_receive_h()
+/**
+ * @brief Receive input values from the wiimote
+ *        and store them in the following variables:
+ *        pad_btn
+ */
+void pad_wiimote_receive()
 {
   wiimote.task();
   if (wiimote.available() > 0)
   {
+    static bool isFirstCall = true; // 初回の呼び出しフラグ
+    if (isFirstCall)
+    {
+      Serial.println("Wiimote successfully connected. ");
+      isFirstCall = false; // 初回の呼び出しフラグをオフにする
+    }
     uint16_t button = wiimote.getButtonState();
     pad_btn = 0;
 
@@ -521,101 +539,101 @@ void Wiipad_receive_h()
     if (button & 0x0080)
       pad_btn |= (0b00000000 * 256) + 0b01010000; // same as up & down//home
 
-    if (MOUNT_JOYPAD == 6)
-    {
-      NunchukState nunchuk = wiimote.getNunchukState();
-      int calib_l1x = 5;  // LスティックX軸のセンターのキャリブレーション値
-      int calib_l1y = -6; // LスティックY軸のセンターのキャリブレーション値
-      pad_stick_L = ((nunchuk.xStick + calib_l1x - 127) * 256 + (nunchuk.yStick - 127 + calib_l1y));
-      // if (nunchuk.cBtn == 1)
-      //    pad_btn |= (0b00000100 * 256) + 0b00000000;
-      //  if (nunchuk.zBtn == 1)
-      //    pad_btn |= (0x00000001 * 256) + 0b00000000;
-    }
-    delay(1); // ここの数値でCPU負荷を軽減できるかも?
+    pad_array.usval[0] = pad_btn; // short型で4個の配列データを持つ
   }
-}
-
-// +----------------------------------------------------------------------
-// | 関数名　　:  sendUDP()
-// +----------------------------------------------------------------------
-// | 機能     :  共用体s_udp_meridimをUDP通信で送信する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void sendUDP()
-{
-  udp.beginPacket(WIFI_SEND_IP, UDP_SEND_PORT); // UDPパケットの開始
-  udp.write(s_udp_meridim.bval, MSG_BUFF);
-  udp.endPacket(); // UDPパケットの終了
-}
-
-// +----------------------------------------------------------------------
-// | 関数名　　:  receiveUDP()
-// +----------------------------------------------------------------------
-// | 機能     :  UDP通信の受信パケットを確認する.
-// | 　　        受信完了を検出したら共用体 r_udp_meridim に値を格納し,
-// | 　　        udp_rsvd_flag のフラグをtrueにする
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
-void receiveUDP()
-{
-  if (udp.parsePacket() >= MSG_BUFF) // データの受信バッファ確認
+  if (MOUNT_JOYPAD == 6)
   {
-    udp.read(r_udp_meridim.bval, MSG_BUFF); // データの受信
+    // NunchukState nunchuk = wiimote.getNunchukState();
+    //  int calib_l1x = 5;  // LスティックX軸のセンターのキャリブレーション値
+    //   int calib_l1y = -6; // LスティックY軸のセンターのキャリブレーション値
+    //    pad_stick_L = ((nunchuk.xStick + calib_l1x - 127) * 256 + (nunchuk.yStick - 127 + calib_l1y));
+    //     if (nunchuk.cBtn == 1)
+    //       pad_btn |= (0b00000100 * 256) + 0b00000000;
+    //      if (nunchuk.zBtn == 1)
+    //        pad_btn |= (0x00000001 * 256) + 0b00000000;
+    //       pad_array.sval[1] = pad_stick_L_x * 256 + pad_stick_L_y; // short型で4個の配列データを持つ
+    //       pad_array.sval[2] = pad_stick_R_x * 256 + pad_stick_R_y; // short型で4個の配列データを持つ
+    //       pad_array.sval[3] = pad_L2_val * 256 + pad_R2_val;       // short型で4個の配列データを持つ
   }
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  bt_settings()
-// +----------------------------------------------------------------------
-// | 機能     :  Bluttooth接続リモコン (PS4,wiimote)関連の設定
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
+/**
+ * @brief Send s_udp_meridim to UDP
+ *
+ */
+void udp_send()
+{
+  udp.beginPacket(WIFI_SEND_IP, UDP_SEND_PORT); // Start UDP packet.
+  udp.write(s_udp_meridim.bval, MSG_BUFF);
+  udp.endPacket(); // End UDP packet.
+}
+
+/**
+ * @brief Check Check received UDP packets.
+ *  　　　　When a reception is complete, store the values in the union r_udp_meridim
+ *  　　　　and set the flag_udp_rsvd flag to true.
+ */
+void udp_receive()
+{
+  if (udp.parsePacket() >= MSG_BUFF) // Check the receive buffer for data.
+  {
+    udp.read(r_udp_meridim.bval, MSG_BUFF); // Receive data.
+  }
+}
+
+/**
+ * @brief Setting for PS4 Bluetooth.
+ *
+ */
 void bt_settings()
 {
   /* Bluetoothの初期化 */
-  initBluetooth();
-  Serial.print("ESP32's Bluetooth Mac Address is => "); // ESP32自身のBluetoothMacアドレスを表示
-  Serial.println(bda2str(esp_bt_dev_get_address(), bda_str, 18));
-  delay(100);
+  if (MOUNT_JOYPAD == 4) // ※現状、リモコンがPS4の時のみこの処理を実施
+  {
 
-  /* Bluetoothのペアリング情報 */
-  int bt_count = esp_bt_gap_get_bond_device_num();
-  if (!bt_count)
-  {
-    Serial.println("No bonded BT device found.");
-  }
-  else
-  {
-    Serial.print("Bonded BT device count: ");
-    Serial.println(bt_count);
-    if (BT_PAIR_MAX_DEVICES < bt_count)
+    initBluetooth();
+    Serial.print("ESP32's Bluetooth Mac Address is => "); // ESP32自身のBluetoothMacアドレスを表示
+    Serial.println(bda2str(esp_bt_dev_get_address(), bda_str, 18));
+    delay(100);
+
+    /* Bluetoothのペアリング情報 */
+    int bt_count = esp_bt_gap_get_bond_device_num();
+    if (!bt_count)
     {
-      bt_count = BT_PAIR_MAX_DEVICES;
-      Serial.print("Reset bonded device count: ");
-      Serial.println(bt_count);
+      Serial.println("No bonded BT device found.");
     }
-    esp_err_t tError = esp_bt_gap_get_bond_device_list(&bt_count, pairedDeviceBtAddr);
-    if (ESP_OK == tError)
+    else
     {
-      for (int i = 0; i < bt_count; i++)
+      Serial.print("Bonded BT device count: ");
+      Serial.println(bt_count);
+      if (BT_PAIR_MAX_DEVICES < bt_count)
       {
-        Serial.print("Found bonded BT device # ");
-        Serial.print(i);
-        Serial.print(" -> ");
-        Serial.println(bda2str(pairedDeviceBtAddr[i], bda_str, 18));
-        if (BT_REMOVE_BONDED_DEVICES)
+        bt_count = BT_PAIR_MAX_DEVICES;
+        Serial.print("Reset bonded device count: ");
+        Serial.println(bt_count);
+      }
+      esp_err_t tError = esp_bt_gap_get_bond_device_list(&bt_count, pairedDeviceBtAddr);
+      if (ESP_OK == tError)
+      {
+        for (int i = 0; i < bt_count; i++)
         {
-          esp_err_t tError = esp_bt_gap_remove_bond_device(pairedDeviceBtAddr[i]);
-          if (ESP_OK == tError)
+          Serial.print("Found bonded BT device # ");
+          Serial.print(i);
+          Serial.print(" -> ");
+          Serial.println(bda2str(pairedDeviceBtAddr[i], bda_str, 18));
+          if (BT_REMOVE_BONDED_DEVICES)
           {
-            Serial.print("Removed bonded BT device # ");
+            esp_err_t tError = esp_bt_gap_remove_bond_device(pairedDeviceBtAddr[i]);
+            if (ESP_OK == tError)
+            {
+              Serial.print("Removed bonded BT device # ");
+            }
+            else
+            {
+              Serial.print("Failed to remove bonded BT device # ");
+            }
+            Serial.println(i);
           }
-          else
-          {
-            Serial.print("Failed to remove bonded BT device # ");
-          }
-          Serial.println(i);
         }
       }
     }
@@ -625,16 +643,14 @@ void bt_settings()
   if (MOUNT_JOYPAD == 4)
   {
     PS4.begin(BT_MAC_ADDR); // ESP32のMACが入ります.PS4にも設定します.
-    Serial.println("PS4 controller connecting...");
+    Serial.println("Try to connect PS4 controller...");
   }
 
   /* Wiiコントローラの接続開始 */
   if ((MOUNT_JOYPAD == 5) or (MOUNT_JOYPAD == 6))
   {
+    Serial.println("Try to connect Wiimote...");
     wiimote.init();
-    // wiimote.addFilter(ACTION_IGNORE, FILTER_NUNCHUK_ACCEL);
-    Serial.println("Wiimote connecting...");
-    joypad_search = 3;
   }
 }
 
@@ -643,22 +659,28 @@ void bt_settings()
 //================================================================================================================
 void Core0_BT_r(void *args)
 { // サブCPU(Core0)で実行するプログラム
+  int _wait = JOYPAD_POLLING - 1;
+  if (_wait < 0)
+  {
+    _wait = 0;
+  }
+
   while (true)
-  {                        // ここで無限ループを作っておく
-    while (!udp_busy_flag) // UDP使用中を避ける
+  {                        // Bluetooth待受用の無限ループ
+    while (!flag_udp_busy) // UDP使用中を避ける
     {
-      // PS4コントローラの受信
+      // PS4 controller
       if (MOUNT_JOYPAD == 4)
       {
-        PS4pad_receive();
+        pad_ps4_receive();
       }
-      // Wiiコントローラの受信
+      // Wiimote
       if ((MOUNT_JOYPAD == 5) or (MOUNT_JOYPAD == 6))
       {
-        Wiipad_receive_h();
+        pad_wiimote_receive();
       }
-      delay(JOYPAD_POLLING - 1); // JOYPAD_POLLING ms秒待つ
+      delay(_wait); // _wait ms
     }
-    delay(1); // JOYPAD_POLLING ms秒待つ
+    delay(1); // 1ms
   }
 }
