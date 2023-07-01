@@ -87,10 +87,8 @@ UnionData s_spi_meridim; // SPI受信用共用体
 UnionData r_spi_meridim; // SPI受信用共用体
 UnionData s_udp_meridim; // UDP送信用共用体
 UnionData r_udp_meridim; // UDP受信用共用体
-// UnionData pad_bt_meridim; // リモコンのBT受信用共用体のインスタンスを宣言
 
 /* リモコン用変数 */
-// int joypad_search = 3;
 typedef union
 {
   short sval[4];       // short型で4個の配列データを持つ
@@ -102,15 +100,13 @@ typedef union
                        // pad_stick_R_x:pad_stick_R_y, pad_L2_val:pad_R2_val
 } UnionPad;
 UnionPad pad_array = {0}; // リモコン値格納用の配列
-
-unsigned short pad_btn = 0;
-int pad_stick_R = 0;
+unsigned short pad_stick_R = 0;
 int pad_stick_R_x = 0;
 int pad_stick_R_y = 0;
-int pad_stick_L = 0;
+unsigned short pad_stick_L = 0;
 int pad_stick_L_x = 0;
 int pad_stick_L_y = 0;
-int pad_stick_V = 0;
+unsigned short pad_stick_L2R2V = 0;
 int pad_R2_val = 0;
 int pad_L2_val = 0;
 
