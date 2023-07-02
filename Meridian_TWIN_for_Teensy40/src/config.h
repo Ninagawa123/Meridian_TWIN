@@ -135,8 +135,9 @@
 #define SERVO_LOST_ERROR_WAIT 3 // サーボ通信エラーと判定する連続エラー回数
 
 // JOYPAD関連設定
-#define JOYPAD_POLLING 4 // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define JOYPAD_REFRESH 1 // JOYPADの受信ボタンデータをこのデバイスで0リセットするか、リセットせず論理加算するか （0:overide, 1:reflesh, 通常は1）
+#define JOYPAD_POLLING 4    // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define JOYPAD_REFRESH 1    // JOYPADの受信ボタンデータをこのデバイスで0リセットするか、リセットせず論理加算するか （0:overide, 1:reflesh, 通常は1）
+#define JOYPAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
 
 /* 固定値, マスターコマンド定義 */
 #define TRIM_ADJUST_MODE 0              // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
