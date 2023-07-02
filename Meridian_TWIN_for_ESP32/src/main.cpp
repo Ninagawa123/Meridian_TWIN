@@ -1,7 +1,7 @@
-// Meridian_TWIN_for_ESP32_20230617 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20230702 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ　20230617版
+// Meridan TWIN ESP32用スケッチ　20230702版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.
@@ -87,8 +87,10 @@ UnionData s_spi_meridim; // SPI受信用共用体
 UnionData r_spi_meridim; // SPI受信用共用体
 UnionData s_udp_meridim; // UDP送信用共用体
 UnionData r_udp_meridim; // UDP受信用共用体
+// UnionData pad_bt_meridim; // リモコンのBT受信用共用体のインスタンスを宣言
 
 /* リモコン用変数 */
+// int joypad_search = 3;
 typedef union
 {
   short sval[4];       // short型で4個の配列データを持つ
@@ -100,13 +102,15 @@ typedef union
                        // pad_stick_R_x:pad_stick_R_y, pad_L2_val:pad_R2_val
 } UnionPad;
 UnionPad pad_array = {0}; // リモコン値格納用の配列
-unsigned short pad_stick_R = 0;
+
+unsigned short pad_btn = 0;
+int pad_stick_R = 0;
 int pad_stick_R_x = 0;
 int pad_stick_R_y = 0;
-unsigned short pad_stick_L = 0;
+int pad_stick_L = 0;
 int pad_stick_L_x = 0;
 int pad_stick_L_y = 0;
-unsigned short pad_stick_L2R2V = 0;
+int pad_stick_V = 0;
 int pad_R2_val = 0;
 int pad_L2_val = 0;
 
@@ -138,7 +142,7 @@ void setup()
   {           // https://www.arduino.cc/en/Reference/WiFiStatus 返り値一覧
     delay(1); // 接続が完了するまでループで待つ
   }
-  mrd.print_esp_hello_ip(WIFI_SEND_IP, WiFi.localIP(), FIXED_IP_ADDR, MODE_FIXED_IP);
+  mrd.print_esp_hello_ip(WIFI_SEND_IP, WiFi.localIP().toString(), FIXED_IP_ADDR, MODE_FIXED_IP);
 
   /* UDP通信の開始 */
   udp.begin(UDP_RESV_PORT);
@@ -180,15 +184,11 @@ void setup()
 }
 
 //================================================================================================================
-//---- メ　イ　ン　ル　ー　プ-----------------------------------------------------------------------------------------
+//---- M A I N  L O O P -----------------------------------------------------------------------------------------
 //================================================================================================================
 void loop()
 {
-
-  //------------------------------------------------------------------------
-  // [ 1 ]  S P I 送 受 信 の 実 行
-  //------------------------------------------------------------------------
-
+  //////// [ 1 ]  S P I 送 受 信 の 実 行  /////////////////////////////////////////////
   /* @[1-1] SPI通信のトランザクションがなければデータをキューに補充 */
   if (slave.remained() == 0)
   {
@@ -208,9 +208,7 @@ void loop()
     memcpy(s_udp_meridim.bval, r_spi_meridim_dma, MSG_BUFF + 4); // DMAのSPI受信データをUDP送信配列に転記
     slave.pop();                                                 // DMAのデータ配列の先頭を削除
 
-    //------------------------------------------------------------------------
-    // [ 2 ]  U D P 送 信 デ ー タ 作 成
-    //------------------------------------------------------------------------
+    //////// [ 2 ]  U D P 送 信 デ ー タ 作 成  /////////////////////////////////////////////
     mrd.monitor_check_flow("[2]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[2-1] このESP32内で計算処理したデータをMeridimに格納する */
@@ -219,18 +217,14 @@ void loop()
     // ・ここでチェックサムを行ってもよい.
     // ・今回は特になにもなし.
 
-    //------------------------------------------------------------------------
-    // [ 3 ]  U D P 送 信 実 行
-    //------------------------------------------------------------------------
+    //////// [ 3 ]  U D P 送 信 実 行  ///////////////////////////////////////////////////
     mrd.monitor_check_flow("[3]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[3-1] UDP送受信の実行 */
     flag_udp_busy = true; // UDP使用中のフラグをアゲる
     udp_send();           // UDP送受信の実行
 
-    //------------------------------------------------------------------------
-    // [ 4 ]  U D P 受 信 待 受 ル ー プ
-    //------------------------------------------------------------------------
+    //////// [ 4 ]  U D P 受 信 待 受 ル ー プ  //////////////////////////////////////////
     mrd.monitor_check_flow("[4]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[4-1] UDP受信の待受 */
@@ -255,9 +249,7 @@ void loop()
     }
     flag_udp_busy = false; // UDP使用中のフラグをサゲる
 
-    //------------------------------------------------------------------------
-    // [ 5 ]  U D P 受 信 品 質 チ ェ ッ ク
-    //------------------------------------------------------------------------
+    //////// [ 5 ]  U D P 受 信 品 質 チ ェ ッ ク  ////////////////////////////////////////
     mrd.monitor_check_flow("[5]", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[5-1] UDP受信データ r_udp_meridim のチェックサムを確認. */
@@ -305,9 +297,7 @@ void loop()
 
     // [check!] ここで s_spi_meridim にはチェック済みの r_udp_meridim が転記され, ESP32UDP受信エラーフラグも入った状態.
 
-    //------------------------------------------------------------------------
-    // [ 6 ]  S P I 送 信 デ ー タ 作 成
-    //------------------------------------------------------------------------
+    //////// [ 6 ]  S P I 送 信 デ ー タ 作 成  ///////////////////////////////////////////
     mrd.monitor_check_flow("[6]\n", MONITOR_FLOW); // 動作チェック用シリアル表示
 
     /* @[6-1] ユーザー定義の送信データの書き込み */
@@ -414,80 +404,148 @@ void pad_ps4_receive()
       isFirstCall = false; // 初回の呼び出しフラグをオフにする
     }
     pad_btn = 0;
-    if (PS4.Right())
-      pad_btn |= (0b00000000 * 256) + 0b00100000;
-    if (PS4.Down())
-      pad_btn |= (0b00000000 * 256) + 0b01000000;
-    if (PS4.Up())
-      pad_btn |= (0b00000000 * 256) + 0b00010000;
-    if (PS4.Left())
-      pad_btn |= (0b00000000 * 256) + 0b10000000;
+    if (JOYPAD_GENERALIZE)
+    { // 一般化,ROS準拠
+      if (PS4.Up())
+        pad_btn |= (0b00000000 * 256) + 0b00010000; // 16
+      if (PS4.Right())
+        pad_btn |= (0b00000000 * 256) + 0b00100000; // 32
+      if (PS4.Down())
+        pad_btn |= (0b00000000 * 256) + 0b01000000; // 64
+      if (PS4.Left())
+        pad_btn |= (0b00000000 * 256) + 0b10000000; // 128
+      if (PS4.Triangle())
+        pad_btn |= (0b00010000 * 256) + 0b00000000; // 4096
+      if (PS4.Circle())
+        pad_btn |= (0b00100000 * 256) + 0b00000000; // 8192
+      if (PS4.Cross())
+        pad_btn |= (0b01000000 * 256) + 0b00000000; // 16384
+      if (PS4.Square())
+        pad_btn |= (0b10000000 * 256) + 0b00000000; // 32768
+      if (PS4.UpRight())
+        pad_btn |= (0b00000000 * 256) + 0b00110000; // 48
+      if (PS4.DownRight())
+        pad_btn |= (0b00000000 * 256) + 0b01100000; // 96
+      if (PS4.UpLeft())
+        pad_btn |= (0b00000000 * 256) + 0b10010000; // 144
+      if (PS4.DownLeft())
+        pad_btn |= (0b00000000 * 256) + 0b11000000; // 192
+      if (PS4.Share())
+        pad_btn |= (0b00000000 * 256) + 0b00000001; // 1
+      if (PS4.L3())
+        pad_btn |= (0b00000000 * 256) + 0b00000010; // 2
+      if (PS4.R3())
+        pad_btn |= (0b00000000 * 256) + 0b00000100; // 4
+      if (PS4.Options())
+        pad_btn |= (0b00000000 * 256) + 0b00001000; // none
+      if (PS4.L1())
+        pad_btn |= (0b00000100 * 256) + 0b00000000; // 1024
+      if (PS4.R1())
+        pad_btn |= (0b00001000 * 256) + 0b00000000; // 2048
 
-    if (PS4.Square())
-      pad_btn |= (0b10000000 * 256) + 0b00000000;
-    if (PS4.Cross())
-      pad_btn |= (0b01000000 * 256) + 0b00000000;
-    if (PS4.Circle())
-      pad_btn |= (0b00100000 * 256) + 0b00000000;
-    if (PS4.Triangle())
-      pad_btn |= (0b00010000 * 256) + 0b00000000;
+      if (PS4.L2())
+      {
+        pad_btn |= (0b00000001 * 256) + 0b00000000;
+        pad_L2_val = constrain(PS4.L2Value(), 0, 255); // 256
+      }
+      if (PS4.R2())
+      {
+        pad_btn |= 512;                                //(0x00000010 * 256) + 0b00000000;
+        pad_R2_val = constrain(PS4.R2Value(), 0, 255); // 512
+      }
 
-    if (PS4.UpRight())
-      pad_btn |= (0b00000000 * 256) + 0b00110000;
-    if (PS4.DownRight())
-      pad_btn |= (0b00000000 * 256) + 0b01100000;
-    if (PS4.UpLeft())
-      pad_btn |= (0b00000000 * 256) + 0b10010000;
-    if (PS4.DownLeft())
-      pad_btn |= (0b00000000 * 256) + 0b11000000;
+      if (PS4.PSButton())
+        pad_btn |= (0b00000000 * 256) + 0b01010000; // same as up & down
+      if (PS4.Touchpad())
+        pad_btn |= (0b00000000 * 256) + 0b10100000; // same as left & right
 
-    if (PS4.L1())
-      pad_btn |= (0b00000100 * 256) + 0b00000000;
-    if (PS4.R1())
-      pad_btn |= (0b00001000 * 256) + 0b00000000;
-
-    if (PS4.Share())
-      pad_btn |= (0b00000000 * 256) + 0b00000001;
-    if (PS4.Options())
-      pad_btn |= (0b00000000 * 256) + 0b00001000;
-    if (PS4.L3())
-      pad_btn |= (0b00000000 * 256) + 0b00000100;
-    if (PS4.R3())
-      pad_btn |= (0b00000000 * 256) + 0b00000010;
-
-    if (PS4.PSButton())
-      pad_btn |= (0b00000000 * 256) + 0b01010000; // same as up & down
-    if (PS4.Touchpad())
-      pad_btn |= (0b00000000 * 256) + 0b00101000; // same as left & right
-
-    if (PS4.L2())
-    {
-      pad_btn |= (0b00000001 * 256) + 0b00000000;
-      pad_L2_val = constrain(PS4.L2Value(), 0, 255);
+      if (PS4.LStickX())
+      {
+        pad_stick_L_x = constrain(PS4.LStickX(), -127, 127);
+      }
+      if (PS4.LStickY())
+      {
+        pad_stick_L_y = constrain(PS4.LStickY(), -127, 127);
+      }
+      if (PS4.RStickX())
+      {
+        pad_stick_R_x = constrain(PS4.RStickX(), -127, 127);
+      }
+      if (PS4.RStickY())
+      {
+        pad_stick_R_y = constrain(PS4.RStickY(), -127, 127);
+      }
     }
-    if (PS4.R2())
-    {
-      pad_btn |= 512; //(0x00000010 * 256) + 0b00000000;
-      pad_R2_val = constrain(PS4.R2Value(), 0, 255);
-    }
+    else
+    { // ストレート
 
-    if (PS4.LStickX())
-    {
-      pad_stick_L_x = constrain(PS4.LStickX(), -127, 127);
+      if (PS4.Up())
+        pad_btn |= (0b00000000 * 256) + 0b00010000; // 16
+      if (PS4.Right())
+        pad_btn |= (0b00000000 * 256) + 0b00100000; // 32
+      if (PS4.Down())
+        pad_btn |= (0b00000000 * 256) + 0b01000000; // 64
+      if (PS4.Left())
+        pad_btn |= (0b00000000 * 256) + 0b10000000; // 128
+      if (PS4.Triangle())
+        pad_btn |= (0b00010000 * 256) + 0b00000000; // 4096
+      if (PS4.Circle())
+        pad_btn |= (0b00100000 * 256) + 0b00000000; // 8192
+      if (PS4.Cross())
+        pad_btn |= (0b01000000 * 256) + 0b00000000; // 16384
+      if (PS4.Square())
+        pad_btn |= (0b10000000 * 256) + 0b00000000; // 32768
+      if (PS4.UpRight())
+        pad_btn |= (0b00000000 * 256) + 0b00110000; // 48
+      if (PS4.DownRight())
+        pad_btn |= (0b00000000 * 256) + 0b01100000; // 96
+      if (PS4.UpLeft())
+        pad_btn |= (0b00000000 * 256) + 0b10010000; // 144
+      if (PS4.DownLeft())
+        pad_btn |= (0b00000000 * 256) + 0b11000000; // 192
+      if (PS4.L1())
+        pad_btn |= (0b00000100 * 256) + 0b00000000; // 1024
+      if (PS4.R1())
+        pad_btn |= (0b00001000 * 256) + 0b00000000; // 2048
+      if (PS4.Share())
+        pad_btn |= (0b00000000 * 256) + 0b00000001; // 1
+      if (PS4.R3())
+        pad_btn |= (0b00000000 * 256) + 0b00000010; // 2
+      if (PS4.L3())
+        pad_btn |= (0b00000000 * 256) + 0b00000100; // 4
+      if (PS4.Options())
+        pad_btn |= (0b00000000 * 256) + 0b00001000; // 8
+      // if (PS4.PSButton())
+      //   pad_btn |= (0b00000000 * 256) + 0b01010000; // same as up & down
+      // if (PS4.Touchpad())
+      //   pad_btn |= (0b00000000 * 256) + 0b10100000; // same as left & right
+      if (PS4.L2())
+      {
+        pad_btn |= (0b00000001 * 256) + 0b00000000;
+        pad_L2_val = constrain(PS4.L2Value(), 0, 255);
+      }
+      if (PS4.R2())
+      {
+        pad_btn |= 512; //(0x00000010 * 256) + 0b00000000;
+        pad_R2_val = constrain(PS4.R2Value(), 0, 255);
+      }
+      if (PS4.LStickX())
+      {
+        pad_stick_L_x = constrain(PS4.LStickX(), -127, 127);
+      }
+      if (PS4.LStickY())
+      {
+        pad_stick_L_y = constrain(PS4.LStickY(), -127, 127);
+      }
+      if (PS4.RStickX())
+      {
+        pad_stick_R_x = constrain(PS4.RStickX(), -127, 127);
+      }
+      if (PS4.RStickY())
+      {
+        pad_stick_R_y = constrain(PS4.RStickY(), -127, 127);
+      };
     }
-    if (PS4.LStickY())
-    {
-      pad_stick_L_y = constrain(PS4.LStickY(), -127, 127);
-    }
-    if (PS4.RStickX())
-    {
-      pad_stick_R_x = constrain(PS4.RStickX(), -127, 127);
-    }
-    if (PS4.RStickY())
-    {
-      pad_stick_R_y = constrain(PS4.RStickY(), -127, 127);
-    }
-
     pad_array.usval[0] = pad_btn;                            // short型で4個の配列データを持つ
     pad_array.sval[1] = pad_stick_L_x * 256 + pad_stick_L_y; // short型で4個の配列データを持つ
     pad_array.sval[2] = pad_stick_R_x * 256 + pad_stick_R_y; // short型で4個の配列データを持つ
@@ -497,8 +555,7 @@ void pad_ps4_receive()
 
 /**
  * @brief Receive input values from the wiimote
- *        and store them in the following variables:
- *        pad_btn
+ *        and store them in pad_btn.
  */
 void pad_wiimote_receive()
 {
@@ -513,53 +570,34 @@ void pad_wiimote_receive()
     }
     uint16_t button = wiimote.getButtonState();
     pad_btn = 0;
-
-    if (button & 0x0400)
-      pad_btn |= (0b00000000 * 256) + 0b00100000; // right
-    if (button & 0x0100)
-      pad_btn |= (0b00000000 * 256) + 0b01000000; // down
-    if (button & 0x0200)
-      pad_btn |= (0b00000000 * 256) + 0b00010000; // up
-    if (button & 0x0800)
-      pad_btn |= (0b00000000 * 256) + 0b10000000; // left
-
-    if (button & 0x0008)
-      pad_btn |= (0b10000000 * 256) + 0b00000000; // A
-    if (button & 0x0002)
-      pad_btn |= (0b01000000 * 256) + 0b00000000; // 1
-    if (button & 0x0001)
-      pad_btn |= (0b00100000 * 256) + 0b00000000; // 2
-    if (button & 0x0004)
-      pad_btn |= (0b00010000 * 256) + 0b00000000; // B
-
-    if (button & 0x0010)
-      pad_btn |= (0b00000000 * 256) + 0b00000001; //+
-    if (button & 0x1000)
-      pad_btn |= (0b00000000 * 256) + 0b00001000; //-
-
-    if (button & 0x0080)
-      pad_btn |= (0b00000000 * 256) + 0b01010000; // same as up & down//home
-
+    for (int i = 0; i < 16; i++)
+    {
+      uint16_t mask = 1 << i;
+      if ((JOYPAD_GENERALIZE && (PAD_WIIMOTE_SOLO[i] & button)) || (!JOYPAD_GENERALIZE && (PAD_WIIMOTE_ORIG[i] & button)))
+      {
+        pad_btn |= mask;
+      }
+    }
     pad_array.usval[0] = pad_btn; // short型で4個の配列データを持つ
   }
   if (MOUNT_JOYPAD == 6)
   {
     // NunchukState nunchuk = wiimote.getNunchukState();
-    //  int calib_l1x = 5;  // LスティックX軸のセンターのキャリブレーション値
-    //   int calib_l1y = -6; // LスティックY軸のセンターのキャリブレーション値
+    //  int calib_l1x = 5;  // キャリブレーション値
+    //   int calib_l1y = -6; // キャリブレーション値
     //    pad_stick_L = ((nunchuk.xStick + calib_l1x - 127) * 256 + (nunchuk.yStick - 127 + calib_l1y));
     //     if (nunchuk.cBtn == 1)
     //       pad_btn |= (0b00000100 * 256) + 0b00000000;
     //      if (nunchuk.zBtn == 1)
     //        pad_btn |= (0x00000001 * 256) + 0b00000000;
-    //       pad_array.sval[1] = pad_stick_L_x * 256 + pad_stick_L_y; // short型で4個の配列データを持つ
-    //       pad_array.sval[2] = pad_stick_R_x * 256 + pad_stick_R_y; // short型で4個の配列データを持つ
-    //       pad_array.sval[3] = pad_L2_val * 256 + pad_R2_val;       // short型で4個の配列データを持つ
+    //       pad_array.sval[1] = pad_stick_L_x * 256 + pad_stick_L_y;
+    //       pad_array.sval[2] = pad_stick_R_x * 256 + pad_stick_R_y;
+    //       pad_array.sval[3] = pad_L2_val * 256 + pad_R2_val;
   }
 }
 
 /**
- * @brief Send s_udp_meridim to UDP
+ * @brief Send s_udp_meridim to UDP.
  *
  */
 void udp_send()
