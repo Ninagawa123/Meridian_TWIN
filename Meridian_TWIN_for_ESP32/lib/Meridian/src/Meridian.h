@@ -7,7 +7,7 @@
  *         MIT license.
  *         Detalis: https://github.com/Ninagawa123/Meridian_TWIN
  *  @author Izumi Ninagawa
- *  @date 2023/06/28
+ *  @date 2023/07/02
  *  @version 1.0.0
  *  @copyright &copy; Izumi Ninagawa & Project Meridian
  */
@@ -196,7 +196,7 @@ namespace arduino
            * @param[in] fixed_ip_addr Fixed Wi-Fi IP of this device. (If mode_fixed_ip is True)
            * @param[in] mode_fixed_ip Use fixed Wi-Fi IP or Not.
            */
-          void print_esp_hello_ip(String wifi_send_ip, IPAddress wifi_localip, String fixed_ip_addr, bool mode_fixed_ip);
+          void print_esp_hello_ip(String wifi_send_ip, String wifi_localip, String fixed_ip_addr, bool mode_fixed_ip);
 
           /**
            * @brief Print IMU/AHRS sensor's type to serial.
