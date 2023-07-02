@@ -1,8 +1,8 @@
-#define VERSION "Meridian_TWIN_for_Teensy_2023.07.01" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2023.07.02" // バージョン表示
 
-// Meridian_TWIN_for_Teensy_20220617 By Izumi Ninagawa
+// Meridian_TWIN_for_Teensy_20220702 By Izumi Ninagawa
 // MIT Licenced.
-// Meridan TWIN Teensy4.0用スクリプト　20230420版
+// Meridan TWIN Teensy4.0用スクリプト
 // 220723 内部計算時に degree*100 を単位として使用するように変更
 // 220723 センサーの関数を集約
 // 220723 サーボオン時にリモコン左十字キー入力で首を左右に振る動作サンプル入り
@@ -19,6 +19,7 @@
 // 230430 変数名 idl_d,idr_dをidl_tgt,idr_tgtにした.
 // 230430 変数名 idl_mt,idl_mtをidl_mount,idl_mountにした.
 // 230617 ライブラリをESP32側と統合.
+// 230702 KRC-5FHリモコン等のROS準拠/オリジナル切り替えモードを追加(JOYPAD_GENERALIZE)
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
@@ -696,24 +697,32 @@ uint64_t joypad_read(int mount_joypad, uint64_t pre_val, int polling, bool joypa
             {
                 int button_1 = buttonData;
 
-                if ((button_1 & 15) == 15)
-                { // 左側十字ボタン全部押しなら start押下とみなす
-                    pad_btn_tmp += 1;
+                if (JOYPAD_GENERALIZE)
+                {
+
+                    if ((button_1 & 15) == 15)
+                    { // 左側十字ボタン全部押しなら start押下とみなす
+                        pad_btn_tmp += 1;
+                    }
+                    else
+                    {
+                        // 左側の十字ボタン
+                        pad_btn_tmp += (button_1 & 1) * 16 + ((button_1 & 2) >> 1) * 64 + ((button_1 & 4) >> 2) * 32 + ((button_1 & 8) >> 3) * 128;
+                    }
+                    if ((button_1 & 368) == 368)
+                        pad_btn_tmp += 8; // 右側十字ボタン全部押しなら select押下とみなす
+                    else
+                    {
+                        // 右側十字ボタン
+                        pad_btn_tmp += ((button_1 & 16) >> 4) * 4096 + ((button_1 & 32) >> 5) * 16384 + ((button_1 & 64) >> 6) * 8192 + ((button_1 & 256) >> 8) * 32768;
+                    }
+                    // L1,L2,R1,R2
+                    pad_btn_tmp += ((button_1 & 2048) >> 11) * 2048 + ((button_1 & 4096) >> 12) * 512 + ((button_1 & 512) >> 9) * 1024 + ((button_1 & 1024) >> 10) * 256;
                 }
                 else
                 {
-                    // 左側の十字ボタン
-                    pad_btn_tmp += (button_1 & 1) * 16 + ((button_1 & 2) >> 1) * 64 + ((button_1 & 4) >> 2) * 32 + ((button_1 & 8) >> 3) * 128;
+                    pad_btn_tmp = button_1;
                 }
-                if ((button_1 & 368) == 368)
-                    pad_btn_tmp += 8; // 右側十字ボタン全部押しなら select押下とみなす
-                else
-                {
-                    // 右側十字ボタン
-                    pad_btn_tmp += ((button_1 & 16) >> 4) * 4096 + ((button_1 & 32) >> 5) * 16384 + ((button_1 & 64) >> 6) * 8192 + ((button_1 & 256) >> 8) * 32768;
-                }
-                // L1,L2,R1,R2
-                pad_btn_tmp += ((button_1 & 2048) >> 11) * 2048 + ((button_1 & 4096) >> 12) * 512 + ((button_1 & 512) >> 9) * 1024 + ((button_1 & 1024) >> 10) * 256;
             }
             /* 共用体用の64ビットの上位16ビット部をボタンデータとして書き換える */
             uint64_t updated_val;
