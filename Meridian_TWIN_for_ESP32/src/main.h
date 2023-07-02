@@ -1,11 +1,10 @@
-
 #ifndef __MERIDIAN_LOCAL_FUNC__
 #define __MERIDIAN_LOCAL_FUNC__
 
 #include <Arduino.h>
 
 //================================================================================================================
-//---- Functions -------------------------------------------------------------------------------------------------
+//---- 関 数 各 種  -----------------------------------------------------------------------------------------------
 //================================================================================================================
 
 /**
@@ -42,13 +41,12 @@ void pad_ps4_receive();
 
 /**
  * @brief Receive input values from the wiimote
- *        and store them in the following variables:
- *        pad_btn
+ *        and store them in pad_btn.
  */
 void pad_wiimote_receive();
 
 /**
- * @brief Send s_udp_meridim to UDP
+ * @brief Send s_udp_meridim to UDP.
  *
  */
 void udp_send();
