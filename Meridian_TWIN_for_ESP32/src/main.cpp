@@ -37,7 +37,7 @@
 #include "main.h"
 
 /* ライブラリ導入 */
-#include "Meridian.h"
+#include <Meridian.h>
 MERIDIANFLOW::Meridian mrd; // ライブラリのクラスを mrdという名前でインスタンス化
 #include <Arduino.h>
 #include <IPAddress.h>
