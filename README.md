@@ -201,9 +201,9 @@ ESP32は主に通信系のWifiとBluetoothリモコンの設定になります.
 #  Meridian consoleを実行する  
 Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.  
 https://github.com/Ninagawa123/Meridian_console  
-![meridian_console](https://user-images.githubusercontent.com/8329123/190897481-e073a30d-e475-40f3-bdf4-cfa3e188bf8f.jpg)
+![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img_20230701.jpg)  
   
-#  Unity版デモを実行する
+#  Unity版デモを実行する  
 （※Mac/Winで動作を確認.Winではファイアーウォールの設定が必要です.）  
   
 ###  UnityHubに登録して起動する  
