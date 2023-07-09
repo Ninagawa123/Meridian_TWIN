@@ -76,14 +76,14 @@ PlatformIOのファイルメニューより「フォルダーを開く」とし,
 
 主なファイル構成は下記になります.  
   
-MERIDIAN_TWIN_FOR_TEENSY40  
+<p>MERIDIAN_TWIN_FOR_TEENSY40  
   ├lib  
   │ └ ICSClass_V210 (サーボ用ライブラリ)    
   ├ src  
   │  ├ config.h (Meridian設定ファイル)  
   │  ├ main.cpp (Meridian本体)  
   │  └ main.h  (Meridianヘッダファイル)    
-  └ platfomio.ini (ボード設定ファイル)   
+  └ platfomio.ini (ボード設定ファイル)   </p>
 
 #### Teensy4.0に導入されるライブラリ
 下記のライブラリはファイルを開く際に自動的に導入されます.  
@@ -135,14 +135,14 @@ PlatformIOのファイルメニューより「フォルダーを開く」とし,
 
 主なファイル構成は下記になります.  
   
-MERIDIAN_TWIN_FOR_ESP
+<p>MERIDIAN_TWIN_FOR_ESP  
   ├ lib  
   │  └ ESP32Wiimote (wiiリモコン用ライブラリ)    
   ├ src  
   │  ├ config.h (Meridian設定ファイル)  
   │  ├ main.cpp (Meridian本体)  
   │  └ main.h  (Meridianヘッダファイル)    
-  └ platfomio.ini (ボード設定ファイル)   
+  └ platfomio.ini (ボード設定ファイル)   </p>
 
 #### ESP32に導入されるライブラリ  
 下記のライブラリはファイルを開く際に自動的に導入されます.  
