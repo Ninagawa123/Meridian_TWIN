@@ -201,7 +201,7 @@ ESP32は主に通信系のWifiとBluetoothリモコンの設定になります.
 #  Meridian consoleを実行する  
 Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.  
 https://github.com/Ninagawa123/Meridian_console  
-![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img_20230701.jpg)  
+![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img.jpg)  
   
 #  Unity版デモを実行する  
 （※Mac/Winで動作を確認.Winではファイアーウォールの設定が必要です.）  
@@ -262,10 +262,10 @@ $ python Meridian_console.py
   
 MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画面のデータが小さく変動し続けます.  
 ここでMeridian consoleの「->ROS1」にチェックを入れるとロボットRoid.1の姿が現れ,  ロボットのサーボ位置が画面の表示に反映されます.  
-さらに「->ESP32」にチェックを入れると, ロボットのサーボを手で動かした時にロボットにも反映されます.  
+そのまま（他のチェックボックスが空の状態）で, ロボットのサーボを手で動かした時にロボットにも反映されます.  
   
-また, 「->ROS1」「<-DEMO」にチェックを入れると, 画面内のロボットがサインカーブで構成されたダンスのデモを行います.  
-ここでさらに「ESP32<-」「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
+また, 「DEMO」「Enable」にチェックを入れると, 画面内のロボットがサインカーブで構成されたダンスのデモを行います.  
+ここでさらに「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
   
   
 # トラブルシューティング
