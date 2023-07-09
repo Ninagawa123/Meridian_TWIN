@@ -8,7 +8,7 @@ Meridian計画はヒューマノイドの制御システムについてのオー
 Meridim配列を中間プロトコルとして既存のシステムの間に挟むことで, 複数社のコマンドサーボやセンサ, Unityなどの開発環境, ROSで使用可能な多岐にわたるシミュレーターなどを自由に繋ぎ合わせることができます.  
   
 当リポジトリで取り扱う ”Meridian_TWIN" はESP32とTeensy4.0を併用するタイプで, 対応ボードはMeridian Board Type.Kとなります.  
-また, ESP32DeckitC単体で動作する簡易バージョンのMeridian_LITE（対応ボードはMeridian Board -LITE-）も開発済みです.  
+また, ESP32DeckitC単体で動作する簡易バージョンのMeridian_LITE(対応ボードはMeridian Board -LITE-)も開発済みです.  
 Meridianは今後も用途に応じて様々なハードウェア, ソフトウェアに対応させていく予定です.  
   
 [![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)  
@@ -23,15 +23,18 @@ Meridianは今後も用途に応じて様々なハードウェア, ソフトウ�
 専用ボードの回路図も公開しており, 自作したりブレットボードで再現することが可能です.  
 動作可能なサンプルプログラムも当リポジトリ内で公開しています.  
   
-全体の仕組みや概要は以下のnoteにまとめています.  
+Meridianの概要や変数やライブラリ関数について, 下記に集約中です.  
+https://ninagawa123.github.io/Meridian_info/
+
+また, 全体の仕組みや開発進捗は以下のnoteにまとめています.  
 https://note.com/ninagawa123/n/ncfde7a6fc835  
   
   
 # System composition  
   
 Meridian_TWINは, ハードウェアとして通信用のESP32DevKitC, 制御用のTeensy4.0, それらを連結する専用ボードのMeiridian Boardで構成されます.  
-デモは近藤科学のKRSサーボ(通信速度1.25Mbps）に対応しており, Meiridian Board Type.KはKHR-3HV用に搭載することができます.  
-PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可能です. またUnity(Mac/Win版）でもヒューマノイドの姿勢をリアルタイムに反映させることができます.  
+デモは近藤科学のKRSサーボ(通信速度1.25Mbps)に対応しており, Meiridian Board Type.KはKHR-3HV用に搭載することができます.  
+PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可能です. またUnity(Mac/Win版)でもヒューマノイドの姿勢をリアルタイムに反映させることができます.  
   
 <img width="500" alt="TypeK" src="https://user-images.githubusercontent.com/8329123/180233435-4ed5fcb0-a2c6-4e73-94b1-b842ffb79af4.png">  
   
@@ -49,40 +52,58 @@ PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可
 Teensy4.0, ESP32DevKitCにそれぞれのファイルを書き込みます.  
 以下の説明の理解にはPlatformIOやTeensy4.0, ESP32の扱いについてのごく初歩的な知識が必要です.
 PlatformIOを初めて使うような方向けの導入手順については後日まとめる予定です.  
+普段Arduino IDEを使っている方のためのPlatformIOの導入Tipsについては下記にまとめました.  
+https://qiita.com/Ninagawa_Izumi/items/6f58d9dbfdfe99be9c13  
+    
   
-  
+# ファイルの準備  
+当リポジトリ右上の「\<\>code」ボタンより「Download ZIP」を選択し,  
+ファイルをお手元のPCの適切なディレクトリに展開します.  
+(もちろんgit cloneなど他の手順でも構いません.)  
+
 ## Teensy4.0の準備  
-#### PlatformIOでTeensy4.0用のプロジェクトファイルを作成する
-PlatformIOで"MeridianTWIN_Teensy40"等の名前で新規プロジェクトを作成し, BoardはTeensy4.0, FrameWorkにはArduinoを選択します.  
+#### PlatformIOでTeensy4.0用のプロジェクトファイルを開く  
+PlatformIOのファイルメニューより「フォルダーを開く」とし, 先ほど展開したファイルの中から「Meridian_TWIN_for_Teensy40」のディレクトリを選択します.  
+(Meridian_TWIN_for_ESP32と間違えないようご注意ください.)  
+
+主なファイル構成は下記になります.  
   
-<img width="400" alt="SS 2373" src="https://user-images.githubusercontent.com/8329123/180238336-6cb5456f-cd9d-43a8-813c-5e792fdfd662.png">  
-  
-#### ライブラリを導入する
-- **TsyDMASPI by hideakitai** (PlatformIO上でインストール可)
-- **MPU6050 by Electronic Cats** (PlatformIO上でインストール可)
-- **Adafruit_BNO055** (PlatformIO上でインストール可)
-- **Adafruit BusIO** (PlatformIO上でインストール可)
-- **Adafruit Unified Sensor** (PlatformIO上でインストール可)
+MERIDIAN_TWIN_FOR_TEENSY40  
+  ├lib  
+  │ └ ICSClass_V210 (サーボ用ライブラリ)    
+  ├ src  
+  │  ├ config.h (Meridian設定ファイル)  
+  │  ├ main.cpp (Meridian本体)  
+  │  └ main.h  (Meridianヘッダファイル)    
+  └ platfomio.ini (ボード設定ファイル)   
+
+#### Teensy4.0に導入されるライブラリ
+下記のライブラリはファイルを開く際に自動的に導入されます.  
+- **Meridian by Ninagawa123** 
+- **TsyDMASPI by hideakitai** 
+- **MPU6050 by Electronic Cats** 
+- **Adafruit_BNO055** 
+- **Adafruit BusIO** 
+- **Adafruit Unified Sensor** 
 - **IcsClass_V210** (詳細は下記)
 
 ##### IcsClass_V210の導入について
+近藤科学のICSサーボのためのライブラリもMITライセンスに基づき同梱していますが,  
+最新版については下記をご参照ください.  
 https://kondo-robot.com/faq/ics-library-a2  
-より, ICS_Library_for_Arduino_V2.1をDLします.  
-一度解凍すると中に IcsClass_V210.zip が現れるのでさらに解凍し,「IcsClass_V210」のフォルダ状態にします.  
-それを当プロジェクトのlibディレクトリに配置する. 配置はPlatformIO左側にあるエクスプローラーの該当箇所へのドラッグ＆ドロップで可能です.  
   
 #### サーボのマウントを設定する
-Teensy4.0ソースコードの サーボ設定 の項目で, 各サーボのマウントありなしを変更できます.  
+Teensy4.0用のソースコードの「src/config.h」を開き,155行目ごろから始まるサーボ設定のところで,各サーボのマウントありなしを変更します.   
 接続しているサーボIDは1に, 接続していないIDは0に設定します.  
 サーボのマウント設定により, KHR-3HVのフルセットがなくてもICSサーボが最低１つあればデモをテストすることができます.  
-サーボ設定に対し１箇所でも接続されていない箇所があると動作しません.  
   
 #### ロボットの姿勢とサーボを設定する  
 接続するKRSサーボの通信速度設定をすべて**1.25Mbps**に変更します.  
   
 また, サーボの0度状態を下記の姿勢に, サーボの＋回転方向も下図の矢印方向に合わせます.  
 左半身および体の中心は下図に順次つつ, 右半身については左半身のミラー方向に回転に合わせます.  
-サーボの回転方向は, サーボの内部の設定変更が望ましいですが, Teensy4.0ソースコードの サーボ設定 の項目でも変更できます.  
+サーボの回転方向は, サーボの内部の設定変更が望ましいですが, 「src/config.h」でも変更できます.  
+(ESP32用のファイルにも同名のconfig.hが存在しますのでご注意ください.)  
 <img width="600" alt="motorccw" src="https://user-images.githubusercontent.com/8329123/147812253-e6cbe388-f70a-445f-80c0-b4cd899aa15a.png">
   
 #### サーボを接続する
@@ -95,84 +116,93 @@ MPU/AHRSセンサをMeridianボードのI2Cピンに接続します.
 センサーがない場合は, Teensy4.0のソースコード設定でセンサの接続をオフにすることができます.  
   
 #### Teensy4.0にソースコードを書き込む
-https://github.com/Ninagawa123/Meridian_TWIN/tree/main/Meridian_TWIN_for_Teensy40  
-の**src/main.cpp**, **platformio.ini** をPlatformIOのプロジェクトファイルに上書きし, Teensy4.0に書き込みます.  
-詳細な設定についてはソースコード内のコメントに記しています.  
-  
+Teensy4.0とPCをUSBケーブルで接続し, PlatformIOの下にある「チェックマーク」のボタンを押して内容をビルドし,[SUCCESS]が表示されることを確認します. その後, 「→」ボタンを押してTeensy4.0にコードを書き込みます.(ボードは自動的に認識されます.)  
+センサーやリモコンなどの機器の接続について, 「src/config.h」にて詳細に設定できます.    
   
 ## ESP32DevkitCの準備
-PlatformIOで"MeridianTWIN_ESP32"等の名前で新規プロジェクトを作成し, BoardはEspressif ESP32 Dev Module, FrameWorkにはArduinoを選択します.  
+
+#### PlatformIOでESP32用のプロジェクトファイルを開く  
+PlatformIOのファイルメニューより「フォルダーを開く」とし, 先ほど展開したファイルの中から「Meridian_TWIN_for_ESP32」のディレクトリを選択します.  
+(Meridian_TWIN_for_Teensy40と間違えないよう注意.)  
+
+主なファイル構成は下記になります.  
   
-#### ESP32書き込み用のCP210ドライバを導入する
+MERIDIAN_TWIN_FOR_ESP
+  ├ lib  
+  │  └ ESP32Wiimote (wiiリモコン用ライブラリ)    
+  ├ src  
+  │  ├ config.h (Meridian設定ファイル)  
+  │  ├ main.cpp (Meridian本体)  
+  │  └ main.h  (Meridianヘッダファイル)    
+  └ platfomio.ini (ボード設定ファイル)   
+
+#### ESP32に導入されるライブラリ  
+下記のライブラリはファイルを開く際に自動的に導入されます.  
+- **Meridian@^0.1.0 by Ninagawa123**  
+- **ESP32DMASPI@0.1.2 by hideakitai**  
+  
+PlatformIOで"MeridianTWIN_ESP32"等の名前で新規プロジェクトを作成し, BoardはEspressif ESP32 Dev Module, FrameWorkにはArduinoを選択します.  
+    
+#### 追加のライブラリを導入し、修正する  
+- **PS4Controller.h**  
+PS4リモコン用のライブラリを追加導入します.(https://github.com/aed3/PS4-esp32)  
+libのインポートなどにルールがあり、下記にまとめました.  
+またPS4ライブラリをESP32用に修正する方法もまとめています  
+https://qiita.com/Ninagawa_Izumi/items/d8966092fe2abd3cba79  
+
+##### 接続先のPCのIPアドレスを調べる
+windowsのコマンドプロンプトを開き,  
+$ ipconfig （Ubuntuの場合は$ ip a もしくは $ ifconfig）  
+と入力しコマンド実行します.  
+IPv4アドレスが表示されます(192.168.1.xxなど)  
+Macの場合は画面右上のwifiマークから”ネットワーク”環境設定...で表示されます.  
+  
+##### WIFIを設定する  
+「src/config.h」 /\* Wifiアクセスポイントの設定 \*/ のところで,  
+接続したいWIFIのアクセスポイントのSSIDとパスワードを入力します.  
+アクセスポイントは5GHzではなく**2.4GHz**に対応している必要があります.  
+また, 先ほど調べた接続先のPCのIPアドレスも記入します.  
+  
+#### ESP32書き込み用のCP210ドライバを導入する  
 すでにお手元でESP32 DevkitCに書き込みを行ったことのあるPCであれば問題ないですが、
 初めての場合、「CP210x USB - UART ブリッジ VCP ドライバ」が必要になる場合があります。
 未導入の方は下記サイトより適切なものをインストールをしてください。
 https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
   
-#### ESP32にライブラリを導入し、修正する
-- **ESP32DMASPI by hideakitai バージョン0.1.2**  
-アリマーク→QUICK ACCESS→ PIO Home → Open → Libraries の検索窓で「ESP32DMASPI」  
-「ESP32DMASPI by Hideaki Tai」を選び、バージョンは0.1.2とする（※0.2.0では動かない） 「Add to Project」でプロジェクトを選択し「Add」ボタンで導入.  
-  
-- **PS4Controller.h**  
-libのインポートなどにルールがあり、下記にまとめました。  
-またPS4ライブラリをESP32用に修正する方法もまとめています。  
-https://qiita.com/Ninagawa_Izumi/items/d8966092fe2abd3cba79  
-  
-- **ESP32Wiimote.h**  
-https://github.com/hrgraf/ESP32Wiimote  
-を前述のPS4リモコンと同様に導入しますが, 階層構造が違うので変更します.  
-解凍してできた「ESP32Wiimote-master」をlibに格納し,  
-その「ESP32Wiimote-master」の中に「src」というディレクトリを作り,  
-ESP32Wiimote.cpp, ESP32Wiimote.h, TinyWiimote.cpp, TinyWiimote.h, library.properties  
-を格納します.  
-  
-#### ソースコードを修正する
-https://github.com/Ninagawa123/Meridian_TWIN/blob/main/Meridian_TWIN_for_ESP32/  
-の**src/main.cpp**, **platformio.ini** をPlatformIOのプロジェクトファイルに上書きします.  
-通信関係の設定を修正する必要があるので, 下記にて必要項目を調べ, 書き換えます.  
-  
-##### 接続先のPCのIPアドレスを調べる
-windowsのコマンドプロンプトを開き,  
-$ ipconfig （Ubuntuの場合は$ ip a もしくは $ ifconfig）  
-と入力しコマンド実行します.  
-IPv4アドレスが表示されます（192.168.1.xxなど)  
-Macの場合は画面右上のwifiマークから”ネットワーク”環境設定...で表示されます.  
-  
-##### WIFIを設定する  
-main.cppの /\* 頻繁に変更するであろう変数 #DEFINE \*/ のところで,  
-接続したいWIFIのアクセスポイントのSSIDとパスワードを入力します.  
-アクセスポイントは5GHzではなく**2.4GHz**に対応している必要があります.  
-また, 先ほど調べた接続先のPCのIPアドレスも記入します.  
-  
 #### ESP32にソースコードを書き込む  
 ここで一度, 更新したファイルを**セーブしESP32に書き込みます**.  
+ESP32とPCをUSBケーブルで接続し, PlatformIOの下にある「チェックマーク」のボタンを押して内容をビルドし,[SUCCESS]が表示されることを確認します. その後, 「→」ボタンを押してESP32にコードを書き込みます.(ボードは自動的に認識されます.)  
   
 #### ESP32のIPアドレスを調べる  
 PlatformIOで画面下のコンセントアイコンからシリアルモニタを開き, ESP32DevKitC本体のENボタンを押します.  
 wifi接続に成功すると  
-> Hello, This is Meridian_TWIN_for_ESP32_20220721.  
+> Hello, This is Meridian_TWIN_for_ESP32_20230710.  
 > WiFi connected to  => xxxxxxx  
 > PC's IP address is  => 192.168.1.xxx  
 > ESP32's IP address is  => 192.168.1.xxx  
 > ESP32's Bluetooth Mac Address is => xx:xx:xx:xx:xx:xx  
   
-と表示され, ESP32本体のIPアドレスが表示されます.このxxの番号をメモしておきます.  
+と表示され, 「ESP32's IP address =>」にESP32本体のIPアドレスが表示されます.このxxの番号をメモしておきます.  
   
 #### ESP32にソースコードを書き込む  
-ソースコードにESP32のBluetooth Mac Addressを記入します.  
+PS4リモコンを使用する場合は, 「src/config.h」にESP32のBluetooth Mac Addressを記入します.  
 更新したファイルをセーブし, ESP32に書き込みます.  
 　　
 #### platformio.ini  
-上書きしたplatformio.iniでは以下の設定を行なっています.
+platformio.iniでは以下の設定を行なっています.
 - platformのバージョン指定
-- PCとのSerial通信速度設定を50000に指定
+- PCとのSerial通信速度設定を115200に指定
 - ライブラリの指定
 - OTA（無線経由のプログラム書き込み機能）の無効化によるパーティション拡張
   
-#### 各種設定の確認    
+#### 設定の確認    
 他にも, 接続するリモコンやシリアルモニタなどについての設定が可能です.  
-各ソースコード内のコメントを参考に適宜変更してください.  
+Bluetoothリモコンを接続しない場合は必ずMOUNT_JOYPADを0に設定してください.(リモコンの受信待ちでMeridianの通信速度が大幅に低下します.)  
+  
+#### 各種設定の確認  
+Teensy40, ESP32両方の「src/config.h」内のコメントを参考に適宜変更してください.  
+Teensy40は主にサーボやセンサーなどのハードウェア接続の設定や制御システムの基本設定,  
+ESP32は主に通信系のWifiとBluetoothリモコンの設定になります.  
   
 これでMeridian Board側の設定は完了です.  
   
@@ -180,9 +210,9 @@ wifi接続に成功すると
 #  Meridian consoleを実行する  
 Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.  
 https://github.com/Ninagawa123/Meridian_console  
-![meridian_console](https://user-images.githubusercontent.com/8329123/190897481-e073a30d-e475-40f3-bdf4-cfa3e188bf8f.jpg)
+![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img.jpg)  
   
-#  Unity版デモを実行する
+#  Unity版デモを実行する  
 （※Mac/Winで動作を確認.Winではファイアーウォールの設定が必要です.）  
   
 ###  UnityHubに登録して起動する  
@@ -223,7 +253,7 @@ Raspberry pi4でROS-noeticを導入する手順については下記にまとめ
 https://qiita.com/Ninagawa_Izumi/items/e84e9841f7a048832fcc  
   
 ### URDFの表示テスト
-https://github.com/Ninagawa123/roid1_urdf  
+https://github.com/Ninagawa123/roid1
 まず, こちらのREADMEにしたがってRvizでロボットを表示できるか確認します.  
   
 
@@ -241,10 +271,10 @@ $ python Meridian_console.py
   
 MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画面のデータが小さく変動し続けます.  
 ここでMeridian consoleの「->ROS1」にチェックを入れるとロボットRoid.1の姿が現れ,  ロボットのサーボ位置が画面の表示に反映されます.  
-さらに「->ESP32」にチェックを入れると, ロボットのサーボを手で動かした時にロボットにも反映されます.  
+そのまま（他のチェックボックスが空の状態）で, ロボットのサーボを手で動かした時にロボットにも反映されます.  
   
-また, 「->ROS1」「<-DEMO」にチェックを入れると, 画面内のロボットがサインカーブで構成されたダンスのデモを行います.  
-ここでさらに「ESP32<-」「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
+また, 「DEMO」「Enable」にチェックを入れると, 画面内のロボットがサインカーブで構成されたダンスのデモを行います.  
+ここでさらに「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
   
   
 # トラブルシューティング
@@ -262,15 +292,28 @@ Meridianボードの電源入力にバッテリーや安定化電源で電力を
   
 ### 既知の課題  
   
-####  Meridian Board(2022.07.21)
+####  Meridian Board(2023.07.10)
 - 各経路で, 0.1%以下の通信エラーが発生します.Meridianのシステムでは通信エラー時はすぐに次のデータを使用することでこのエラーをフォローしています.
-- PS4コントローラの接続時, データスキップが5%~10%ほど生じます.
-- Wiiコントローラの接続時はデータのスキップはほとんど発生しませんが, 初回の接続が確立しない場合が多いです.
-
-####  Meridian console版(2022.05.04)
-Meridian Consoleで読み取った関節データをROS1に出力し, rosbagでjointstateを記録することは可能のようですが, rosbug playとした場合にMeridian Console経由で再生しようとするとカクツキが生じています.改善すべく, 原因を探っています. 
+- PS4コントローラの接続時, データスキップが5%~15%ほど生じます.
+- Wiiコントローラの接続時はデータのスキップはほとんど発生しません.
 
 ####  Meridian Board Type.K のフリーピン結線時の注意  
 Meridian Board Type.Kには未接続のピン穴を複数設けてあり, 背面からマイコンの入出力と半田付けするすることでIOポートとして利用可能です.その際の注意点を以下にメモします.  
 - ESP32のRX0, TX0はPCとのUSBシリアルで使用されています.  
 - ESP32のGPIO6-11は内部フラッシュとの接続されておりIOとしては使用できないようです.  
+- SPIの機器追加がうまくいかない場合は, 機器側の信号線をプルアップすることで動作が安定することがあります.  
+  
+####  ICSサーボの取得値のゆれ  
+近藤科学のICS通信では, 取得するデータが常時小刻みに揺れています.
+このためUnityやRviz,Meridian Consoleで表示した際にも, ピクピクと揺れます.  
+(表示側である程度の揺れを吸収する場合もあります.)  
+
+####  Meridian Board でサーボのデータが途切れ途切れになる  
+USBバスパワーのみで動作させている場合など, サーボへの電力供給が足りていない場合, サーボがリセットを繰り返すことにより返信データが途切れやすくなります. ボードに正しく電源を接続してください.  
+
+####  Meridian Board でサーボが全く反応しない  
+サーボ接続時にコネクタの方向を間違えることで, 半二重回路が破損します.  
+万が一回路が破損した場合には,3系統の回路で代用するか,修理用のキット(BOOTHで販売)で回路を交換してください.    
+
+####  9軸センサのBNO055がうまく動作しない  
+Teensy4.0との相性問題で,通信中に正しいデータが取得できなくなります.改善方法を探っています.  
