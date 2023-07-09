@@ -54,8 +54,8 @@
 #define MONITOR_SEQ 0    // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
 
 /* Wifiアクセスポイントの設定 */
-#define WIFI_AP_SSID "xxxxxxxx"    // アクセスポイントのWIFI_AP_SSID
-#define WIFI_AP_PASS "xxxxxxxx"     // アクセスポイントのパスワード
+#define WIFI_AP_SSID "xxxxxx"       // アクセスポイントのWIFI_AP_SSID
+#define WIFI_AP_PASS "xxxxxx"       // アクセスポイントのパスワード
 #define WIFI_SEND_IP "192.168.1.xx" // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
 #define UDP_SEND_PORT 22222         // 送り先のポート番号
 #define UDP_RESV_PORT 22224         // このESP32のポート番号
@@ -68,7 +68,7 @@
 #define FIXED_IP_SUBNET "255. 255. 255. 0" // ESP32のIPアドレスを固定する場合のサブネット
 
 /* リモコンの設定 */
-#define MOUNT_JOYPAD 5                  // ジョイパッドの搭載 (※KRC-5FHはTeensy側に接続)
+#define MOUNT_JOYPAD 0                  // ジョイパッドの搭載 (※KRC-5FHはTeensy側に接続)
                                         // 0:なし, 1:SBDBT(未), 2:KRC-5FH, 3:PS3(未), 4:PS4 ,5:Wii_yoko, 6:Wii+Nun(未), 7:WiiPRO(未), 8:Xbox(未)
                                         // 2:KRC-5FH : Teensy側に接続のため0を選ぶ。通信エラーなし。利用可。
                                         // 4:PS4 : 通信エラーが 10%程度発生。要修正。
@@ -81,7 +81,7 @@
 #define BT_REMOVE_BONDED_DEVICES 0      // 0でバインドデバイス情報表示, 1でバインドデバイス情報クリア(BTリモコンがペアリング接続できない時に使用)
 constexpr unsigned short PAD_WIIMOTE_SOLO[16] = {0x1000, 0x0080, 0x0000, 0x0010, 0x0200, 0x0400, 0x0100, 0x0800, 0x0000, 0x0000, 0x0000, 0x0000, 0x0008, 0x0001, 0x0002, 0x0004};
 constexpr unsigned short PAD_WIIMOTE_ORIG[16] = {0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0000, 0x0000, 0x0080};
-                                        // リモコン受信ボタンデータの変換テーブル
+// リモコン受信ボタンデータの変換テーブル
 
 // PC接続関連設定
 #define SERIAL_PC_BPS 115200 // ESP-PC間のシリアル速度（モニタリング表示用）
