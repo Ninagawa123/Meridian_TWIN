@@ -1,6 +1,6 @@
-#define VERSION "Meridian_TWIN_for_Teensy_2023.07.02" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2023.07.10" // バージョン表示
 
-// Meridian_TWIN_for_Teensy_20220702 By Izumi Ninagawa
+// Meridian_TWIN_for_Teensy_20220710 By Izumi Ninagawa
 // MIT Licenced.
 // Meridan TWIN Teensy4.0用スクリプト
 // 220723 内部計算時に degree*100 を単位として使用するように変更

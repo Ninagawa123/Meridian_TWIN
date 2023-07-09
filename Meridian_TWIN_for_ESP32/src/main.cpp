@@ -1,7 +1,7 @@
-// Meridian_TWIN_for_ESP32_20230702 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20230710 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ　20230702版
+// Meridan TWIN ESP32用スケッチ　20230710版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.

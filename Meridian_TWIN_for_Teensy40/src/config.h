@@ -70,9 +70,9 @@
 /*
   [00]      マスターコマンド デフォルトは90 で配列数も同時に示す
   [01]      シーケンシャルカウンタ
-  [02]-[04] IMU/AHRS:acc＿x,acc＿y,acc＿z    加速度x,y,z
-  [05]-[07] IMU/AHRS:gyro＿x,gyro＿y,gyro＿z ジャイロx,y,z
-  [08]-[10] IMU/AHRS:mag＿x,mag＿y,mag＿z    磁気コンパスx,y,z
+  [02]-[04] IMU/AHRS:acc_x,acc_y,acc_z    加速度x,y,z
+  [05]-[07] IMU/AHRS:gyro_x,gyro_y,gyro_z ジャイロx,y,z
+  [08]-[10] IMU/AHRS:mag_x,mag_y,mag_z    磁気コンパスx,y,z
   [11]      IMU/AHRS:temp                   温度
   [12]-[14] IMU/AHRS:DMP ROLL,PITCH,YAW     DMP推定値 ロール,ピッチ,ヨー
   [15]      ボタンデータ1
@@ -101,7 +101,7 @@
 #define FRAME_DURATION 10       // 1フレームあたりの単位時間（単位ms）
 
 /* 動作チェックモード */
-#define CHECK_SD_RW 1 // 起動時のSDカードリーダーの読み書きチェック
+#define CHECK_SD_RW 0 // 起動時のSDカードリーダーの読み書きチェック
 
 /* シリアルモニタリング */
 #define MONITOR_ALL_ERROR 0 // Teensyでのシリアル表示:全経路の受信エラー率
