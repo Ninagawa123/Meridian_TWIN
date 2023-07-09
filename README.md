@@ -120,6 +120,7 @@ Teensy4.0とPCをUSBケーブルで接続し, PlatformIOの下にある「チェ
 センサーやリモコンなどの機器の接続について, 「src/config.h」にて詳細に設定できます.    
   
 ## ESP32DevkitCの準備
+
 #### PlatformIOでESP32用のプロジェクトファイルを開く  
 PlatformIOのファイルメニューより「フォルダーを開く」とし, 先ほど展開したファイルの中から「Meridian_TWIN_for_ESP32」のディレクトリを選択します.  
 (Meridian_TWIN_for_Teensy40と間違えないよう注意.)  
@@ -140,13 +141,15 @@ MERIDIAN_TWIN_FOR_ESP
 - **Meridian@^0.1.0 by Ninagawa123**  
 - **ESP32DMASPI@0.1.2 by hideakitai**  
   
+PlatformIOで"MeridianTWIN_ESP32"等の名前で新規プロジェクトを作成し, BoardはEspressif ESP32 Dev Module, FrameWorkにはArduinoを選択します.  
+    
 #### 追加のライブラリを導入し、修正する  
 - **PS4Controller.h**  
 PS4リモコン用のライブラリを追加導入します.(https://github.com/aed3/PS4-esp32)  
 libのインポートなどにルールがあり、下記にまとめました.  
 またPS4ライブラリをESP32用に修正する方法もまとめています  
 https://qiita.com/Ninagawa_Izumi/items/d8966092fe2abd3cba79  
-    
+
 ##### 接続先のPCのIPアドレスを調べる
 windowsのコマンドプロンプトを開き,  
 $ ipconfig （Ubuntuの場合は$ ip a もしくは $ ifconfig）  
@@ -159,6 +162,12 @@ Macの場合は画面右上のwifiマークから”ネットワーク”環境�
 接続したいWIFIのアクセスポイントのSSIDとパスワードを入力します.  
 アクセスポイントは5GHzではなく**2.4GHz**に対応している必要があります.  
 また, 先ほど調べた接続先のPCのIPアドレスも記入します.  
+  
+#### ESP32書き込み用のCP210ドライバを導入する  
+すでにお手元でESP32 DevkitCに書き込みを行ったことのあるPCであれば問題ないですが、
+初めての場合、「CP210x USB - UART ブリッジ VCP ドライバ」が必要になる場合があります。
+未導入の方は下記サイトより適切なものをインストールをしてください。
+https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
   
 #### ESP32にソースコードを書き込む  
 ここで一度, 更新したファイルを**セーブしESP32に書き込みます**.  
