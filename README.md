@@ -256,7 +256,10 @@ Unityを起動した後, Meridianボードを起動します.
   
 ### ROS noeticの導入
 お手持ちの環境にROSを導入してください.  
-Raspberry pi4でROS-noeticを導入する手順については下記にまとめました.
+以下の公式のインストール方法をご参照ください.
+http://wiki.ros.org/ja/noetic/Installation/Ubuntu
+  
+また、Raspberry pi4でROS-noeticを導入する手順については下記にまとめました.
 https://qiita.com/Ninagawa_Izumi/items/e84e9841f7a048832fcc  
   
 ### URDFの表示テスト
