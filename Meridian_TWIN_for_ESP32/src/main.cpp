@@ -627,7 +627,7 @@ void udp_receive()
 void bt_settings()
 {
   /* Bluetoothの初期化 */
-  if (MOUNT_JOYPAD == 4) // ※現状、リモコンがPS4の時のみこの処理を実施
+  if (true) // ※常にBluetoothの初期化とアドレス表示を実行する設定
   {
 
     initBluetooth();
