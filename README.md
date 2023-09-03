@@ -221,35 +221,12 @@ https://github.com/Ninagawa123/Meridian_console
 ![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img.jpg)  
   
 #  Unity版デモを実行する  
-（※Mac/Winで動作を確認.Winではファイアーウォールの設定が必要です.）  
   
-###  UnityHubに登録して起動する  
-https://github.com/Ninagawa123/Meridian_core/tree/main/Unity_demo  
-フォルダ「Unity_demo」の中のMeridian_unity_demo_win_20220210.zipをDLし解凍します.  
-UnityHubを開き, ProjectsのADDで解凍済みの「Meridian_unity_demo_win_20220210」フォルダを指定します.  
-UnityHubに登録されたらプロジェクトを起動します.（Unityのバージョンは**2020.3.25f1(LTS)** です.） 
+Meridian_TWINとUnityを連携させることができます.  
+下記のリポジトリの内容をお試しください.  
+[https://github.com/Ninagawa123/Meridian_Unity/tree/main](https://github.com/Ninagawa123/Meridian_Unity/tree/main)  
   
-###  UnityのソースコードのIPアドレスを書き換える
-画面下の「Project」→「Assets」→「Script」よりUdp_handler_sendをダブルクリックして開きます（VScodeなどが立ち上がります）  
-ソースコード9行目のconst string HOST = "192.168.1.xx"; にESP32DevKitCのIPアドレスを記入し, セーブします.
-
-###  ESP32のIPアドレスを書き換える
-これまでの手順で設定済みの場合はそのままでOKです.
-
-### Windowsの場合はファイアーウォールを設定する
-Windowsスタートメニュー→「設定」→「更新とセキュリティ」→「Windowsセキュリティ」→「ファイアーウォールとネットワーク保護」→「詳細設定」→「受信の規則」の一覧から「Unity 2020.3.25f1 Editor」の「パブリック」となっているものを選択しダブルクリック.「接続を許可する」にチェックを入れOKする.
-
-###  UnityとMeridianボードを起動する
-Unityを起動した後, Meridianボードを起動します.
-通信が成立していればロボットの関節にシンクロして画面の中のモデルが動きます.
-
-画面の「Send」にチェックを入れるとUnityからロボットを操作することができます.
-スライドバーに対応したサーボが動きます.またスライドバーの上のテキストボックスに直接数値を入力することができます.
-数値の単位はdegreeとなります.
-
-「Action」にチェックを入れるとUnityからロボットにサンプルのモーションを送信します.
-左半身の各関節角度をsinカーブで増減させます.
-このモーションはParamMaster.csの160行目-167行目で設定しているので, 適宜書き換えてお試しください.
+<img width="500" alt="Meridian_Unity" src="https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/5b486e83-40b8-4556-8a98-8d0ac643effd">
 
   
 # ROS版デモを実行する
