@@ -1,12 +1,12 @@
-// Meridian_TWIN_for_ESP32_20230710 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20231231 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ　20230710版
+// Meridan TWIN ESP32用スケッチ 20231231版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.
 // 動作が大幅に安定し通信エラーはほぼゼロ。
-// PCからのリモコン受信をTeensyにも反映できるように調整　ここまで2022年までの改訂.
+// PCからのリモコン受信をTeensyにも反映できるように調整 ここまで2022年までの改訂.
 // 2023.05.03 変数を調整し,関数とライブラリを使うように変更
 // 2023.05.03 各種設定はconfig.hからまとめて行えるようにした.
 // 2023.05.03 シーケンス番号を0-60000に設定, udp受信値についてチェック.
@@ -17,6 +17,8 @@
 // 2023.07.01 処理順についての日本語コメントの整理
 // 2023.07.01 関数コメントの整理
 // 2023.07.01 リモコン関連の調整
+// 2023.12.31 key.hの分離
+// 2023.12.31 stepモードに対応
 
 // 【課題】2022.07.30
 // PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する.
@@ -24,7 +26,7 @@
 // よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
 // I2C経由の無線でさまざまなコントローラーに接続できるものを開発中。
 
-#define VERSION "Meridian_TWIN_for_ESP32_20230701." // バージョン表示
+#define VERSION "Meridian_TWIN_for_ESP32_20231231." // バージョン表示
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
@@ -32,6 +34,7 @@
 
 /* コンフィグファイルの読み込み */
 #include "config.h"
+#include "keys.h"
 
 /* ヘッダファイルの読み込み */
 #include "main.h"
@@ -74,6 +77,7 @@ TaskHandle_t thp[4];        // マルチスレッドのタスクハンドル格�
 bool flag_spi_ready = true; // SPI送信の順番制御用
 bool flag_udp_rsvd = true;  // UDPスレッドでの受信完了フラグ
 bool flag_udp_busy = false; // UDPスレッドでの受信中フラグ（送信抑制）
+bool flag_udp_board_passive = false; // UDP受信のパッシブモード（0:デフォルト, 1:パッシブ/PC側が通信周期制御）
 int mrd_seq_r_expect = 0;   // フレーム毎に前回受信値に+１として受信値と比較（-30000~29999)
 
 /* Meridim配列用の共用体の設定 */
@@ -126,7 +130,11 @@ void setup()
   /* シリアルモニタ表示 */
   Serial.begin(SERIAL_PC_BPS);
   delay(120); // シリアルの開始を待ち安定化させるためのディレイ（ほどよい）
-  mrd.print_esp_hello_start(String(VERSION), String(SERIAL_PC_BPS), String(WIFI_AP_SSID));
+ 
+  /* 起動メッセージ1 */
+  mrd.print_esp_hello_start(VERSION, String(SERIAL_PC_BPS), WIFI_AP_SSID);
+  //mrd.print_esp_hello_start(String(VERSION), String(SERIAL_PC_BPS), String(WIFI_AP_SSID));
+
 
   /* WiFiの初期化と開始 */
   WiFi.disconnect(true, true); // WiFi接続をリセット
@@ -142,6 +150,8 @@ void setup()
   {           // https://www.arduino.cc/en/Reference/WiFiStatus 返り値一覧
     delay(1); // 接続が完了するまでループで待つ
   }
+
+  /* 起動メッセージ2 */
   mrd.print_esp_hello_ip(WIFI_SEND_IP, WiFi.localIP().toString(), FIXED_IP_ADDR, MODE_FIXED_IP);
 
   /* UDP通信の開始 */
@@ -170,7 +180,7 @@ void setup()
   slave.setDataMode(SPI_MODE3);
   slave.setMaxTransferSize(MSG_BUFF + 4);
   slave.setDMAChannel(2); // 専用メモリの割り当て(1か2のみ)
-  slave.setQueueSize(1);  // キューサイズ　とりあえず1
+  slave.setQueueSize(1);  // キューサイズ とりあえず1
   slave.begin();          // 引数を指定しなければデフォルトのSPI（SPI2,HSPIを利用）ピン番号は CS: 15, CLK: 14, MOSI: 13, MISO: 12
   delay(100);             // この行は削除できそう
 
@@ -239,7 +249,10 @@ void loop()
         flag_udp_rsvd = true;
         mrd.monitor_check_flow("UdpRsvd", MONITOR_FLOW); // 動作チェック用シリアル表示
       }
-      if (udp_time_count > UDP_TIMEOUT) // UDPの受信待ちのタイムアウト
+      if (flag_udp_board_passive){// パッシブモードならUDP待ちでタイムアウトしない
+        mrd.monitor_check_flow("*Passive mode.", MONITOR_FLOW); // 動作チェック用シリアル表示
+      }
+      else if(udp_time_count > UDP_TIMEOUT) // UDPの受信待ちのタイムアウト
       {
         mrd.monitor_check_flow("*UdpResvTimeOut", MONITOR_FLOW); // 動作チェック用シリアル表示
         break;
@@ -297,27 +310,39 @@ void loop()
 
     // [check!] ここで s_spi_meridim にはチェック済みの r_udp_meridim が転記され, ESP32UDP受信エラーフラグも入った状態.
 
-    //////// [ 6 ]  S P I 送 信 デ ー タ 作 成  ///////////////////////////////////////////
+    //////// [ 6 ]  受 信 値 に よ る 処 理  ///////////////////////////////////////////
+    /* @[6-1] マスターコマンドによる処理 */
+    if (s_spi_meridim.sval[0] == MCMD_BOARD_TRANSMIT_PASSIVE) // ボードが受信を待ち返信するモード（PC側が定刻送信）
+    {
+      flag_udp_board_passive = 1;
+      }
+
+    if (s_spi_meridim.sval[0] == MCMD_BOARD_TRANSMIT_ACTIVE) // ボードが受信を待ち返信するモード（PC側が定刻送信）
+      {
+        flag_udp_board_passive = 0;
+      }
+
+    //////// [ 7 ]  S P I 送 信 デ ー タ 作 成  ///////////////////////////////////////////
     mrd.monitor_check_flow("[6]\n", MONITOR_FLOW); // 動作チェック用シリアル表示
 
-    /* @[6-1] ユーザー定義の送信データの書き込み */
+    /* @[7-1] ユーザー定義の送信データの書き込み */
     // ・Teensyへ送るデータをこのパートで作成, 書き込み.
     // ・今回はとくに何もしない.
 
-    /* @[6-2] リモコンデータの書き込み */
+    /* @[7-2] リモコンデータの書き込み */
     for (int i = 0; i < 4; i++)
     { // Meridim配列のリモコン該当箇所に、ESPで受信したリモコン値を加算する
       s_spi_meridim.sval[i + 15] = r_udp_meridim.sval[i + 15] | pad_array.usval[i];
     }
 
-    /* @[6-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）*/
+    /* @[7-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）*/
     // → すでにPCから受け取った値がs_spi_meridim.sval[1]に入っているのでここでは何もしない.
 
-    /* @[6-4] チェックサムの追記 */
+    /* @[7-4] チェックサムの追記 */
     s_spi_meridim.sval[MSG_SIZE - 1] = mrd.cksm_val(s_spi_meridim.sval, MSG_SIZE);
     // [check!] ここでSPI送信データ"s_spi_meridim"はチェックサムが入り完成している状態.
 
-    /* @[6-5] 完成したSPI送信データをDMAに転記*/
+    /* @[7-5] 完成したSPI送信データをDMAに転記*/
     memcpy(s_spi_meridim_dma, s_spi_meridim.bval, MSG_BUFF + 4);
     flag_spi_ready = true; // SPI送信の順番制御用
                            // [check!] この時点で 次回のSPI送受信に備え、DMAにデータが格納された状態.
@@ -609,8 +634,8 @@ void udp_send()
 
 /**
  * @brief Check Check received UDP packets.
- *  　　　　When a reception is complete, store the values in the union r_udp_meridim
- *  　　　　and set the flag_udp_rsvd flag to true.
+ *        When a reception is complete, store the values in the union r_udp_meridim
+ *        and set the flag_udp_rsvd flag to true.
  */
 void udp_receive()
 {
