@@ -106,7 +106,7 @@
 /* シリアルモニタリング */
 #define MONITOR_ALL_ERROR 0  // Teensyでのシリアル表示:全経路の受信エラー率
 #define MONITOR_SERVO_ERR 0  // 通信エラーのあったサーボIDの表示(0:OFF, 1:ON)
-#define MONITOR_SEQ_NUMBER 1 // シーケンス番号の比較表示(0:OFF, 1:ON)
+#define MONITOR_SEQ_NUMBER 0 // シーケンス番号の比較表示(0:OFF, 1:ON)
 #define MONITOR_JOYPAD 0     // Teensyでのシリアル表示:リモコンのデータ
 
 /* 各種ハードウェアのマウント有無 */
