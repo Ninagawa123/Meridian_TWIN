@@ -104,9 +104,10 @@
 #define CHECK_SD_RW 0 // 起動時のSDカードリーダーの読み書きチェック
 
 /* シリアルモニタリング */
-#define MONITOR_ALL_ERROR 0 // Teensyでのシリアル表示:全経路の受信エラー率
-#define MONITOR_SERVO_ERR 0 // 通信エラーのあったサーボIDの表示(0:OFF, 1:ON)
-#define MONITOR_JOYPAD 0    // Teensyでのシリアル表示:リモコンのデータ
+#define MONITOR_ALL_ERROR 0  // Teensyでのシリアル表示:全経路の受信エラー率
+#define MONITOR_SERVO_ERR 0  // 通信エラーのあったサーボIDの表示(0:OFF, 1:ON)
+#define MONITOR_SEQ_NUMBER 1 // シーケンス番号の比較表示(0:OFF, 1:ON)
+#define MONITOR_JOYPAD 0     // Teensyでのシリアル表示:リモコンのデータ
 
 /* 各種ハードウェアのマウント有無 */
 #define MOUNT_ESP32 1        // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
@@ -140,10 +141,13 @@
 #define JOYPAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
 
 /* 固定値, マスターコマンド定義 */
-#define TRIM_ADJUST_MODE 0              // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
-#define MCMD_UPDATE_YAW_CENTER 10002    // センサの推定ヨー軸を現在値センターとしてリセット
-#define MCMD_ENTER_TRIM_MODE 10003      // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
-#define MCMD_CLEAR_SERVO_ERROR_ID 10004 // 通信エラーのサーボのIDをクリア(MSG_ERR_l)
+#define TRIM_ADJUST_MODE 0                // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
+#define MCMD_UPDATE_YAW_CENTER 10002      // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_ENTER_TRIM_MODE 10003        // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
+#define MCMD_CLEAR_SERVO_ERROR_ID 10004   // 通信エラーのサーボのIDをクリア(MSG_ERR_l)
+#define MCMD_BOARD_TRANSMIT_ACTIVE 10005  // ボードが定刻で送信を行うモード（PC側が受信待ち.デフォルト）
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
+#define MCMD_RESET_MRD_TIMER 10007        // フレーム管理時計mrd_t_milを現在時刻にリセット
 
 /* ピンアサイン */
 #define PIN_ERR_LED 2       // LED用 処理が時間内に収まっていない場合に点灯
