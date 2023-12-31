@@ -53,6 +53,20 @@
 #define MONITOR_FLOW 0   // シリアルモニタでフローを表示（0:OFF, 1:ON）
 #define MONITOR_SEQ 0    // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
 
+/* Wifiアクセスポイントの設定 */
+#define WIFI_AP_SSID "xxxxxx"       // アクセスポイントのWIFI_AP_SSID
+#define WIFI_AP_PASS "xxxxxx"       // アクセスポイントのパスワード
+#define WIFI_SEND_IP "192.168.1.xx" // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
+#define UDP_SEND_PORT 22222         // 送り先のポート番号
+#define UDP_RESV_PORT 22224         // このESP32のポート番号
+#define UDP_TIMEOUT 4               // UDPの待受タイムアウト（単位ms,推奨値0）
+
+/* ESP32のIPアドレスを固定する場合は下記の5項目を設定 */
+#define MODE_FIXED_IP 0                    // IPアドレスを固定するか（0:NO, 1:YES）
+#define FIXED_IP_ADDR "192. 168. 1. xx"    // ESP32のIPアドレスを固定する場合のESPのIPアドレス
+#define FIXED_IP_GATEWAY "192. 168. 1. xx" // ESP32のIPアドレスを固定する場合のルーターのゲートウェイ
+#define FIXED_IP_SUBNET "255. 255. 255. 0" // ESP32のIPアドレスを固定する場合のサブネット
+
 /* リモコンの設定 */
 #define MOUNT_JOYPAD 0                  // ジョイパッドの搭載 (※KRC-5FHはTeensy側に接続)
                                         // 0:なし, 1:SBDBT(未), 2:KRC-5FH, 3:PS3(未), 4:PS4 ,5:Wii_yoko, 6:Wii+Nun(未), 7:WiiPRO(未), 8:Xbox(未)
@@ -61,6 +75,7 @@
                                         // 5:Wii_yoko : wiiリモコン単体。通信エラーが 1%以下発生。利用可。
 #define JOYPAD_POLLING 10               // ジョイパッドの問い合わせフレーム間隔(PSは10)
 #define JOYPAD_GENERALIZE 1             // ジョイパッドの入力値をPS系に一般化する
+#define BT_MAC_ADDR "xx:xx:xx:xx:xx:xx" // ESP32自身のBluetoothMACアドレス（本プログラムを実行しシリアルモニタで確認）
                                         // PS4リモコン(Bluetooth)を使わない場合は不要.
 #define BT_PAIR_MAX_DEVICES 20          // BT接続デバイスの記憶可能数
 #define BT_REMOVE_BONDED_DEVICES 0      // 0でバインドデバイス情報表示, 1でバインドデバイス情報クリア(BTリモコンがペアリング接続できない時に使用)
@@ -74,9 +89,3 @@ constexpr unsigned short PAD_WIIMOTE_ORIG[16] = {0x0100, 0x0200, 0x0400, 0x0800,
 /* UDP通信のオンオフ */
 #define UDP_SEND 1    // PCへのデータ送信を行うか（0:OFF, 1:ON, 通常は1）
 #define UDP_RESEIVE 1 // PCからのデータ受信を行うか（0:OFF, 1:ON, 通常は1）
-#define UDP_TIMEOUT 2 // UDPの待受タイムアウト（単位ms,推奨値0）
-
-/* マスターコマンド定義 */
-#define MCMD_BOARD_TRANSMIT_ACTIVE 10005 // ボードが定刻で送信を行うモード（デフォルト設定.PC側が受信待ち）
-#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
-#define MCMD_RESET_MRD_TIMER 10007 // フレーム管理時計mrd_t_milを現在時刻にリセット
