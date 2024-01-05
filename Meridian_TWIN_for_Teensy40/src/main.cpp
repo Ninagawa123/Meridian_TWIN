@@ -1,6 +1,6 @@
-#define VERSION "Meridian_TWIN_for_Teensy_2023.12.31" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_2024.01.05" // バージョン表示
 
-// Meridian_TWIN_for_Teensy_20231231 By Izumi Ninagawa
+// Meridian_TWIN_for_Teensy_20240105 By Izumi Ninagawa
 // MIT Licenced.
 // Meridan TWIN Teensy4.0用スクリプト
 // 220723 内部計算時に degree*100 を単位として使用するように変更
@@ -20,7 +20,6 @@
 // 230430 変数名 idl_mt,idl_mtをidl_mount,idl_mountにした.
 // 230617 ライブラリをESP32側と統合.
 // 230702 KRC-5FHリモコン等のROS準拠/オリジナル切り替えモードを追加(JOYPAD_GENERALIZE)
-// 231231 UDPを受信待ちするPassiveモードに対応
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
@@ -72,9 +71,10 @@ File myFile;                                                                    
 int servo_num_max = max(max(MOUNT_SERVO_NUM_L, MOUNT_SERVO_NUM_R), MOUNT_SERVO_NUM_3); // サーボ送受信のループ処理数（L系R系で多い方）
 
 /* フラグ用変数 */
-bool flag_imuahrs_available = true; // メインが結果値を読み取る瞬間、サブスレッドによる書き込みをウェイト
-bool flag_udp_board_passive = 0;    // UDP受信のパッシブモード（0:active/デフォルト, 1:passive/PC側が通信周期制御)
-bool flag_rest_meridian_time = 0;   // フレーム管理時計をリセットするかどうか(パッシブモードの終了時にリセットする設定)
+bool flag_imuahrs_available = true;   // メインが結果値を読み取る瞬間、サブスレッドによる書き込みをウェイト
+bool flag_udp_board_passive = false;  // UDP受信のパッシブモード（0:active/デフォルト, 1:passive/PC側が通信周期制御)
+bool flag_reset_meridian_time = false;// フレーム管理時計をリセットするかどうか(パッシブモードの終了時にリセットする設定)
+bool flag_stop_board_during = false;  // ボードの末端処理をmeridim[2]秒, meridim[3]ミリ秒だけ止める。
 
 /* タイマー管理用の変数 */
 long frame_ms = FRAME_DURATION;  // 1フレームあたりの単位時間(ms)
@@ -87,7 +87,6 @@ int frame_count_max = 360000;    // フレームカウントの最大値
 int joypad_polling_count = 0;    // JOYPADのデータを読みに行くためのフレームカウント
 int mrd_seq_s_increment = 0;     // フレーム毎に0-59999をカウントし、送信
 int mrd_seq_r_expect = 0;        // フレーム毎に0-59999をカウントし、受信値と比較
-int mrd_seq_r_past = -1;         // 前回受信したシーケンス番号のキープ
 
 /* エラーカウント用 */
 int err_esp_pc = 0;   // PCの受信エラー（ESP32からのUDP）
@@ -259,7 +258,7 @@ void loop()
     {
         TsyDMASPI0.transfer(s_spi_meridim_dma.bval, r_spi_meridim_dma.bval, MSG_BUFF + 4);
 
-        // @[1-2] ESP32からのSPI受信データチェックサム確認と成否のシリアル表示
+        // [1-2] ESP32からのSPI受信データチェックサム確認と成否のシリアル表示
         if (mrd.cksm_rslt(r_spi_meridim_dma.sval, MSG_SIZE))
         { // チェックサムがOKならバッファから受信配列に転記
             for (int i = 0; i < MSG_SIZE; i++)
@@ -275,26 +274,6 @@ void loop()
 
         // @[1-3] シーケンス番号チェック
         mrd_seq_r_expect = mrd.seq_predict_num(mrd_seq_r_expect); // シーケンス番号予想値の生成
-
-        if (flag_udp_board_passive)
-        {
-             mrd_seq_r_expect--; // パッシブモード時には予測値を調整
-        }
-
-        // @[1-4] シーケンス番号の前回との比較. 差分がない場合は一切の処理を行わない
-        // if (mrd_seq_r_past != int(r_spi_meridim.usval[MRD_SEQENTIAL]))
-        //{
-
-        if (MONITOR_SEQ_NUMBER) // シーケンス番号の比較表示
-        {
-            Serial.print("exp ");
-            Serial.print(mrd_seq_r_expect);
-            Serial.print(" : ");
-            Serial.print(int(r_spi_meridim.usval[MRD_SEQENTIAL]));
-            Serial.print(" revd, passive_mode ");
-            Serial.println(bool(flag_udp_board_passive));
-        }
-
         if (mrd.seq_compare_nums(mrd_seq_r_expect, int(r_spi_meridim.usval[MRD_SEQENTIAL])))
         {
             r_spi_meridim.bval[MSG_ERR_u] &= 0b11111101; // [MSG_ERR] 9番ビット[Teensy受信のスキップ検出]をサゲる.
@@ -306,266 +285,251 @@ void loop()
             err_tsy_skip++;
         }
 
-        // @[1-5] 通信エラー処理(エラーカウンタへの反映)
+        // [1-4] 通信エラー処理(エラーカウンタへの反映)
         countup_errors();
 
         //////// < 2 > シ リ ア ル モ ニ タ リ ン グ 表 示 処 理  //////////////////////////////
-        // @[2-1] 全経路のエラー数の表示
+        // [2-1] 全経路のエラー数の表示
         if (monitor_all_error)
         {
             print_error_monitor();
         }
+    }
 
-        //////// < 3 > 積 み 残 し 処 理  ////////////////////////////////////////////////////
-        // @[3-1] 積み残しがあればここで処理
+    //////// < 3 > 積 み 残 し 処 理  ////////////////////////////////////////////////////
+    // [3-1] 積み残しがあればここで処理
 
-        //////// < 4 > 受 信 S P I デ ー タ を 送 信 S P I デ ー タ に 転 記 ////////////////////
-        // @[4-1] 受信データを送信データに転記
-        memcpy(s_spi_meridim.bval, r_spi_meridim.bval, MSG_BUFF + 4);
+    //////// < 4 > 受 信 S P I デ ー タ を 送 信 S P I デ ー タ に 転 記 ////////////////////
+    // [4-1] 受信データを送信データに転記
+    memcpy(s_spi_meridim.bval, r_spi_meridim.bval, MSG_BUFF + 4);
 
-        //////// < 5 > セ ン サ ー 類 読 み 取 り /////////////////////////////////////////////
-        // @[5-1] IMU/AHRSについてはタイマー割り込みで別途処理
+    //////// < 5 > セ ン サ ー 類 読 み 取 り /////////////////////////////////////////////
+    // [5-1] IMU/AHRSについてはタイマー割り込みで別途処理
 
-        //////// < 6 > コ ン ト ロ ー ラ の 読 み 取 り　///////////////////////////////////////
-        // @[6-1] コントローラの値を取得して送信データに格納する
-        if (MOUNT_JOYPAD == 1)
-        { // SBDBTが接続設定されていれば受信チェック（未実装）
-            Serial.print("SBDBT connection has not been programmed yet.");
-        }
-        else if (MOUNT_JOYPAD == 2)
-        { // KRC-5FH+KRR-5FHが接続設定されていれば受信チェック
-            pad_array.ui64val[0] = joypad_read(MOUNT_JOYPAD, pad_array.ui64val[0], JOYPAD_POLLING, JOYPAD_REFRESH);
-            r_spi_meridim.sval[MRD_CONTROL_BUTTONS] |= pad_array.usval[0];
-            s_spi_meridim.sval[MRD_CONTROL_BUTTONS] |= pad_array.usval[0];
-        }
-        else
-        {
-            pad_array.usval[0] = r_spi_meridim.sval[15]; // をセットする
-        }
-        if (MONITOR_JOYPAD)
-        {
-            mrd.monitor_joypad(pad_array.usval);
-        }
-
-        //////// < 7 > Teensy 内 部 で 位 置 制 御 す る 場 合 の 処 理 /////////////////////////
-        // @[7-1] マスターコマンドの判定により工程の実行orスキップを分岐
-        execute_MasterCommand();
-
-        // @[7-2] 前回のラストに読み込んだサーボ位置をサーボ配列に書き込む
-        for (int i = 0; i < servo_num_max; i++)
-        {
-            idl_tgt_past[i] = idl_tgt[i];                       // 前回のdegreeをキープ
-            idr_tgt_past[i] = idr_tgt[i];                       // 前回のdegreeをキープ
-            idl_tgt[i] = r_spi_meridim.sval[i * 2 + 21] * 0.01; // 通常のdegreeが一旦入る
-            idr_tgt[i] = r_spi_meridim.sval[i * 2 + 51] * 0.01; // 通常のdegreeが一旦入る
-        }
-
-        // @[7-3] Teensyによる次回動作の計算
-        // リモコンの左十字キー左右で首を30度左右にふるサンプル
-        if (r_spi_meridim.sval[MRD_CONTROL_BUTTONS] == 32)
-        {
-            idl_tgt[0] = -30.0; // -30度
-        }
-        else if (r_spi_meridim.sval[MRD_CONTROL_BUTTONS] == 128)
-        {
-            idl_tgt[0] = 30.0; // +30度
-        }
-
-        // @[7-4] センサーデータによる動作へのフィードバック加味
-
-        // @[7-5] 移動時間の決定
-
-        // @[7-6] Teensy内計算による次回動作をMeridim配列に書き込む
-
-        //////// < 8 > サ ー ボ コ マ ン ド の 書 き 込 み /////////////////////////////////////
-
-        // @[8-1] Meridim配列をサーボ命令に変更
-
-        // @[8-2] サーボコマンドの配列に書き込み
-
-        // @[8-3] サーボデータのICS送信および返り値を取得
-
-        //////// < 9 > サ ー ボ 動 作 の 実 行 /////////////////////////////////////////////
-        // @ [9-1] サーボ命令の実行およびサーボ角度戻り値の取得
-        for (int i = 0; i < servo_num_max; i++) // ICS_L系統の処理
-        {                                       // 接続したサーボの数だけ繰り返す。最大は15
-            if (idl_mount[i])
-            {
-                if (r_spi_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
-                {
-                    k = krs_L.setPos(i, mrd.Deg2Krs(idl_tgt[i], idl_trim[i], idl_cw[i]));
-                    if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-                    {
-                        k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
-                        idl_err[i]++;
-                        if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
-                        {
-                            s_spi_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
-                            mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
-                        }
-                    }
-                    else
-                    {
-                        idl_err[i] = 0;
-                    }
-                }
-                else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
-                {
-                    k = krs_L.setFree(i); // サーボからの返信信号を受け取れていれば値を更新
-                    if (k == -1)          // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-                    {
-                        k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
-                        idl_err[i]++;
-                        if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
-                        {
-                            s_spi_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
-                            mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
-                        }
-                    }
-                    else
-                    {
-                        idl_err[i] = 0;
-                    }
-                }
-                idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i], idl_cw[i]);
-            }
-            delayMicroseconds(2);
-
-            if (idr_mount[i])
-            {
-                if (r_spi_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
-                {
-                    k = krs_R.setPos(i, mrd.Deg2Krs(idr_tgt[i], idr_trim[i], idr_cw[i]));
-                    if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-                    {
-                        k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
-                        idr_err[i]++;
-                        if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
-                        {
-                            s_spi_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
-                            mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
-                        }
-                    }
-                    else
-                    {
-                        idr_err[i] = 0;
-                    }
-                }
-                else // 1以外ならとりあえずサーボを脱力し位置を取得
-                {
-                    k = krs_R.setFree(i);
-                    if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-                    {
-                        k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
-                        idr_err[i]++;
-                        if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
-                        {
-                            s_spi_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
-                            mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
-                        }
-                    }
-                    else
-                    {
-                        idr_err[i] = 0;
-                    }
-                }
-                idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i], idr_cw[i]);
-            }
-            delayMicroseconds(2);
-        }
-
-        //////// < 10 > S P I 送 信 用 の Meridim 配 列 を 作 成 す る //////////////////////////
-        // @[10-1] マスターコマンドを配列に格納
-        s_spi_meridim.sval[0] = MSG_SIZE; // デフォルトのマスターコマンドは配列数
-
-        // @[10-2] 移動時間を配列に格納
-        // s_spi_meridim.sval[1] = 10 ;//(移動時間）
-
-        // @[10-3] センサー値を配列に格納
-        imuahrs_store();
-
-        // @[10-4] サーボIDごとにの現在位置もしくは計算結果を配列に格納
-        for (int i = 0; i < 15; i++)
-        {
-            s_spi_meridim.sval[i * 2 + 20] = 0;                             // 仮にここでは各サーボのコマンドを脱力&ポジション指示(0)に設定
-            s_spi_meridim.sval[i * 2 + 21] = mrd.float2HfShort(idl_tgt[i]); // 仮にここでは最新のサーボ角度degreeを格納
-        }
-        for (int i = 0; i < 15; i++)
-        {
-            s_spi_meridim.sval[i * 2 + 50] = 0;                             // 仮にここでは各サーボのコマンドを脱力&ポジション指示(0)に設定
-            s_spi_meridim.sval[i * 2 + 51] = mrd.float2HfShort(idr_tgt[i]); // 仮にここでは最新のサーボ角度degreeを格納
-        }
-
-        // @[10-5] Meridimのシーケンス番号をカウントアップして送信用に格納
-        mrd_seq_s_increment = mrd.seq_increase_num(mrd_seq_s_increment);
-        s_spi_meridim.usval[1] = mrd_seq_s_increment;
-
-        // @[10-6] カスタムデータを配列格納
-
-        // @[10-7] チェックサムを計算
-        s_spi_meridim.sval[MSG_SIZE - 1] = mrd.cksm_val(s_spi_meridim.sval, MSG_SIZE);
-
-        // @[10-8] 送信データのSPIバッファへのバイト型書き込み
-        for (int i = 0; i < MSG_BUFF; i++)
-        {
-            s_spi_meridim_dma.bval[i] = s_spi_meridim.bval[i];
-        }
-
-        //////// < 11 > フ レ ー ム 終 端 処 理 ///////////////////////////////////////////////
-
-        // 今回の受信シーケンス番号をキープ
-        mrd_seq_r_past = r_spi_meridim.usval[MRD_SEQENTIAL];
-
-        // 必要に応じてフレーム管理時計mrd_t_milを現在時刻にリセット
-        if (flag_rest_meridian_time)
-        {
-            now_t_mil = (long)millis();
-            mrd_t_mil = now_t_mil + 1;
-            flag_rest_meridian_time = 0;
-        }
-
-        // @[11-1] この時点で１フレーム内に処理が収まっていない時の処理
-        now_t_mil = (long)millis(); // 現在時刻を取得
-        now_t_mic = (long)micros(); // 現在時刻を取得
-        if (now_t_mil > mrd_t_mil)
-        {                              // 現在時刻がフレーム管理時計を超えていたらアラートを出す
-            Serial.print("* delay: "); // シリアルに遅延msを表示
-            Serial.println(now_t_mil - mrd_t_mil);
-            digitalWrite(PIN_ERR_LED, HIGH); // 処理落ちが発生していたらLEDを点灯
-        }
-        else
-        {
-            digitalWrite(PIN_ERR_LED, LOW); // 処理が収まっていればLEDを消灯
-        }
-
-        // @[11-2] この時点で時間が余っていたら時間消化。時間がオーバーしていたらこの処理を自然と飛ばす。
-        if (!flag_udp_board_passive) // パッシブモードの時は時間消化なし
-        {
-            while ((mrd_t_mil - now_t_mil) >= 1)
-            {
-                delay(1);
-                now_t_mil = (long)millis();
-            }
-            while (now_t_mic < mrd_t_mil * 1000)
-            {
-                now_t_mic = (long)micros(); // 現在時刻を取得
-            }
-        }
-
-        // @[11-3]フレーム管理時計mercのカウントアップ
-        mrd_t_mil = mrd_t_mil + frame_ms;             // フレーム管理時計を1フレーム分進める
-        frame_count = frame_count + frame_count_diff; // サインカーブ等動作用のフレームカウントアップ
-        if (frame_count > frame_count_max)            // カウンターが最大値ならゼロリセット
-        {
-            frame_count = 0;
-        }
+    //////// < 6 > コ ン ト ロ ー ラ の 読 み 取 り　///////////////////////////////////////
+    // [6-1] コントローラの値を取得して送信データに格納する
+    if (MOUNT_JOYPAD == 1)
+    { // SBDBTが接続設定されていれば受信チェック（未実装）
+        Serial.print("SBDBT connection has not been programmed yet.");
+    }
+    else if (MOUNT_JOYPAD == 2)
+    { // KRC-5FH+KRR-5FHが接続設定されていれば受信チェック
+        pad_array.ui64val[0] = joypad_read(MOUNT_JOYPAD, pad_array.ui64val[0], JOYPAD_POLLING, JOYPAD_REFRESH);
+        r_spi_meridim.sval[MRD_CONTROL_BUTTONS] |= pad_array.usval[0];
+        s_spi_meridim.sval[MRD_CONTROL_BUTTONS] |= pad_array.usval[0];
     }
     else
     {
-        delay(1);
+        pad_array.usval[0] = r_spi_meridim.sval[15]; // をセットする
+    }
+    if (MONITOR_JOYPAD)
+    {
+        mrd.monitor_joypad(pad_array.usval);
+    }
+
+    //////// < 7 > Teensy 内 部 で 位 置 制 御 す る 場 合 の 処 理 /////////////////////////
+    // @[7-1] マスターコマンドの判定により工程の実行orスキップを分岐
+    execute_MasterCommand();
+
+    // @[7-2] 前回のラストに読み込んだサーボ位置をサーボ配列に書き込む
+    for (int i = 0; i < servo_num_max; i++)
+    {
+        idl_tgt_past[i] = idl_tgt[i];                       // 前回のdegreeをキープ
+        idr_tgt_past[i] = idr_tgt[i];                       // 前回のdegreeをキープ
+        idl_tgt[i] = r_spi_meridim.sval[i * 2 + 21] * 0.01; // 通常のdegreeが一旦入る
+        idr_tgt[i] = r_spi_meridim.sval[i * 2 + 51] * 0.01; // 通常のdegreeが一旦入る
+    }
+
+    // @[7-3] Teensyによる次回動作の計算
+    // リモコンの左十字キー左右で首を30度左右にふるサンプル
+    if (r_spi_meridim.sval[MRD_CONTROL_BUTTONS] == 32)
+    {
+        idl_tgt[0] = -30.0; // -30度
+    }
+    else if (r_spi_meridim.sval[MRD_CONTROL_BUTTONS] == 128)
+    {
+        idl_tgt[0] = 30.0; // +30度
+    }
+
+    // @[7-4] センサーデータによる動作へのフィードバック加味
+
+    // @[7-5] 移動時間の決定
+
+    // @[7-6] Teensy内計算による次回動作をMeridim配列に書き込む
+
+    //////// < 8 > サ ー ボ コ マ ン ド の 書 き 込 み /////////////////////////////////////
+
+    // @[8-1] Meridim配列をサーボ命令に変更
+
+    // @[8-2] サーボコマンドの配列に書き込み
+
+    // @[8-3] サーボデータのICS送信および返り値を取得
+
+    //////// < 9 > サ ー ボ 動 作 の 実 行 /////////////////////////////////////////////
+    // @ [9-1] サーボ命令の実行およびサーボ角度戻り値の取得
+    for (int i = 0; i < servo_num_max; i++) // ICS_L系統の処理
+    {                                       // 接続したサーボの数だけ繰り返す。最大は15
+        if (idl_mount[i])
+        {
+            if (r_spi_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
+            {
+                k = krs_L.setPos(i, mrd.Deg2Krs(idl_tgt[i], idl_trim[i], idl_cw[i]));
+                if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
+                    idl_err[i]++;
+                    if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+                    {
+                        s_spi_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
+                        mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+                    }
+                }
+                else
+                {
+                    idl_err[i] = 0;
+                }
+            }
+            else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
+            {
+                k = krs_L.setFree(i); // サーボからの返信信号を受け取れていれば値を更新
+                if (k == -1)          // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
+                    idl_err[i]++;
+                    if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+                    {
+                        s_spi_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
+                        mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+                    }
+                }
+                else
+                {
+                    idl_err[i] = 0;
+                }
+            }
+            idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i], idl_cw[i]);
+        }
+        delayMicroseconds(2);
+
+        if (idr_mount[i])
+        {
+            if (r_spi_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
+            {
+                k = krs_R.setPos(i, mrd.Deg2Krs(idr_tgt[i], idr_trim[i], idr_cw[i]));
+                if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
+                    idr_err[i]++;
+                    if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+                    {
+                        s_spi_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
+                        mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+                    }
+                }
+                else
+                {
+                    idr_err[i] = 0;
+                }
+            }
+            else // 1以外ならとりあえずサーボを脱力し位置を取得
+            {
+                k = krs_R.setFree(i);
+                if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+                {
+                    k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
+                    idr_err[i]++;
+                    if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+                    {
+                        s_spi_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
+                        mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+                    }
+                }
+                else
+                {
+                    idr_err[i] = 0;
+                }
+            }
+            idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i], idr_cw[i]);
+        }
+        delayMicroseconds(2);
+    }
+
+    //////// < 10 > S P I 送 信 用 の Meridim 配 列 を 作 成 す る //////////////////////////
+    // @[10-1] マスターコマンドを配列に格納
+    s_spi_meridim.sval[0] = MSG_SIZE; // デフォルトのマスターコマンドは配列数
+
+    // @[10-2] 移動時間を配列に格納
+    // s_spi_meridim.sval[1] = 10 ;//(移動時間）
+
+    // @[10-3] センサー値を配列に格納
+    imuahrs_store();
+
+    // @[10-4] サーボIDごとにの現在位置もしくは計算結果を配列に格納
+    for (int i = 0; i < 15; i++)
+    {
+        s_spi_meridim.sval[i * 2 + 20] = 0;                             // 仮にここでは各サーボのコマンドを脱力&ポジション指示(0)に設定
+        s_spi_meridim.sval[i * 2 + 21] = mrd.float2HfShort(idl_tgt[i]); // 仮にここでは最新のサーボ角度degreeを格納
+    }
+    for (int i = 0; i < 15; i++)
+    {
+        s_spi_meridim.sval[i * 2 + 50] = 0;                             // 仮にここでは各サーボのコマンドを脱力&ポジション指示(0)に設定
+        s_spi_meridim.sval[i * 2 + 51] = mrd.float2HfShort(idr_tgt[i]); // 仮にここでは最新のサーボ角度degreeを格納
+    }
+
+    // @[10-5] Meridimのシーケンス番号をカウントアップして送信用に格納
+    mrd_seq_s_increment = mrd.seq_increase_num(mrd_seq_s_increment);
+    s_spi_meridim.usval[1] = mrd_seq_s_increment;
+
+    // @[10-6] カスタムデータを配列格納
+
+    // @[10-7] チェックサムを計算
+    s_spi_meridim.sval[MSG_SIZE - 1] = mrd.cksm_val(s_spi_meridim.sval, MSG_SIZE);
+
+    // @[10-8] 送信データのSPIバッファへのバイト型書き込み
+    for (int i = 0; i < MSG_BUFF; i++)
+    {
+        s_spi_meridim_dma.bval[i] = s_spi_meridim.bval[i];
+    }
+
+    //////// < 11 > フ レ ー ム 終 端 処 理 ///////////////////////////////////////////////
+
+    // 必要に応じてフレーム管理時計mrd_t_milを現在時刻にリセット
+    if (flag_reset_meridian_time)
+    {
+        now_t_mil = (long)millis();
+        mrd_t_mil = now_t_mil;
+        flag_reset_meridian_time = false;
+    }
+
+    // @[11-1] この時点で１フレーム内に処理が収まっていない時の処理
+    now_t_mil = (long)millis(); // 現在時刻を更新
+    if (now_t_mil > mrd_t_mil)
+    {                              // 現在時刻がフレーム管理時計を超えていたらアラートを出す
+        Serial.print("* delay: "); // シリアルに遅延msを表示
+        Serial.println(now_t_mil - mrd_t_mil);
+        digitalWrite(PIN_ERR_LED, HIGH); // 処理落ちが発生していたらLEDを点灯
+    }
+    else
+    {
+        digitalWrite(PIN_ERR_LED, LOW); // 処理が収まっていればLEDを消灯
+    }
+
+    // @[11-2] この時点で時間が余っていたら時間消化。時間がオーバーしていたらこの処理を自然と飛ばす。
+    now_t_mil = (long)millis();
+    now_t_mic = (long)micros(); // 現在時刻を取得
+    while (now_t_mil < mrd_t_mil)
+    {
+        now_t_mil = (long)millis();
+    }
+
+    // @[11-3]フレーム管理時計mercのカウントアップ
+    mrd_t_mil = mrd_t_mil + frame_ms;             // フレーム管理時計を1フレーム分進める
+    frame_count = frame_count + frame_count_diff; // サインカーブ等動作用のフレームカウントアップ
+    if (frame_count > frame_count_max)            // カウンターが最大値ならゼロリセット
+    {
+        frame_count = 0;
     }
 }
-//}
 
 //================================================================================================================
 //---- 関 数 各 種  -----------------------------------------------------------------------------------------------
@@ -1030,21 +994,37 @@ void execute_MasterCommand()
     // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に（デフォルト）
     if (r_spi_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE)
     {
-        flag_udp_board_passive = 0;  // UDP送信をアクティブモードに
-        flag_rest_meridian_time = 1; // フレームの管理時計をリセットフラグを上げる
+        flag_udp_board_passive = false;  // UDP送信をアクティブモードに
+        flag_reset_meridian_time = true; // フレームの管理時計をリセットフラグを上げる
     }
 
     // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に（SSH的な動作）
     if (r_spi_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE)
     {
-        flag_udp_board_passive = 1;  // UDP送信をパッシブモードに
-        flag_rest_meridian_time = 1; // フレームの管理時計をリセットフラグを上げる
+        flag_udp_board_passive = true;  // UDP送信をパッシブモードに
+        flag_reset_meridian_time = true; // フレームの管理時計をリセットフラグを上げる
     }
 
     // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10007) フレーム管理時計mrd_t_milを現在時刻にリセット
     if (r_spi_meridim.sval[MRD_MASTER] == MCMD_RESET_MRD_TIMER)
     {
-        flag_rest_meridian_time = 1; // フレームの管理時計をリセットフラグを上げる
+        flag_reset_meridian_time = true; // フレームの管理時計をリセットフラグを上げる
+    }
+
+    // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10008) ボードの末端処理を指定時間だけ止める。
+    if (r_spi_meridim.sval[MRD_MASTER] == MCMD_STOP_BOARD_DURING)
+    {
+        flag_stop_board_during = true; // ボードの処理停止フラグを上げる
+        // ボードの末端処理をmeridim[2]ミリ秒だけ止める。
+        Serial.print("Stop teensy's processing during ");
+        Serial.print(int(r_spi_meridim.sval[MRD_STOP_FRAMES_MS]));
+        Serial.println(" ms.");
+        for (int i = 0; i < int(r_spi_meridim.sval[MRD_STOP_FRAMES_MS]); i++)
+        {
+            delay(1);
+        }
+        flag_stop_board_during = false;   // ボードの処理停止フラグを下げる
+        flag_reset_meridian_time = true;  // フレームの管理時計をリセットフラグを上げる
     }
 }
 
