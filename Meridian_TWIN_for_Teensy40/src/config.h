@@ -144,14 +144,22 @@
 #define JOYPAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
 
 /* 固定値, マスターコマンド定義 */
-#define TRIM_ADJUST_MODE 0                // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
-#define MCMD_UPDATE_YAW_CENTER 10002      // センサの推定ヨー軸を現在値センターとしてリセット
-#define MCMD_ENTER_TRIM_MODE 10003        // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
-#define MCMD_CLEAR_SERVO_ERROR_ID 10004   // 通信エラーのサーボのIDをクリア(MSG_ERR_l)
-#define MCMD_BOARD_TRANSMIT_ACTIVE 10005  // ボードが定刻で送信を行うモード（PC側が受信待ち.デフォルト）
-#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
-#define MCMD_RESET_MRD_TIMER 10007        // フレーム管理時計mrd_t_milを現在時刻にリセット
-#define MCMD_STOP_BOARD_DURING 10008      // ボードの末端処理をmeridim[MRD_STOP_FRAMES_MS]ミリ秒だけ止める。
+#define TRIM_ADJUST_MODE 0                 // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
+#define MCMD_UPDATE_YAW_CENTER 10002       // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_ENTER_TRIM_MODE 10003         // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
+#define MCMD_CLEAR_SERVO_ERROR_ID 10004    // 通信エラーのサーボのIDをクリア(MSG_ERR_l)
+#define MCMD_BOARD_TRANSMIT_ACTIVE 10005   // ボードが定刻で送信を行うモード（PC側が受信待ち.デフォルト）
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード（PC側が定刻送信）
+#define MCMD_RESET_MRD_TIMER 10007         // フレーム管理時計mrd_t_milを現在時刻にリセット
+#define MCMD_STOP_BOARD_DURING 10008       // ボードの末端処理をmeridim[MRD_STOP_FRAMES_MS]ミリ秒だけ止める。
+#define MCMD_ENTER_EEPROM_WRITE_MODE 10009 // EEPROM書き込みモードのスタート
+#define MCMD_EXIT_EEPROM_WRITE_MODE 10010  // EEPROM書き込みモードの終了
+#define MCMD_ENTER_EEPROM_READ_MODE 10011  // EEPROM読み出しモードのスタート
+#define MCMD_EXIT_EEPROM_READ_MODE 10012   // EEPROM読み出しモードの終了
+#define MCMD_ENTER_SDCARD_WRITE_MODE 10013 // SDCARD書き込みモードのスタート
+#define MCMD_EXIT_SDCARD_WRITE_MODE 10014  // SDCARD書き込みモードの終了
+#define MCMD_ENTER_SDCARD_READ_MODE 10015  // SDCARD読み出しモードのスタート
+#define MCMD_EXIT_SDCARD_READ_MODE 10016   // SDCARD読み出しモードの終了
 
 /* ピンアサイン */
 #define PIN_ERR_LED 2       // LED用 処理が時間内に収まっていない場合に点灯
@@ -262,51 +270,51 @@
 #define ID3_CW14 1 // 追加サーボ用
 
 /* 各サーボの直立デフォルト値(degree) 直立状態になるよう、具体的な数値を入れて現物調整する */
-#define IDL_TRIM0 0        // 頭ヨー
+#define IDL_TRIM0 0      // 頭ヨー
 #define IDL_TRIM1 -2.36  // 左肩ピッチ
-#define IDL_TRIM2 -91.10  // 左肩ロール
-#define IDL_TRIM3 0        // 左肘ヨー
+#define IDL_TRIM2 -91.10 // 左肩ロール
+#define IDL_TRIM3 0      // 左肘ヨー
 #define IDL_TRIM4 89.98  // 左肘ピッチ
-#define IDL_TRIM5 0        // 左股ヨー
-#define IDL_TRIM6 0        // 左股ロール
-#define IDL_TRIM7 -1.35    // 左股ピッチ
-#define IDL_TRIM8 -58.05   // 左膝ピッチ
-#define IDL_TRIM9 -20.25   // 左足首ピッチ
-#define IDL_TRIM10 -0.68  // 左足首ロール
-#define IDL_TRIM11 0       // 追加サーボ用
-#define IDL_TRIM12 0       // 追加サーボ用
-#define IDL_TRIM13 0       // 追加サーボ用
-#define IDL_TRIM14 0       // 追加サーボ用
-#define IDR_TRIM0 0        // 腰ヨー
-#define IDR_TRIM1 0        // 右肩ピッチ
+#define IDL_TRIM5 0      // 左股ヨー
+#define IDL_TRIM6 0      // 左股ロール
+#define IDL_TRIM7 -1.35  // 左股ピッチ
+#define IDL_TRIM8 -58.05 // 左膝ピッチ
+#define IDL_TRIM9 -20.25 // 左足首ピッチ
+#define IDL_TRIM10 -0.68 // 左足首ロール
+#define IDL_TRIM11 0     // 追加サーボ用
+#define IDL_TRIM12 0     // 追加サーボ用
+#define IDL_TRIM13 0     // 追加サーボ用
+#define IDL_TRIM14 0     // 追加サーボ用
+#define IDR_TRIM0 0      // 腰ヨー
+#define IDR_TRIM1 0      // 右肩ピッチ
 #define IDR_TRIM2 -89.44 // 右肩ロール
-#define IDR_TRIM3 0        // 右肘ヨー
+#define IDR_TRIM3 0      // 右肘ヨー
 #define IDR_TRIM4 89.98  // 右肘ピッチ
-#define IDR_TRIM5 0        // 右股ヨー
+#define IDR_TRIM5 0      // 右股ヨー
 #define IDR_TRIM6 1.69   // 右股ロール
-#define IDR_TRIM7 -3.38   // 右股ピッチ
-#define IDR_TRIM8 -57.38  // 右膝ピッチ
-#define IDR_TRIM9 -20.25   // 右足首ピッチ
+#define IDR_TRIM7 -3.38  // 右股ピッチ
+#define IDR_TRIM8 -57.38 // 右膝ピッチ
+#define IDR_TRIM9 -20.25 // 右足首ピッチ
 #define IDR_TRIM10 -2.36 // 右足首ロール
-#define IDR_TRIM11 0       // 追加サーボ用
-#define IDR_TRIM12 0       // 追加サーボ用
-#define IDR_TRIM13 0       // 追加サーボ用
-#define IDR_TRIM14 0       // 追加サーボ用
-#define ID3_TRIM0 0        // 追加サーボ用
-#define ID3_TRIM1 0        // 追加サーボ用
-#define ID3_TRIM2 0        // 追加サーボ用
-#define ID3_TRIM3 0        // 追加サーボ用
-#define ID3_TRIM4 0        // 追加サーボ用
-#define ID3_TRIM5 0        // 追加サーボ用
-#define ID3_TRIM6 0        // 追加サーボ用
-#define ID3_TRIM7 0        // 追加サーボ用
-#define ID3_TRIM8 0        // 追加サーボ用
-#define ID3_TRIM9 0        // 追加サーボ用
-#define ID3_TRIM10 0       // 追加サーボ用
-#define ID3_TRIM11 0       // 追加サーボ用
-#define ID3_TRIM12 0       // 追加サーボ用
-#define ID3_TRIM13 0       // 追加サーボ用
-#define ID3_TRIM14 0       // 追加サーボ用
+#define IDR_TRIM11 0     // 追加サーボ用
+#define IDR_TRIM12 0     // 追加サーボ用
+#define IDR_TRIM13 0     // 追加サーボ用
+#define IDR_TRIM14 0     // 追加サーボ用
+#define ID3_TRIM0 0      // 追加サーボ用
+#define ID3_TRIM1 0      // 追加サーボ用
+#define ID3_TRIM2 0      // 追加サーボ用
+#define ID3_TRIM3 0      // 追加サーボ用
+#define ID3_TRIM4 0      // 追加サーボ用
+#define ID3_TRIM5 0      // 追加サーボ用
+#define ID3_TRIM6 0      // 追加サーボ用
+#define ID3_TRIM7 0      // 追加サーボ用
+#define ID3_TRIM8 0      // 追加サーボ用
+#define ID3_TRIM9 0      // 追加サーボ用
+#define ID3_TRIM10 0     // 追加サーボ用
+#define ID3_TRIM11 0     // 追加サーボ用
+#define ID3_TRIM12 0     // 追加サーボ用
+#define ID3_TRIM13 0     // 追加サーボ用
+#define ID3_TRIM14 0     // 追加サーボ用
 
 //-------------------------------------------------------------------------
 //---- Meridim90 配列アクセス対応キー  ---------------------------------------
