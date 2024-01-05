@@ -60,10 +60,16 @@ void imuahrs_start();
 void imuahrs_store();
 
 /**
- * @brief Execute mastercommands.
+ * @brief Execute mastercommands group1.
  *
  */
-void execute_MasterCommand();
+void execute_MasterCommand_1();
+
+/**
+ * @brief Execute mastercommands group2.
+ *
+ */
+void execute_MasterCommand_2();
 
 /**
  * @brief Resetting the origin of the yaw axis.
