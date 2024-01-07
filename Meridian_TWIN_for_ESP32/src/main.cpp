@@ -1,7 +1,7 @@
-// Meridian_TWIN_for_ESP32_20231231 By Izumi Ninagawa & Meridian Project
+// Meridian_TWIN_for_ESP32_20240107 By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
 //
-// Meridan TWIN ESP32用スケッチ 20231231版
+// Meridan TWIN ESP32用スケッチ 20240107版
 // スレッド制を見直し, 連続する工程をひとまとまりに.
 // UDPの受信待受とSPI待受でループするようにした.
 // UDP受信についてタイムアウトを導入.
@@ -19,6 +19,7 @@
 // 2023.07.01 リモコン関連の調整
 // 2023.12.31 key.hの分離
 // 2023.12.31 stepモードに対応
+// 2024.01.07 SPIの送信、受信分離に対応
 
 // 【課題】2022.07.30
 // PS4リモコンを接続するとTeensyの受信スキップが5~10%発生する.
@@ -26,7 +27,7 @@
 // よって現状では通信に影響のないKRC-5FHをTeensy側に接続するのがよい.
 // I2C経由の無線でさまざまなコントローラーに接続できるものを開発中。
 
-#define VERSION "Meridian_TWIN_for_ESP32_20231231." // バージョン表示
+#define VERSION "Meridian_TWIN_for_ESP32_20240107." // バージョン表示
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
@@ -74,11 +75,11 @@ uint8_t *r_spi_meridim_dma; // DMA用
 TaskHandle_t thp[4];        // マルチスレッドのタスクハンドル格納用
 
 /* フラグ関連変数 */
-bool flag_spi_ready = true; // SPI送信の順番制御用
-bool flag_udp_rsvd = true;  // UDPスレッドでの受信完了フラグ
-bool flag_udp_busy = false; // UDPスレッドでの受信中フラグ（送信抑制）
+bool flag_spi_ready = true;          // SPI送信の順番制御用
+bool flag_udp_rsvd = true;           // UDPスレッドでの受信完了フラグ
+bool flag_udp_busy = false;          // UDPスレッドでの受信中フラグ（送信抑制）
 bool flag_udp_board_passive = false; // UDP受信のパッシブモード（0:デフォルト, 1:パッシブ/PC側が通信周期制御）
-int mrd_seq_r_expect = 0;   // フレーム毎に前回受信値に+１として受信値と比較（-30000~29999)
+int mrd_seq_r_expect = 0;            // フレーム毎に前回受信値に+１として受信値と比較（-30000~29999)
 
 /* Meridim配列用の共用体の設定 */
 typedef union
@@ -130,11 +131,10 @@ void setup()
   /* シリアルモニタ表示 */
   Serial.begin(SERIAL_PC_BPS);
   delay(120); // シリアルの開始を待ち安定化させるためのディレイ（ほどよい）
- 
+
   /* 起動メッセージ1 */
   mrd.print_esp_hello_start(VERSION, String(SERIAL_PC_BPS), WIFI_AP_SSID);
-  //mrd.print_esp_hello_start(String(VERSION), String(SERIAL_PC_BPS), String(WIFI_AP_SSID));
-
+  // mrd.print_esp_hello_start(String(VERSION), String(SERIAL_PC_BPS), String(WIFI_AP_SSID));
 
   /* WiFiの初期化と開始 */
   WiFi.disconnect(true, true); // WiFi接続をリセット
@@ -208,6 +208,10 @@ void loop()
       slave.queue(r_spi_meridim_dma, s_spi_meridim_dma, MSG_BUFF + 4);
       flag_spi_ready = false;
     }
+    else
+    {
+      mrd.monitor_check_flow("Waiting SPI", MONITOR_FLOW); // 動作チェック用シリアル表示
+    }
   }
 
   // [check!] ここがTeensyをマスターとして実施されるSPI通信の完了を待つ待機ループになる
@@ -224,128 +228,143 @@ void loop()
     /* @[2-1] このESP32内で計算処理したデータをMeridimに格納する */
     // ・Teensy→ESP32→PCという経路.
     // ・Teensyからのリモコン値はここでのみ補足可能.
-    // ・ここでチェックサムを行ってもよい.
-    // ・今回は特になにもなし.
 
-    //////// [ 3 ]  U D P 送 信 実 行  ///////////////////////////////////////////////////
-    mrd.monitor_check_flow("[3]", MONITOR_FLOW); // 動作チェック用シリアル表示
-
-    /* @[3-1] UDP送受信の実行 */
-    flag_udp_busy = true; // UDP使用中のフラグをアゲる
-    udp_send();           // UDP送受信の実行
-
-    //////// [ 4 ]  U D P 受 信 待 受 ル ー プ  //////////////////////////////////////////
-    mrd.monitor_check_flow("[4]", MONITOR_FLOW); // 動作チェック用シリアル表示
-
-    /* @[4-1] UDP受信の待受 */
-    flag_udp_rsvd = false;
-    int udp_time_count = 0;
-    while (!flag_udp_rsvd) // データの受信バッファ確認
+    /* @[2-2] チェックサムを行いNGなら抜けてUDP送信を行わず, SPI受信に戻る */
+    if (mrd.cksm_rslt(s_udp_meridim.sval, MSG_SIZE))
     {
-      short udp_packet = udp.parsePacket();
-      if (udp_packet >= MSG_BUFF)
+
+      // for (int i=0; i < MSG_SIZE; i++){
+      //   Serial.print(s_udp_meridim.sval[i]);
+      //   Serial.print(", ");
+      // }
+      // Serial.println();
+
+      //////// [ 3 ]  U D P 送 信 実 行  ///////////////////////////////////////////////////
+      mrd.monitor_check_flow("[3]", MONITOR_FLOW); // 動作チェック用シリアル表示
+
+      /* @[3-1] UDP送受信の実行 */
+      flag_udp_busy = true; // UDP使用中のフラグをアゲる
+      udp_send();           // UDP送受信の実行
+
+      //////// [ 4 ]  U D P 受 信 待 受 ル ー プ  //////////////////////////////////////////
+      mrd.monitor_check_flow("[4]", MONITOR_FLOW); // 動作チェック用シリアル表示
+
+      /* @[4-1] UDP受信の待受 */
+      flag_udp_rsvd = false;
+      int udp_time_count = 0;
+      while (!flag_udp_rsvd) // データの受信バッファ確認
       {
-        udp.read(r_udp_meridim.bval, MSG_BUFF); // データの受信
-        flag_udp_rsvd = true;
-        mrd.monitor_check_flow("UdpRsvd", MONITOR_FLOW); // 動作チェック用シリアル表示
+        short udp_packet = udp.parsePacket();
+        if (udp_packet >= MSG_BUFF)
+        {
+          udp.read(r_udp_meridim.bval, MSG_BUFF); // データの受信
+          flag_udp_rsvd = true;
+          mrd.monitor_check_flow("UdpRsvd", MONITOR_FLOW); // 動作チェック用シリアル表示
+        }
+        if (flag_udp_board_passive)
+        {                                                         // パッシブモードならUDP待ちでタイムアウトしない
+          mrd.monitor_check_flow("*Passive mode.", MONITOR_FLOW); // 動作チェック用シリアル表示
+        }
+        else if (udp_time_count > UDP_TIMEOUT) // UDPの受信待ちのタイムアウト
+        {
+          mrd.monitor_check_flow("*UdpResvTimeOut", MONITOR_FLOW); // 動作チェック用シリアル表示
+          break;
+        }
+        udp_time_count++;
+        delay(1);
       }
-      if (flag_udp_board_passive){// パッシブモードならUDP待ちでタイムアウトしない
-        mrd.monitor_check_flow("*Passive mode.", MONITOR_FLOW); // 動作チェック用シリアル表示
-      }
-      else if(udp_time_count > UDP_TIMEOUT) // UDPの受信待ちのタイムアウト
+      flag_udp_busy = false; // UDP使用中のフラグをサゲる
+
+      //////// [ 5 ]  U D P 受 信 品 質 チ ェ ッ ク  ////////////////////////////////////////
+      mrd.monitor_check_flow("[5]", MONITOR_FLOW); // 動作チェック用シリアル表示
+
+      /* @[5-1] UDP受信データ r_udp_meridim のチェックサムを確認. */
+      if (mrd.cksm_rslt(r_udp_meridim.sval, MSG_SIZE))
       {
-        mrd.monitor_check_flow("*UdpResvTimeOut", MONITOR_FLOW); // 動作チェック用シリアル表示
-        break;
+        /* @[5-1a] 受信成功ならUDP受信データをSPI送信データに上書き更新する.*/
+        memcpy(s_spi_meridim.bval, r_udp_meridim.bval, MSG_BUFF + 4);
+        s_spi_meridim.bval[MSG_ERR_u] &= 0b10111111; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをサゲる.
       }
-      udp_time_count++;
-      delay(1);
-    }
-    flag_udp_busy = false; // UDP使用中のフラグをサゲる
+      else
+      {
+        /* @[5-1b] 受信失敗なら今回の受信データを使わず、前回のSPI送信データにエラーフラグだけ上乗せする.*/
+        s_spi_meridim.bval[MSG_ERR_u] |= 0b01000000; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをアゲる.
+      }
 
-    //////// [ 5 ]  U D P 受 信 品 質 チ ェ ッ ク  ////////////////////////////////////////
-    mrd.monitor_check_flow("[5]", MONITOR_FLOW); // 動作チェック用シリアル表示
-
-    /* @[5-1] UDP受信データ r_udp_meridim のチェックサムを確認. */
-    if (mrd.cksm_rslt(r_udp_meridim.sval, MSG_SIZE))
-    {
-      /* @[5-1a] 受信成功ならUDP受信データをSPI送信データに上書き更新する.*/
-      memcpy(s_spi_meridim.bval, r_udp_meridim.bval, MSG_BUFF + 4);
-      s_spi_meridim.bval[MSG_ERR_u] &= 0b10111111; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをサゲる.
-    }
-    else
-    {
-      /* @[5-1b] 受信失敗なら今回の受信データを使わず、前回のSPI送信データにエラーフラグだけ上乗せする.*/
-      s_spi_meridim.bval[MSG_ERR_u] |= 0b01000000; // meridimの[MSG_ERR]番の14ビット目(ESPのUDP受信成否)のフラグをアゲる.
-    }
-
-    /* @[5-2] 連番スキップ検出 */
-    /* @[5-2-1] シーケンス番号の予想値の生成 */
-    mrd_seq_r_expect = mrd.seq_predict_num(mrd_seq_r_expect);
-    if (MONITOR_SEQ)
-    {
-      Serial.print("SeqNum exp: ");
-      Serial.print(mrd_seq_r_expect);
-      Serial.print(" / udp_rsvd: ");
-      Serial.print(int(r_udp_meridim.usval[1]));
-    }
-
-    /* @[5-2-2] シーケンス番号予想値と受信値が合致しているかのチェック */
-    if (mrd.seq_compare_nums(mrd_seq_r_expect, int(r_udp_meridim.usval[1]))) // 受信シーケンス番号の値が予想通りなら,
-    {
-      s_spi_meridim.bval[MSG_ERR_u] &= 0b11111011; // エラーフラグ10番(ESP受信のスキップ検出)をサゲる.
+      /* @[5-2] 連番スキップ検出 */
+      /* @[5-2-1] シーケンス番号の予想値の生成 */
+      mrd_seq_r_expect = mrd.seq_predict_num(mrd_seq_r_expect);
       if (MONITOR_SEQ)
       {
-        Serial.println("  ok.");
+        Serial.print("SeqNum exp: ");
+        Serial.print(mrd_seq_r_expect);
+        Serial.print(" / udp_rsvd: ");
+        Serial.print(int(r_udp_meridim.usval[1]));
       }
-    }
-    else // 受信シーケンシャルカウンタの値が予想と違ったら,
-    {
-      mrd_seq_r_expect = int(r_udp_meridim.usval[1]); // 現在の受信値を予想結果としてキープ
-      s_spi_meridim.bval[MSG_ERR_u] |= 0b00000100;    // エラーフラグ10番(ESP受信のスキップ検出)をアゲる.
-      if (MONITOR_SEQ)
+
+      /* @[5-2-2] シーケンス番号予想値と受信値が合致しているかのチェック */
+      if (mrd.seq_compare_nums(mrd_seq_r_expect, int(r_udp_meridim.usval[1]))) // 受信シーケンス番号の値が予想通りなら,
       {
-        Serial.println(" *NG*");
+        s_spi_meridim.bval[MSG_ERR_u] &= 0b11111011; // エラーフラグ10番(ESP受信のスキップ検出)をサゲる.
+        if (MONITOR_SEQ)
+        {
+          Serial.println("  ok.");
+        }
       }
-    }
-
-    // [check!] ここで s_spi_meridim にはチェック済みの r_udp_meridim が転記され, ESP32UDP受信エラーフラグも入った状態.
-
-    //////// [ 6 ]  受 信 値 に よ る 処 理  ///////////////////////////////////////////
-    /* @[6-1] マスターコマンドによる処理 */
-    if (s_spi_meridim.sval[0] == MCMD_BOARD_TRANSMIT_PASSIVE) // ボードが受信を待ち返信するモード（PC側が定刻送信）
-    {
-      flag_udp_board_passive = 1;
+      else // 受信シーケンシャルカウンタの値が予想と違ったら,
+      {
+        mrd_seq_r_expect = int(r_udp_meridim.usval[1]); // 現在の受信値を予想結果としてキープ
+        s_spi_meridim.bval[MSG_ERR_u] |= 0b00000100;    // エラーフラグ10番(ESP受信のスキップ検出)をアゲる.
+        if (MONITOR_SEQ)
+        {
+          Serial.println(" *NG*");
+        }
       }
 
-    if (s_spi_meridim.sval[0] == MCMD_BOARD_TRANSMIT_ACTIVE) // ボードが受信を待ち返信するモード（PC側が定刻送信）
+      // [check!] ここで s_spi_meridim にはチェック済みの r_udp_meridim が転記され, ESP32UDP受信エラーフラグも入った状態.
+
+      //////// [ 6 ]  受 信 値 に よ る 処 理  ///////////////////////////////////////////
+      /* @[6-1] マスターコマンドによる処理 */
+      if (s_spi_meridim.sval[0] == MCMD_BOARD_TRANSMIT_PASSIVE) // ボードが受信を待ち返信するモード（PC側が定刻送信）
+      {
+        flag_udp_board_passive = 1;
+      }
+
+      if (s_spi_meridim.sval[0] == MCMD_BOARD_TRANSMIT_ACTIVE) // ボードが受信を待ち返信するモード（PC側が定刻送信）
       {
         flag_udp_board_passive = 0;
       }
 
-    //////// [ 7 ]  S P I 送 信 デ ー タ 作 成  ///////////////////////////////////////////
-    mrd.monitor_check_flow("[6]\n", MONITOR_FLOW); // 動作チェック用シリアル表示
+      //////// [ 7 ]  S P I 送 信 デ ー タ 作 成  ///////////////////////////////////////////
+      mrd.monitor_check_flow("[6]\n", MONITOR_FLOW); // 動作チェック用シリアル表示
 
-    /* @[7-1] ユーザー定義の送信データの書き込み */
-    // ・Teensyへ送るデータをこのパートで作成, 書き込み.
-    // ・今回はとくに何もしない.
+      /* @[7-1] ユーザー定義の送信データの書き込み */
+      // ・Teensyへ送るデータをこのパートで作成, 書き込み.
+      // ・今回はとくに何もしない.
 
-    /* @[7-2] リモコンデータの書き込み */
-    for (int i = 0; i < 4; i++)
-    { // Meridim配列のリモコン該当箇所に、ESPで受信したリモコン値を加算する
-      s_spi_meridim.sval[i + 15] = r_udp_meridim.sval[i + 15] | pad_array.usval[i];
+      /* @[7-2] リモコンデータの書き込み */
+      for (int i = 0; i < 4; i++)
+      { // Meridim配列のリモコン該当箇所に、ESPで受信したリモコン値を加算する
+        s_spi_meridim.sval[i + 15] = r_udp_meridim.sval[i + 15] | pad_array.usval[i];
+      }
+
+      /* @[7-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）*/
+      // → すでにPCから受け取った値がs_spi_meridim.sval[1]に入っているのでここでは何もしない.
+
+      /* @[7-4] チェックサムの追記 */
+      s_spi_meridim.sval[MSG_SIZE - 1] = mrd.cksm_val(s_spi_meridim.sval, MSG_SIZE);
+      // [check!] ここでSPI送信データ"s_spi_meridim"はチェックサムが入り完成している状態.
+
+      /* @[7-5] 完成したSPI送信データをDMAに転記*/
+      memcpy(s_spi_meridim_dma, s_spi_meridim.bval, MSG_BUFF + 4);
+      flag_spi_ready = true; // SPI送信の順番制御用
+                             // [check!] この時点で 次回のSPI送受信に備え、DMAにデータが格納された状態.
     }
-
-    /* @[7-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）*/
-    // → すでにPCから受け取った値がs_spi_meridim.sval[1]に入っているのでここでは何もしない.
-
-    /* @[7-4] チェックサムの追記 */
-    s_spi_meridim.sval[MSG_SIZE - 1] = mrd.cksm_val(s_spi_meridim.sval, MSG_SIZE);
-    // [check!] ここでSPI送信データ"s_spi_meridim"はチェックサムが入り完成している状態.
-
-    /* @[7-5] 完成したSPI送信データをDMAに転記*/
-    memcpy(s_spi_meridim_dma, s_spi_meridim.bval, MSG_BUFF + 4);
-    flag_spi_ready = true; // SPI送信の順番制御用
-                           // [check!] この時点で 次回のSPI送受信に備え、DMAにデータが格納された状態.
+    else
+    {
+      mrd.monitor_check_flow("SpiCkNg", MONITOR_FLOW); // 動作チェック用シリアル表示
+      break;
+    }
   }
 }
 
