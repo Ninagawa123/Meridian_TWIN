@@ -301,7 +301,7 @@ USBバスパワーのみで動作させている場合など, サーボへの電
 ####  9軸センサのBNO055がうまく動作しない  
 Teensy4.0との相性問題で,通信中に正しいデータが取得できなくなります.改善方法を探っています.  
 
-#Update
+# Update
 
 #### Update 20240325 v1.0.1
 esp32側のpratformio.ini内、lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため、  
