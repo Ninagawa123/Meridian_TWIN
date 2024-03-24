@@ -1,4 +1,4 @@
-### bugfixed 20240325
+### Update 20240325 v1.0.1
 esp32側のpratformio.ini内、lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため、  
 hideakitai/ESP32DMASPI@0.3.0 にアップデートしました。  
   
