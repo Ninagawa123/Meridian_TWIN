@@ -1,3 +1,7 @@
+### bugfixed 20240325
+esp32側のpratformio.ini内、lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため、  
+hideakitai/ESP32DMASPI@0.3.0 にアップデートしました。  
+  
 # Update 20230710  v1.0.0
 
 ライブラリ対応版として大幅なアップデートを行いました.(前回までのバージョンはoldディレクトリにzipで格納しています.)      
@@ -5,7 +9,7 @@
 また, マイコンごとにまちまちだった変数名の書式も統一しました.  
 変数のルールやライブラリ関数については, 下記に情報を集約していきます.  
 https://ninagawa123.github.io/Meridian_info/  
-  
+
 # Meridian_TWIN
   
 Meridian計画はヒューマノイドの制御システムについてのオープンソースプロジェクトです.  
