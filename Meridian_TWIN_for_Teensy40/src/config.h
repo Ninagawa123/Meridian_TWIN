@@ -1,8 +1,10 @@
-// Meridian_TWIN_for_Teensy_CONFIG_20240412 By Izumi Ninagawa
+#ifndef __MERIDIAN_CONFIG__
+#define __MERIDIAN_CONFIG__
+
+// Meridian_TWIN_for_Teensy_CONFIG_20240506 By Izumi Ninagawa
 //================================================================================================================
 //---- Teensy4.0 の 配 線 / ピンアサイン ----------------------------------------------------------------------------
 //================================================================================================================
-
 /*
   [GND]               -> GND
   [00] RX1, CRX2      -> ICS_3rd_TX
@@ -35,7 +37,7 @@
 */
 
 //================================================================================================================
-//---- サーボIDとロボット部位、軸との対応表 ----------------------------------------------------------------------------
+//---- サーボIDとロボット部位, 軸との対応表 ----------------------------------------------------------------------------
 //================================================================================================================
 /*
   ID    Parts-Axis　＜ICS_Left_Upper SIO1,SIO2＞
@@ -97,58 +99,73 @@
   [MSG_SIZE-1] チェックサム
 */
 
-#define I2C_MERIMOTE_ADDR 0x58
-#define JOYPAD_LEN 4
-#define JOYPAD_I2C_LEN 5
+// Meridimの基本設定
+#define MSG_SIZE 90       // Meridim配列の長さ設定（デフォルトは90）
+#define FRAME_DURATION 10 // 1フレームあたりの単位時間（単位ms）
+#define CHARGE_TIME 3     // 起動時のコンデンサチャージ待機時間（単位sec）
 
-/* Meridimの基本設定 */
-#define MSG_SIZE 90             // Meridim配列の長さ設定（デフォルトは90）
-#define MSG_BUFF (MSG_SIZE * 2) // Meridim配列のバイト型の長さ
-#define FRAME_DURATION 10       // 1フレームあたりの単位時間（単位ms）
+// 動作チェックモード
+#define CHECK_SD_RW 1  // 起動時のSDカードリーダーの読み書きチェック
+#define EEPROM_CHECK 0 // EEPROMの動作チェック
+#define EEPROM_LOAD 0  // EEPROMの内容を読み込み
+#define EEPROM_SET 0   // EEPROMにスクリプトの内容をセット(mrd_set_eeprom)
 
-/* 動作チェックモード */
-#define CHECK_SD_RW 0 // 起動時のSDカードリーダーの読み書きチェック
-
-/* シリアルモニタリング */
+// シリアルモニタリング
 #define MONITOR_FLOW 0       // シリアルモニタでフローを表示（0:OFF, 1:ON）
 #define MONITOR_ALL_ERROR 0  // Teensyでのシリアル表示:全経路の受信エラー率
-#define MONITOR_SERVO_ERR 0  // 通信エラーのあったサーボIDの表示(0:OFF, 1:ON)
+#define MONITOR_SERVO_ERR 1  // 通信エラーのあったサーボIDの表示(0:OFF, 1:ON)
 #define MONITOR_SEQ_NUMBER 0 // シーケンス番号の比較表示(0:OFF, 1:ON)
 #define MONITOR_JOYPAD 0     // Teensyでのシリアル表示:リモコンのデータ
 
-/* 各種ハードウェアのマウント有無 */
-#define MOUNT_ESP32 1        // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
-#define MOUNT_SD 1           // SDカードリーダーのありなし. MeridianBoard Type.Kは有り
-#define MOUNT_IMUAHRS 1      // IMU/AHRSの搭載状況 0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
-#define MOUNT_ICS3 0         // 半二重サーボ信号の3系のありなし
-#define MOUNT_JOYPAD 3       // ジョイパッドの搭載 0:なしorESP32orPCで受信, 1:SBDBT(未), 2:KRC-5FH 3:Merimote 4:BlueRetro(未)
-#define MOUNT_SERVO_NUM_L 11 // L系統につないだサーボの総数
-#define MOUNT_SERVO_NUM_R 11 // R系統につないだサーボの総数
-#define MOUNT_SERVO_NUM_3 0  // 3系統につないだサーボの総数
+// 各種ハードウェアのマウント有無
+#define MOUNT_ESP32 1 // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
+#define MOUNT_SD 1    // SDカードリーダーのありなし. MeridianBoard Type.Kは有り
+
+// I2C設定, I2Cセンサ関連設定
+#define MOUNT_IMUAHRS MPU6050_IMU // IMU/AHRSの搭載状況 NO_IMU, MPU6050_IMU, MPU9250_IMU.BNO055_AHRS
+#define I2C0_SPEED 400000         // I2Cの速度（400kHz推奨）
+#define IMUAHRS_INTERVAL 10       // IMU/AHRSのセンサの読み取り間隔(ms)
+#define IMUAHRS_STOCK 4           // MPUで移動平均を取る際の元にする時系列データの個数
+#define I2C1_SPEED 100000         // I2Cの速度（100kHz推奨?）
+#define I2C1_MERIMOTE_ADDR 0x58   // MerimoteのI2Cアドレス
+
+// JOYPAD関連設定
+#define MOUNT_JOYPAD MERIMOTE // ジョイパッドの搭載 PC(デフォルト), MERIMOTE, BLUERETRO, SBDBT, KRR5FH
+#define JOYPAD_INTERVAL 4     // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define JOYPAD_BUTTON_MARGE 1 // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
+#define JOYPAD_GENERALIZE 1   // ジョイパッドの入力値をPS系に一般化する
+
+// コマンドサーボの種類
+// 00: マウントなし
+// 01: Single PWM (Not yet.)
+// 11: I2C_PCA9685 to PWM (Not yet.)
+// 21: FUTABA_RSxTTL (Not yet.)
+// 31: DYNAMIXEL Protocol 1.0 (Not yet.)
+// 32: DYNAMIXEL Protocol 2.0 (Not yet.)
+// 43: KONDO_ICS 3.5/3.6
+// 44: KONDO_PMX (Not yet.)
+// 51: JRPROPO_XBUS (Not yet.)
+// 61: FEETECH_STS (Not yet.)
+// 62: FEETECH_SCS (Not yet.)
+#define MOUNT_L_SERVO_TYPE 43 // L系統
+#define MOUNT_R_SERVO_TYPE 43 // R系統
+#define MOUNT_C_SERVO_TYPE 0  // C系統(旧C系統)
+#define MOUNT_L_SERVO_NUM 11  // L系統につないだサーボの総数
+#define MOUNT_R_SERVO_NUM 11  // R系統につないだサーボの総数
+#define MOUNT_C_SERVO_NUM 0   // C系統につないだサーボの総数
+
+// サーボ関連設定
+#define ICS_BAUDRATE 1250000    // ICSサーボの通信速度1.25M
+#define ICS_TIMEOUT 3           // ICS返信待ちのタイムアウト時間. 
+#define SERVO_LOST_ERROR_WAIT 6 // サーボ通信エラーと判定する連続エラー回数
 
 // PC接続関連設定
 #define SERIAL_PC_BPS 6000000 // PCとのシリアル速度（モニタリング表示用）
 
 // SPI設定
-#define SPI_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
+#define SPI0_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
 
-// I2C設定, I2Cセンサ関連設定
-#define I2C_SPEED 100000   // I2Cの速度（400kHz推奨）
-#define IMUAHRS_POLLING 10 // IMU/AHRSのセンサの読み取り間隔(ms)
-#define IMUAHRS_STOCK 4    // MPUで移動平均を取る際の元にする時系列データの個数
-
-// サーボ関連設定
-#define ICS_BAUDRATE 1250000    // ICSサーボの通信速度1.25M
-#define ICS_TIMEOUT 2           // ICS返信待ちのタイムアウト時間。通信できてないか確認する場合には1000ぐらいに設定するとよい
-#define SERVO_LOST_ERROR_WAIT 3 // サーボ通信エラーと判定する連続エラー回数
-
-// JOYPAD関連設定
-#define JOYPAD_POLLING 4    // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define JOYPAD_REFRESH 1    // JOYPADの受信ボタンデータをこのデバイスで0リセットするか、リセットせず論理加算するか （0:overide, 1:reflesh, 通常は1）
-#define JOYPAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
-
-/* 固定値, マスターコマンド定義 */
-#define TRIM_ADJUST_MODE 0                 // トリムモードのオンオフ、起動時に下記の設定値で静止させたい時は1
+// 固定値, マスターコマンド定義
 #define MCMD_DUMMY_DATA -32768             // SPI送受信用のダミーデータ判定用
 #define MCMD_UPDATE_YAW_CENTER 10002       // センサの推定ヨー軸を現在値センターとしてリセット
 #define MCMD_ENTER_TRIM_MODE 10003         // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
@@ -156,7 +173,7 @@
 #define MCMD_BOARD_TRANSMIT_ACTIVE 10005   // ボードが定刻で送信を行うモード（PC側が受信待ち.デフォルト）
 #define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード（PC側が定刻送信）
 #define MCMD_RESET_MRD_TIMER 10007         // フレーム管理時計mrd_t_milを現在時刻にリセット
-#define MCMD_STOP_BOARD_DURING 10008       // ボードの末端処理をmeridim[MRD_STOP_FRAMES_MS]ミリ秒だけ止める。
+#define MCMD_STOP_BOARD_DURING 10008       // ボードの末端処理をmeridim[MRD_STOP_FRAMES_MS]ミリ秒だけ止める.
 #define MCMD_ENTER_EEPROM_WRITE_MODE 10009 // EEPROM書き込みモードのスタート
 #define MCMD_EXIT_EEPROM_WRITE_MODE 10010  // EEPROM書き込みモードの終了
 #define MCMD_ENTER_EEPROM_READ_MODE 10011  // EEPROM読み出しモードのスタート
@@ -166,23 +183,23 @@
 #define MCMD_ENTER_SDCARD_READ_MODE 10015  // SDCARD読み出しモードのスタート
 #define MCMD_EXIT_SDCARD_READ_MODE 10016   // SDCARD読み出しモードの終了
 
-/* ピンアサイン */
+// ピンアサイン
 #define PIN_ERR_LED 2       // LED用 処理が時間内に収まっていない場合に点灯
 #define PIN_EN_L 6          // ICSサーボ信号の左系のENピン番号（固定）
 #define PIN_EN_R 5          // ICSサーボ信号の右系のENピン番号（固定）
-#define PIN_EN_3 23         // 半二重サーボ信号の3系のENピン番号（固定）
+#define PIN_EN_C 23         // 半二重サーボ信号の3系のENピン番号（固定）
 #define PIN_CHIPSELECT_SD 9 // SDカードSPI通信用のChipSelectのピン番号
 
 //-------------------------------------------------------------------------
 //---- サ ー ボ 設 定  -----------------------------------------------------
 //-------------------------------------------------------------------------
 
-/* 各サーボ系統の最大サーボマウント数 */
+// 各サーボ系統の最大サーボマウント数
 #define IDL_MAX 15 // L系統の最大サーボ数
 #define IDR_MAX 15 // R系統の最大サーボ数
-#define ID3_MAX 15 // 3系統の最大サーボ数
+#define IDC_MAX 15 // C系統の最大サーボ数
 
-/* 各サーボのマウントありなし（1:サーボあり、0:サーボなし） */
+// 各サーボのマウントありなし（1:サーボあり, 0:サーボなし）
 #define IDL_MT0 1  // 頭ヨー
 #define IDL_MT1 1  // 左肩ピッチ
 #define IDL_MT2 1  // 左肩ロール
@@ -215,23 +232,23 @@
 #define IDR_MT13 0 // 追加サーボ用
 #define IDR_MT14 0 // 追加サーボ用
 
-#define ID3_MT0 0  // 追加サーボ用
-#define ID3_MT1 0  // 追加サーボ用
-#define ID3_MT2 0  // 追加サーボ用
-#define ID3_MT3 0  // 追加サーボ用
-#define ID3_MT4 0  // 追加サーボ用
-#define ID3_MT5 0  // 追加サーボ用
-#define ID3_MT6 0  // 追加サーボ用
-#define ID3_MT7 0  // 追加サーボ用
-#define ID3_MT8 0  // 追加サーボ用
-#define ID3_MT9 0  // 追加サーボ用
-#define ID3_MT10 0 // 追加サーボ用
-#define ID3_MT11 0 // 追加サーボ用
-#define ID3_MT12 0 // 追加サーボ用
-#define ID3_MT13 0 // 追加サーボ用
-#define ID3_MT14 0 // 追加サーボ用
+#define IDC_MT0 0  // 追加サーボ用
+#define IDC_MT1 0  // 追加サーボ用
+#define IDC_MT2 0  // 追加サーボ用
+#define IDC_MT3 0  // 追加サーボ用
+#define IDC_MT4 0  // 追加サーボ用
+#define IDC_MT5 0  // 追加サーボ用
+#define IDC_MT6 0  // 追加サーボ用
+#define IDC_MT7 0  // 追加サーボ用
+#define IDC_MT8 0  // 追加サーボ用
+#define IDC_MT9 0  // 追加サーボ用
+#define IDC_MT10 0 // 追加サーボ用
+#define IDC_MT11 0 // 追加サーボ用
+#define IDC_MT12 0 // 追加サーボ用
+#define IDC_MT13 0 // 追加サーボ用
+#define IDC_MT14 0 // 追加サーボ用
 
-/* 各サーボの内外回転プラスマイナス方向補正(1 or -1) */
+// 各サーボの内外回転プラスマイナス方向補正(1 or -1)
 #define IDL_CW0 1  // 頭ヨー
 #define IDL_CW1 1  // 左肩ピッチ
 #define IDL_CW2 1  // 左肩ロール
@@ -264,23 +281,23 @@
 #define IDR_CW13 1 // 追加サーボ用
 #define IDR_CW14 1 // 追加サーボ用
 
-#define ID3_CW0 1  // 追加サーボ用
-#define ID3_CW1 1  // 追加サーボ用
-#define ID3_CW2 1  // 追加サーボ用
-#define ID3_CW3 1  // 追加サーボ用
-#define ID3_CW4 1  // 追加サーボ用
-#define ID3_CW5 1  // 追加サーボ用
-#define ID3_CW6 1  // 追加サーボ用
-#define ID3_CW7 1  // 追加サーボ用
-#define ID3_CW8 1  // 追加サーボ用
-#define ID3_CW9 1  // 追加サーボ用
-#define ID3_CW10 1 // 追加サーボ用
-#define ID3_CW11 1 // 追加サーボ用
-#define ID3_CW12 1 // 追加サーボ用
-#define ID3_CW13 1 // 追加サーボ用
-#define ID3_CW14 1 // 追加サーボ用
+#define IDC_CW0 1  // 追加サーボ用
+#define IDC_CW1 1  // 追加サーボ用
+#define IDC_CW2 1  // 追加サーボ用
+#define IDC_CW3 1  // 追加サーボ用
+#define IDC_CW4 1  // 追加サーボ用
+#define IDC_CW5 1  // 追加サーボ用
+#define IDC_CW6 1  // 追加サーボ用
+#define IDC_CW7 1  // 追加サーボ用
+#define IDC_CW8 1  // 追加サーボ用
+#define IDC_CW9 1  // 追加サーボ用
+#define IDC_CW10 1 // 追加サーボ用
+#define IDC_CW11 1 // 追加サーボ用
+#define IDC_CW12 1 // 追加サーボ用
+#define IDC_CW13 1 // 追加サーボ用
+#define IDC_CW14 1 // 追加サーボ用
 
-/* 各サーボの直立デフォルト値(degree) 直立状態になるよう、具体的な数値を入れて現物調整する */
+// 各サーボの直立デフォルト値(degree) 直立状態になるよう, 具体的な数値を入れて現物調整する
 #define IDL_TRIM0 0      // 頭ヨー
 #define IDL_TRIM1 -2.36  // 左肩ピッチ
 #define IDL_TRIM2 -91.10 // 左肩ロール
@@ -296,6 +313,7 @@
 #define IDL_TRIM12 0     // 追加サーボ用
 #define IDL_TRIM13 0     // 追加サーボ用
 #define IDL_TRIM14 0     // 追加サーボ用
+
 #define IDR_TRIM0 0      // 腰ヨー
 #define IDR_TRIM1 0      // 右肩ピッチ
 #define IDR_TRIM2 -89.44 // 右肩ロール
@@ -311,21 +329,21 @@
 #define IDR_TRIM12 0     // 追加サーボ用
 #define IDR_TRIM13 0     // 追加サーボ用
 #define IDR_TRIM14 0     // 追加サーボ用
-#define ID3_TRIM0 0      // 追加サーボ用
-#define ID3_TRIM1 0      // 追加サーボ用
-#define ID3_TRIM2 0      // 追加サーボ用
-#define ID3_TRIM3 0      // 追加サーボ用
-#define ID3_TRIM4 0      // 追加サーボ用
-#define ID3_TRIM5 0      // 追加サーボ用
-#define ID3_TRIM6 0      // 追加サーボ用
-#define ID3_TRIM7 0      // 追加サーボ用
-#define ID3_TRIM8 0      // 追加サーボ用
-#define ID3_TRIM9 0      // 追加サーボ用
-#define ID3_TRIM10 0     // 追加サーボ用
-#define ID3_TRIM11 0     // 追加サーボ用
-#define ID3_TRIM12 0     // 追加サーボ用
-#define ID3_TRIM13 0     // 追加サーボ用
-#define ID3_TRIM14 0     // 追加サーボ用
+#define IDC_TRIM0 0      // 追加サーボ用
+#define IDC_TRIM1 0      // 追加サーボ用
+#define IDC_TRIM2 0      // 追加サーボ用
+#define IDC_TRIM3 0      // 追加サーボ用
+#define IDC_TRIM4 0      // 追加サーボ用
+#define IDC_TRIM5 0      // 追加サーボ用
+#define IDC_TRIM6 0      // 追加サーボ用
+#define IDC_TRIM7 0      // 追加サーボ用
+#define IDC_TRIM8 0      // 追加サーボ用
+#define IDC_TRIM9 0      // 追加サーボ用
+#define IDC_TRIM10 0     // 追加サーボ用
+#define IDC_TRIM11 0     // 追加サーボ用
+#define IDC_TRIM12 0     // 追加サーボ用
+#define IDC_TRIM13 0     // 追加サーボ用
+#define IDC_TRIM14 0     // 追加サーボ用
 
 //-------------------------------------------------------------------------
 //---- Meridim90 配列アクセス対応キー  ---------------------------------------
@@ -383,6 +401,7 @@
 #define L_SERVO_ID14_VAL 49       // 追加サーボ用の値
 #define WAIST_Y_CMD 50            // 腰ヨーのコマンド
 #define WAIST_Y_VAL 51            // 腰ヨーの値
+
 #define R_SHOULDER_P_CMD 52       // 右肩ピッチのコマンド
 #define R_SHOULDER_P_VAL 53       // 右肩ピッチの値
 #define R_SHOULDER_R_CMD 54       // 右肩ロールのコマンド
@@ -421,3 +440,5 @@
 #define MRD_USERDATA_87 87        // ユーザー定義用
 #define MRD_ERROR_CODE 88         // エラーコード
 #define MRD_CHECKSUM 89           // チェックサム
+
+#endif
