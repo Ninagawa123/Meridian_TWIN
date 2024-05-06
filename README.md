@@ -1,30 +1,15 @@
-# Update 20240430  v1.0.2
+# Meridian_TWIN (Update 20240506 v1.1.0)
   
-Teensy側のSPI通信を１フレームで上り下り２回処理を行うようにしました.  
-この改訂により、PCは常に最新の動作結果を得られるようになりました.  
-(これまではSPI通信は1フレーム1回のみだったため,受信値は1フレーム前のものでした.)  
-  
-# Update 20231231  v1.0.1
-  
-パッシブモードに対応しました.Meridian_Consoleの v23.1230以降に対応しています.  
-通信関連のパスワード等のデータをkeys.hに分離しました.  04.30
-  
-# Update 20230710  v1.0.0  
-  
-ライブラリ対応版として大幅なアップデートを行いました.(前回までのバージョンはoldディレクトリにzipで格納しています.)      
-メインが整理され, 改造の見通しが立ちやすくなりました.  
-また, マイコンごとにまちまちだった変数名の書式も統一しました.  
-変数のルールやライブラリ関数については, 下記に情報を集約していきます.  
-https://ninagawa123.github.io/Meridian_info/  
-  
-# Meridian_TWIN
+![meridian_logo_800x450](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/f4034bae-70ab-49db-a834-f4bab2ecdad3)
   
 Meridian計画はヒューマノイドの制御システムについてのオープンソースプロジェクトです.  
 ホビーロボットのデジタルツイン化を簡単に実装することができ, PC上のシミュレーション空間とロボット実機をWIFI経由で10msの更新頻度でデータリンクします.  
-    
+  
 システムの中核はMeridim配列というロボットの状態データを格納できる軽量で汎用的なデータ配列です.  
 このデータ配列がデバイス間を高速に廻ることで, リアルタイムな状態データを共有を可能にします.  
 Meridim配列を中間プロトコルとして既存のシステムの間に挟むことで, 複数社のコマンドサーボやセンサ, Unityなどの開発環境, ROSで使用可能な多岐にわたるシミュレーターなどを自由に繋ぎ合わせることができます.  
+  
+![meridian_circulate_image](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/c786bec4-3bf4-4f71-8090-dbf179d04758)
   
 当リポジトリで取り扱う ”Meridian_TWIN" はESP32とTeensy4.0を併用するタイプで, 対応ボードはMeridian Board Type.Kとなります.  
 また, ESP32DeckitC単体で動作する簡易バージョンのMeridian_LITE(対応ボードはMeridian Board -LITE-)も開発済みです.  
@@ -42,7 +27,7 @@ Meridianは今後も用途に応じて様々なハードウェア, ソフトウ�
 専用ボードの回路図も公開しており, 自作したりブレットボードで再現することが可能です.  
 動作可能なサンプルプログラムも当リポジトリ内で公開しています.  
   
-Meridianの概要や変数やライブラリ関数について, 下記に集約中です.  
+Meridianの概要や変数やライブラリ関数について, 下記に集約中です.（データがやや古いです.）  
 https://ninagawa123.github.io/Meridian_info/
 
 また, 全体の仕組みや開発進捗は以下のnoteにまとめています.  
@@ -64,7 +49,7 @@ PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可
 - Teensy4.0  
 - ESP32DevkitC  
 - MPU6050(GY-521)  
-- Meridian Board Type.K
+- Meridian Board Type.K  
   
   
 # Installation  
@@ -161,14 +146,7 @@ PlatformIOのファイルメニューより「フォルダーを開く」とし,
 - **ESP32DMASPI@0.1.2 by hideakitai**  
   
 PlatformIOで"MeridianTWIN_ESP32"等の名前で新規プロジェクトを作成し, BoardはEspressif ESP32 Dev Module, FrameWorkにはArduinoを選択します.  
-    
-#### 追加のライブラリを導入し、修正する  
-- **PS4Controller.h**  
-PS4リモコン用のライブラリを追加導入します.(https://github.com/aed3/PS4-esp32)  
-libのインポートなどにルールがあり、下記にまとめました.  
-またPS4ライブラリをESP32用に修正する方法もまとめています  
-https://qiita.com/Ninagawa_Izumi/items/d8966092fe2abd3cba79  
-
+  
 ##### 接続先のPCのIPアドレスを調べる
 windowsのコマンドプロンプトを開き,  
 $ ipconfig （Ubuntuの場合は$ ip a もしくは $ ifconfig）  
@@ -177,7 +155,7 @@ IPv4アドレスが表示されます(192.168.1.xxなど)
 Macの場合は画面右上のwifiマークから”ネットワーク”環境設定...で表示されます.  
   
 ##### WIFIを設定する  
-「src/**keys.h**」 /\* Wifiアクセスポイントの設定 \*/ のところで,  
+「src/config.h」 // Wifiアクセスポイントの設定 のところで,  
 接続したいWIFIのアクセスポイントのSSIDとパスワードを入力します.  
 アクセスポイントは5GHzではなく**2.4GHz**に対応している必要があります.  
 また, 先ほど調べた接続先のPCのIPアドレスも記入します.  
@@ -191,6 +169,7 @@ https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
 #### ESP32にソースコードを書き込む  
 ここで一度, 更新したファイルを**セーブしESP32に書き込みます**.  
 ESP32とPCをUSBケーブルで接続し, PlatformIOの下にある「チェックマーク」のボタンを押して内容をビルドし,[SUCCESS]が表示されることを確認します. その後, 「→」ボタンを押してESP32にコードを書き込みます.(ボードは自動的に認識されます.)  
+  
 ##### ESP32のアップロードがうまくいかない場合  
 アップロードが失敗する場合でも, 何度か行うことで成功する場合があるので試してみてください.  
 アップロード開始時にESP32DeckitCのENボタンを押すことでアップロードがうまくいく場合もあります.  
@@ -220,7 +199,7 @@ platformio.iniでは以下の設定を行なっています.
   
 #### 設定の確認    
 他にも, 接続するリモコンやシリアルモニタなどについての設定が可能です.  
-Bluetoothリモコンを接続しない場合は必ずMOUNT_JOYPADを0に設定してください.(リモコンの受信待ちでMeridianの通信速度が大幅に低下します.)  
+Bluetoothリモコンを接続しない場合は必ずMOUNT_JOYPADを0に設定してください.
   
 #### 各種設定の確認  
 Teensy40, ESP32両方の「src/config.h」内のコメントを参考に適宜変更してください.  
@@ -293,13 +272,8 @@ Meridian consoleのアドレスを更新してください.*
 Meridianボードの電源入力にバッテリーや安定化電源で電力を供給することでも安定的に動きます.  
   
 ### 既知の課題  
-  
-####  Meridian Board(2023.07.10)
-- 各経路で, 0.1%以下の通信エラーが発生します.Meridianのシステムでは通信エラー時はすぐに次のデータを使用することでこのエラーをフォローしています.
-- PS4コントローラの接続時, データスキップが5%~15%ほど生じます.
-- Wiiコントローラの接続時はデータのスキップはほとんど発生しません.
 
-####  Meridian Board Type.K のフリーピン結線時の注意  
+####  Meridian Board Type.K のフリーピン結線時の注意    
 Meridian Board Type.Kには未接続のピン穴を複数設けてあり, 背面からマイコンの入出力と半田付けするすることでIOポートとして利用可能です.その際の注意点を以下にメモします.  
 - ESP32のRX0, TX0はPCとのUSBシリアルで使用されています.  
 - ESP32のGPIO6-11は内部フラッシュとの接続されておりIOとしては使用できないようです.  
@@ -319,3 +293,36 @@ USBバスパワーのみで動作させている場合など, サーボへの電
 
 ####  9軸センサのBNO055がうまく動作しない  
 Teensy4.0との相性問題で,通信中に正しいデータが取得できなくなります.改善方法を探っています.  
+
+# Update
+
+#### Update 20240506 v1.1.0
+コードの内容を大幅にリファクタリングし, アップデートしました.
+コードを機能ごとのファイルに分け, モージュール化しました. これにより追加機能の開発に取り組みやすくなりました.  
+
+![Meridian_TWIN_module_diagram_20240506](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/2d77a89e-ffc8-43b5-8ba3-b4757d01679f)
+  
+
+![Meridan90_flowchart_20240504](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/f4fb614d-844c-4568-98f5-f2270f87d86c)
+
+また, 通信フローを抜本的に見直し, 送受信の上り, 下りを明確にしました. 具体的には, これまでTeensy-ESP間の通信は1フレームあたり1回でしtが, 通信を2回行うようにしました. これによりPC側からみて, 送信したコマンドの実行結果が入った受信データをリアルタムに受け取れるようになりました.  
+
+
+Meridianと親和するリモコン受信機のコードも公開しました. M5StampPICOをWiiremoteやPS4コントローラーの受信機とし, I2C経由でMeridianにPADデータを流し込めます.
+
+https://github.com/Ninagawa123/Merimote?tab=readme-ov-file
+  
+![merimote](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/5e1ed141-ad12-418a-b0ae-96a22db865e0)  
+  
+  
+#### Update 20240325 v1.0.1
+esp32側のpratformio.ini内、lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため、  
+hideakitai/ESP32DMASPI@0.3.0 にアップデートしました。  
+  
+#### Update 20230710  v1.0.0
+
+ライブラリ対応版として大幅なアップデートを行いました.(前回までのバージョンはoldディレクトリにzipで格納しています.)      
+メインが整理され, 改造の見通しが立ちやすくなりました.  
+また, マイコンごとにまちまちだった変数名の書式も統一しました.  
+変数のルールやライブラリ関数については, 下記に情報を集約していきます.  
+https://ninagawa123.github.io/Meridian_info/  
