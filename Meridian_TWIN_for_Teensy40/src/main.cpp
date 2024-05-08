@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_MAIN__
 #define __MERIDIAN_MAIN__
 
-#define VERSION "Meridian_TWIN_for_Teensy_2024.05.05" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_v1.1.0_2024.05.09" // バージョン表示
 
 // Meridian_TWIN_for_Teensy By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
@@ -10,11 +10,7 @@
 // 20240414 SPI通信を1フレームあたり2回,往復実行するように修正.変数を構造化
 // 20240503 第三次リファクタリング
 // 20240502 モジュールごとにファイルを分割
-// ※デフォルト値がIポーズかTポーズかを決定するフラグか変数が必要
-
-// 引数をもっていること. （設定系の構造体が先頭(トリムとか, マウント, 設定？), meridimの送受信, OPTION）
-// option:スルーモード, やりたいことは, SDアクセス, EEPROMアクセスなど
-// （古いデータで上書きしちゃうけど, 上書き自体をしないでほしい. ）
+// 20240509 コメント修正
 
 //================================================================================================================
 //---- 初期設定  --------------------------------------------------------------------------------------------------
@@ -113,7 +109,7 @@ void loop()
     // @[1-1] ESP32とのSPI送受信の実行
     if (spi_trans)
     {
-        // SPIのデータを受信。送信はダミーデータ。
+        // SPIのデータを受信. 送信はダミーデータ. 
         TsyDMASPI0.transfer(s_spi_meridim_dummy.bval, r_spi_meridim_dma.bval, MSG_BUFF + 4);
 
         // [1-2] ESP32からのSPI受信データチェックサム確認と成否のシリアル表示
@@ -335,7 +331,7 @@ void loop()
         delay(1); // 待機処理をスキップするが, 負荷低減のため1msのディレイ
     }
 
-    // @[14-3] 必要に応じてフレーム管理時計tmr.mrd_milを現在時刻にリセット
+    // @[14-3] 必要に応じてフレームの遅延累積時間frameDeleyをリセット
     if (flg.reset_meridian_time)
     {
         frameDeley = 0;
@@ -350,30 +346,44 @@ void loop()
 //---- 関 数 各 種  -----------------------------------------------------------------------------------------------
 //================================================================================================================
 
-// ビットをセットする関数（16ビット用）
+/// @brief 指定された位置のビットをセットします（16ビット変数用）. 
+/// @param byte ビットをセットする16ビットの変数の参照. 
+/// @param bitPosition セットするビットの位置（0から15）. 
+/// @return なし. 
 void setBit16(uint16_t &byte, uint16_t bitPosition)
 {
     byte |= (1 << bitPosition);
 }
 
-// ビットをクリアする関数（16ビット用）
+/// @brief 指定された位置のビットをクリアします（16ビット変数用）. 
+/// @param byte ビットをクリアする16ビットの変数の参照. 
+/// @param bitPosition クリアするビットの位置（0から15）. 
+/// @return なし. 
 void clearBit16(uint16_t &byte, uint16_t bitPosition)
 {
     byte &= ~(1 << bitPosition);
 }
 
-// ビットをセットする関数（8ビット用）
+/// @brief 指定された位置のビットをセットします（8ビット変数用）. 
+/// @param value ビットをセットする8ビットの変数の参照. 
+/// @param bitPosition セットするビットの位置（0から7）. 
+/// @return なし. 
 void setBit8(uint8_t &value, uint8_t bitPosition)
 {
     value |= (1 << bitPosition);
 }
 
-// ビットをクリアする関数（8ビット用）
+/// @brief 指定された位置のビットをクリアします（8ビット変数用）. 
+/// @param value ビットをクリアする8ビットの変数の参照. 
+/// @param bitPosition クリアするビットの位置（0から7）. 
+/// @return なし. 
 void clearBit8(uint8_t &value, uint8_t bitPosition)
 {
     value &= ~(1 << bitPosition);
 }
 
+/// @brief エラーカウントをインクリメントする関数です. 特定のビット位置に基づいて各種エラーをチェックし, 対応するエラーカウンターを増加させます. 
+/// @return なし. 
 void countup_errors()
 {
     auto incrementError = [&](int bitPosition, int &errorCounter)
@@ -397,6 +407,9 @@ void countup_errors()
 //---- Command processing ----------------------------------------------------------------------------------------
 //================================================================================================================
 
+/// @brief Master Commandの実行を行います. 受信フラグに基づき, 異なるコマンドの処理を行います. 
+/// @param exe_flg_mrd_spi_rcvd SPI受信の実行フラグ. 
+/// @return コマンドが実行されなかった場合はfalse, それ以外はtrueを返します. 
 bool execute_MasterCommand_1(bool exe_flg_mrd_spi_rcvd)
 {
     if (!exe_flg_mrd_spi_rcvd)
@@ -439,6 +452,9 @@ bool execute_MasterCommand_1(bool exe_flg_mrd_spi_rcvd)
     return true;
 }
 
+/// @brief Master Commandの実行を行います. 受信フラグに基づき, 異なるコマンドの処理を行います. 
+/// @param exe_flg_mrd_spi_rcvd SPI受信の実行フラグ. 
+/// @return コマンドが実行されなかった場合はfalse, それ以外はtrueを返します. 
 bool execute_MasterCommand_2(bool exe_flg_mrd_spi_rcvd)
 {
     if (!exe_flg_mrd_spi_rcvd)
