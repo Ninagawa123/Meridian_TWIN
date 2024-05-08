@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_MAIN__
 #define __MERIDIAN_MAIN__
 
-#define VERSION "Meridian_TWIN_for_Teensy_v1.1.0_2024.05.09" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2024.05.09" // バージョン表示
 
 // Meridian_TWIN_for_Teensy By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
