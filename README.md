@@ -28,10 +28,10 @@ Meridianは今後も用途に応じて様々なハードウェア, ソフトウ�
 動作可能なサンプルプログラムも当リポジトリ内で公開しています.  
   
 Meridianの概要や変数やライブラリ関数について, 下記に集約中です.（データがやや古いです.）  
-https://ninagawa123.github.io/Meridian_info/
-
+[https://ninagawa123.github.io/Meridian_info/](https://ninagawa123.github.io/Meridian_info/)  
+  
 また, 全体の仕組みや開発進捗は以下のnoteにまとめています.  
-https://note.com/ninagawa123/n/ncfde7a6fc835  
+[https://note.com/ninagawa123/n/ncfde7a6fc835](https://note.com/ninagawa123/n/ncfde7a6fc835)  
   
   
 # System composition  
