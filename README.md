@@ -57,7 +57,7 @@ Teensy4.0, ESP32DevKitCにそれぞれのファイルを書き込みます.
 以下の説明の理解にはPlatformIOやTeensy4.0, ESP32の扱いについてのごく初歩的な知識が必要です.
 PlatformIOを初めて使うような方向けの導入手順については後日まとめる予定です.  
 普段Arduino IDEを使っている方のためのPlatformIOの導入Tipsについては下記にまとめました.  
-https://qiita.com/Ninagawa_Izumi/items/6f58d9dbfdfe99be9c13  
+[https://qiita.com/Ninagawa_Izumi/items/6f58d9dbfdfe99be9c13](https://qiita.com/Ninagawa_Izumi/items/6f58d9dbfdfe99be9c13)  
     
   
 # ファイルの準備  
@@ -98,7 +98,7 @@ MERIDIAN_TWIN_FOR_TEENSY40
 ##### IcsClass_V210の導入について
 近藤科学のICSサーボのためのライブラリもMITライセンスに基づき同梱していますが,  
 最新版については下記をご参照ください.  
-https://kondo-robot.com/faq/ics-library-a2  
+[https://kondo-robot.com/faq/ics-library-a2](https://kondo-robot.com/faq/ics-library-a2)  
   
 #### サーボのマウントを設定する
 Teensy4.0用のソースコードの「src/config.h」を開き,155行目ごろから始まるサーボ設定のところで,各サーボのマウントありなしを変更します.   
@@ -168,7 +168,8 @@ Macの場合は画面右上のwifiマークから”ネットワーク”環境�
 すでにお手元でESP32 DevkitCに書き込みを行ったことのあるPCであれば問題ないですが、
 初めての場合、「CP210x USB - UART ブリッジ VCP ドライバ」が必要になる場合があります。
 未導入の方は下記サイトより適切なものをインストールをしてください。
-https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
+[https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads](https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
+)
   
 #### ESP32にソースコードを書き込む  
 ここで一度, 更新したファイルを**セーブしESP32に書き込みます**.  
