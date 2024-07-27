@@ -73,13 +73,15 @@ PlatformIOのファイルメニューより「フォルダーを開く」とし,
 主なファイル構成は下記になります.  
 
 ```  
-MERIDIAN_TWIN_FOR_TEENSY40  
-├lib  
-│ └ ICSClass_V210 (サーボ用ライブラリ)  
-├ src  
-│ ├ config.h (Meridian設定ファイル)  
-│ ├ main.cpp (Meridian本体)  
-│ └ main.h  (Meridianヘッダファイル)  
+MERIDIAN_TWIN_FOR_TEENSY40
+│  
+├─ lib  
+│   └ ICSClass_V210 (サーボ用ライブラリ)
+│  
+├─ src  
+│   ├ config.h (Meridian設定ファイル)  
+│   ├ main.cpp (Meridian本体)  
+│   └ main.h  (Meridianヘッダファイル)  
 └ platfomio.ini (ボード設定ファイル)  </p>
 ```
 
