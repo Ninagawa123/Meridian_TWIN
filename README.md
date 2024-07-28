@@ -21,7 +21,7 @@ Meridianは今後も用途に応じて様々なハードウェア, ソフトウ�
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
 100Hzダンスのデモ動画
   
-# 開発資料  
+## 開発資料  
   
 プログラムのフローや配列の定義, ボードのピンアサインについては「document」ディレクトリの中に資料としてまとめています.  
 専用ボードの回路図も公開しており, 自作したりブレットボードで再現することが可能です.  
@@ -34,7 +34,7 @@ Meridianの概要や変数やライブラリ関数について, 下記に集約�
 [https://note.com/ninagawa123/n/ncfde7a6fc835](https://note.com/ninagawa123/n/ncfde7a6fc835)  
   
   
-# System composition  
+## System composition  
   
 Meridian_TWINは, ハードウェアとして通信用のESP32DevKitC, 制御用のTeensy4.0, それらを連結する専用ボードのMeiridian Boardで構成されます.  
 デモは近藤科学のKRSサーボ(通信速度1.25Mbps)に対応しており, Meiridian Board Type.KはKHR-3HV用に搭載することができます.  
@@ -43,7 +43,7 @@ PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可
 <img width="500" alt="TypeK" src="https://user-images.githubusercontent.com/8329123/180233435-4ed5fcb0-a2c6-4e73-94b1-b842ffb79af4.png">  
   
   
-# 開発環境  
+## 開発環境  
 - PlatformIO (Teensy4.0のプラットフォームバージョンは3.5.0対応)  
 - Teensyduino(Teensy Loader 1.54, PlatformIOと併用)  
 - Teensy4.0  
@@ -52,7 +52,7 @@ PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可
 - Meridian Board Type.K  
   
   
-# Installation  
+## Installation  
 Teensy4.0, ESP32DevKitCにそれぞれのファイルを書き込みます.  
 以下の説明の理解にはPlatformIOやTeensy4.0, ESP32の扱いについてのごく初歩的な知識が必要です.
 PlatformIOを初めて使うような方向けの導入手順については後日まとめる予定です.  
@@ -60,12 +60,12 @@ PlatformIOを初めて使うような方向けの導入手順については後�
 [https://qiita.com/Ninagawa_Izumi/items/6f58d9dbfdfe99be9c13](https://qiita.com/Ninagawa_Izumi/items/6f58d9dbfdfe99be9c13)  
     
   
-# ファイルの準備  
+## ファイルの準備  
 当リポジトリ右上の「\<\>code」ボタンより「Download ZIP」を選択し,  
 ファイルをお手元のPCの適切なディレクトリに展開します.  
 (もちろんgit cloneなど他の手順でも構いません.)  
 
-## Teensy4.0の準備  
+### Teensy4.0の準備  
 #### PlatformIOでTeensy4.0用のプロジェクトファイルを開く  
 PlatformIOのファイルメニューより「フォルダーを開く」とし, 先ほど展開したファイルの中から「Meridian_TWIN_for_Teensy40」のディレクトリを選択します.  
 (Meridian_TWIN_for_ESP32と間違えないようご注意ください.)  
@@ -127,7 +127,7 @@ MPU/AHRSセンサをMeridianボードのI2Cピンに接続します.
 Teensy4.0とPCをUSBケーブルで接続し, PlatformIOの下にある「チェックマーク」のボタンを押して内容をビルドし,[SUCCESS]が表示されることを確認します. その後, 「→」ボタンを押してTeensy4.0にコードを書き込みます.(ボードは自動的に認識されます.)  
 センサーやリモコンなどの機器の接続について, 「src/config.h」にて詳細に設定できます.    
   
-## ESP32DevkitCの準備
+### ESP32DevkitCの準備
 
 #### PlatformIOでESP32用のプロジェクトファイルを開く  
 PlatformIOのファイルメニューより「フォルダーを開く」とし, 先ほど展開したファイルの中から「Meridian_TWIN_for_ESP32」のディレクトリを選択します.  
@@ -214,12 +214,12 @@ ESP32は主に通信系のWifiとBluetoothリモコンの設定になります.
 これでMeridian Board側の設定は完了です.  
   
   
-#  Meridian consoleを実行する  
+## Meridian consoleを実行する  
 Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.  
 https://github.com/Ninagawa123/Meridian_console  
 ![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img.jpg)  
   
-#  Unity版デモを実行する  
+## Unity版デモを実行する  
   
 Meridian_TWINとUnityを連携させることができます.  
 下記のリポジトリの内容をお試しください.  
@@ -228,7 +228,7 @@ Meridian_TWINとUnityを連携させることができます.
 <img width="500" alt="Meridian_Unity" src="https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/5b486e83-40b8-4556-8a98-8d0ac643effd">
 
   
-# ROS版デモを実行する
+## ROS版デモを実行する
   
 ### ROS noeticの導入
 お手持ちの環境にROSを導入してください.  
@@ -263,7 +263,7 @@ MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画�
 ここでさらに「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
   
   
-# トラブルシューティング
+## トラブルシューティング
   
 ### ROS版デモ実行時のトラブルシューティング
 Error: Cannot assign requested address となる  
@@ -299,7 +299,7 @@ USBバスパワーのみで動作させている場合など, サーボへの電
 ####  9軸センサのBNO055がうまく動作しない  
 Teensy4.0との相性問題で,通信中に正しいデータが取得できなくなります.改善方法を探っています.  
 
-# Update
+## Update
 
 #### Update 20240506 v1.1.0
 コードの内容を大幅にリファクタリングし, アップデートしました.
@@ -319,7 +319,7 @@ https://github.com/Ninagawa123/Merimote?tab=readme-ov-file
   
 <img width="400" alt="merimote" src="https://github.com/user-attachments/assets/562b162e-1b4a-4766-8667-0760f6f7ee3f">
 
-# [Merimote v0.0.1](https://github.com/Ninagawa123/Merimote)  
+## [Merimote v0.0.1](https://github.com/Ninagawa123/Merimote)  
 Merimoteは主にM5StampPICOを用いたマルチユースのリモコン受信デバイスです。  
 Arduino frameworkのオープンソースのため拡張しやすく、好みのリモコン環境を構築できます。  
 Meridianシステムの一部ですが、もちろんMerimote単独でも利用することができます。  
@@ -328,24 +328,24 @@ Merimote is a module for receiving remote control signals.
 Merimote primarily uses the M5StampPICO as a multi-use remote control receiving device. It is open source, making it easy to extend and allows for building a custom remote control environment. It is part of the Meridian system, but can also be used independently.  
 I have prepared a connection sample for the M5Stamp PICO and Arduino UNO, so you can also immediately test the I2C functionality.  
   
-## Current Compatible Devices and Outputs  
+### Current Compatible Devices and Outputs  
 ・M5StampPICO  
 ・I2C output  
 ・Wii Remort
 ・PS4 Controler  
   
-## Why M5StampPICO  
+### Why M5StampPICO  
 多くのリモコンに対応するためには、SPPが必要があります。  
 M5StampPICOは小型でSPPに対応したデバイスです。  
 To support many remotes, SPP is necessary. M5StampPICO is a compact device that supports SPP.  
   
-## Reasons for Separating the Receiver from the Microcontroller  
+### Reasons for Separating the Receiver from the Microcontroller  
 ESP32などで高速なWifi通信を行う場合、Bluetoothと併用することでリアルタイム処理が間に合わなくなる場合があります。  
 そこでリモコンの受信処理を分散し、整理したデータをI2Cで渡すようにしました。  
 また別モジュール化して疎結合化したことで、個別に拡張しやすくなるという利点があります。  
 When performing high-speed Wifi communications with devices like the ESP32, combining it with Bluetooth can delay real-time processing. Therefore, remote control reception is decentralized, and organized data is transmitted via I2C. Also, modularizing and decoupling facilitate easy individual extensions.  
   
-## I2C Data Format  
+### I2C Data Format  
 デフォルトのM5StampPICOのI2Cアドレスを0x58と設定しています。  
 呼び出すことで下記の配列データを返します。  
 The default I2C address for the M5StampPICO is set to 0x58. It returns the following array data when called:
@@ -361,11 +361,11 @@ Short型でindex0〜4、Byte型でindex0〜9となる共用体配列です。
 その他の仕様については[Meridian](https://ninagawa123.github.io/Meridian_info/#aboutMeridim/remort_controller/)に準拠します。  
 This is a union array with Short type ranging from index 0 to 4 and Byte type from index 0 to 9. The checksum is calculated by summing up Short type from index 0 to 3 and then inverting the bits. For further specifications, please refer to Meridian, which this complies with.  
 
-## How To Install  
+### How To Install  
 PlatformIOでMerimote>MerimotePICOフォルダを開き、M5StackPICOにインストールします。  
 通信先となるマイコンボードとSCK同士、SDA同士、GND、5Vを接続します。  
 
-## How To Use  
+### How To Use  
 config.hで設定を行います。  
 
 ```
@@ -374,47 +374,49 @@ config.hで設定を行います。
 #define MONITOR_JOYPAD 1 // 動作確認用にシリアルモニタで入力データを表示できます。（0:OFF, 1:ボタンのみ, 2:アナログ込み） 
 ```
 
-## LED  
+### LED  
 PIN25(DAC)とGNDの間に抵抗入りLEDを接続すると、リモコンペアリング前は点滅し、ペアリング後に常時点灯となります。  
   
-## Reset Button  
+### Reset Button  
 PIN32と5Vをショートするとソフトウェアリセットし、再度ペアリングができるようになります。  
   
-## Trouble Shooting   
+### Trouble Shooting   
 接続が確立しない場合、  
 #define BT_REMOVE_BONDED_DEVICES 1  
 を書き込んで再起動すると、BTデバイスの登録がリセットされ、接続できるようになるかもしれません。  
   
-## Wiiリモコンの接続方法  
+### Wiiリモコンの接続方法  
 #define MOUNT_JOYPAD 5 として書き込みます。  
 Wiiリモコンの1,2ボタンを同時押しするとペアリングします。  
   
-## PS4リモコンの接続方法  
+### PS4リモコンの接続方法  
 #define MOUNT_JOYPAD 4 として書き込みます。  
 起動するとシリアルモニタにM5StampPICOのMACアドレスがxx:xx:xx:xx:xx:xxのフォーマットで表示されるのでメモします。  
 **SixaxisPairTool**を検索してPCにダウンロードし、SixaxisPairToolの起動後にPS4リモコンをUSBケーブルでPCに接続します。  
 接続先のMacアドレスを設定できるようになるので、メモしたアドレスを上書き登録します。  
 M5StampPICOの起動後にPSボタンを押すと、ペアリングが確立します。  
 
-## 動作確認  
+### 動作確認  
 簡易的に動作確認ができるArduino UNO用のサンプルスクリプトを用意しました。  
 Arduino UnoなどとM5StampPICOをSCK同士、SDA同士、V5、GNDをそれぞれ結線し、Sample＞Merimote_Receiver.inoをArduino IDE等で書き込んでください。  
 実行後にシリアルモニタで下図のように動作確認ができます。  
 
 <img width="400" alt="Merimote_Receiver" src="https://github.com/Ninagawa123/Merimote/assets/8329123/2bd1d101-ddce-4497-9dcd-9cdfd1a659a0">
 
-## BlueRetroを使えばよいのでは？
+### BlueRetroを使えばよいのでは？
 MeridianはBlueRetro準拠に移行予定です。  
 一方、Merimoteはコードベースで内容のカスタマイズができて便利な面も多いので、必要に応じて育てていこうと思います。  
 
-  
-  
+## Update情報
+
+#### Update 20240506 v1.1.0
+関数を機能ごとにヘッダファイルとして切り出し、モジュール構造としました。  
+
 #### Update 20240325 v1.0.1
 esp32側のpratformio.ini内、lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため、  
 hideakitai/ESP32DMASPI@0.3.0 にアップデートしました。  
   
 #### Update 20230710  v1.0.0
-
 ライブラリ対応版として大幅なアップデートを行いました.(前回までのバージョンはoldディレクトリにzipで格納しています.)      
 メインが整理され, 改造の見通しが立ちやすくなりました.  
 また, マイコンごとにまちまちだった変数名の書式も統一しました.  
