@@ -382,15 +382,15 @@ PIN32と5Vをショートするとソフトウェアリセットし、再度ペ�
   
 ### Trouble Shooting   
 接続が確立しない場合、  
-#define BT_REMOVE_BONDED_DEVICES 1  
+\#define BT_REMOVE_BONDED_DEVICES 1  
 を書き込んで再起動すると、BTデバイスの登録がリセットされ、接続できるようになるかもしれません。  
   
 ### Wiiリモコンの接続方法  
-#define MOUNT_JOYPAD 5 として書き込みます。  
+\#define MOUNT_JOYPAD 5 として書き込みます。  
 Wiiリモコンの1,2ボタンを同時押しするとペアリングします。  
   
 ### PS4リモコンの接続方法  
-#define MOUNT_JOYPAD 4 として書き込みます。  
+\#define MOUNT_JOYPAD 4 として書き込みます。  
 起動するとシリアルモニタにM5StampPICOのMACアドレスがxx:xx:xx:xx:xx:xxのフォーマットで表示されるのでメモします。  
 **SixaxisPairTool**を検索してPCにダウンロードし、SixaxisPairToolの起動後にPS4リモコンをUSBケーブルでPCに接続します。  
 接続先のMacアドレスを設定できるようになるので、メモしたアドレスを上書き登録します。  
