@@ -11,12 +11,10 @@
 //  初期設定
 //================================================================================================================
 
-// コンフィグファイルの読み込み
-#include "config.h"
-#include "keys.h"
-
 // ヘッダファイルの読み込み
+#include "config.h"
 #include "main.h"
+#include "keys.h"
 #include "mrd_bt.h"
 #include "mrd_msg.h"
 #include "mrd_pad.h"
