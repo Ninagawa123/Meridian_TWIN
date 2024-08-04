@@ -1,10 +1,8 @@
 #ifndef __MERIDIAN_JOYPAD_H__
 #define __MERIDIAN_JOYPAD_H__
 
-// コンフィグファイルの読み込み
-#include "config.h"
-
 // ヘッダファイルの読み込み
+#include "config.h"
 #include "main.h"
 #include "mrd_bt.h"
 
