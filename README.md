@@ -1,4 +1,4 @@
-# [Meridian_TWIN v1.1.0](https://github.com/Ninagawa123/Meridian_TWIN)
+# [Meridian_TWIN v1.1.1](https://github.com/Ninagawa123/Meridian_TWIN)
   
 ![meridian_logo_800x450](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/f4034bae-70ab-49db-a834-f4bab2ecdad3)
   
