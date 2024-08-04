@@ -1,10 +1,8 @@
 #ifndef __MERIDIAN_WIFI_H__
 #define __MERIDIAN_WIFI_H__
 
-// コンフィグファイルの読み込み
-#include "config.h"
-
 // ヘッダファイルの読み込み
+#include "config.h"
 #include "main.h"
 #include "keys.h"
 
