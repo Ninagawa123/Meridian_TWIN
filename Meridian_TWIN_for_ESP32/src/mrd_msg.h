@@ -1,14 +1,10 @@
 #ifndef __MERIDIAN_MESSAGE_H__
 #define __MERIDIAN_MESSAGE_H__
 
-// コンフィグファイルの読み込み
+// ヘッダファイルの読み込み
 #include "config.h"
-
-// ヘッダファイルの読み込み
-#include "keys.h"
-
-// ヘッダファイルの読み込み
 #include "main.h"
+#include "keys.h"
 
 // ライブラリ導入
 #include <WiFi.h>
