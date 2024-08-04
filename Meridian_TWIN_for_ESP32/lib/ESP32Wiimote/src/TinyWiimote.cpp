@@ -332,7 +332,7 @@ static void l2capClearConnection(void) {
 static uint8_t tmpQueueData[256];
 
 static void resetDevice(void) {
-  UNVERBOSE_PRINT("resetDevice\n");
+  UNVERBOSE_PRINT("Wiimote reset.\n");
   connected_device_clear();
   l2capClearConnection();
   uint16_t len = make_cmd_reset(tmpQueueData);
@@ -938,7 +938,7 @@ static void handleExtensionControllerReports(uint16_t ch, uint16_t channelID, ui
     if(data[1] == 0x21){
       if(memcmp(data+5, (const uint8_t[]){0x00, 0xFA}, 2) == 0){
         if(memcmp(data+7, (const uint8_t[]){0x00, 0x00, 0xA4, 0x20, 0x00, 0x00}, 6) == 0){ // Nunchuk
-          UNVERBOSE_PRINT("Nunchuk detected\n");
+          UNVERBOSE_PRINT("Nunchuk detected.\n");
           nunchukConnected = true;
           if (useAccelerometer)
             setDataReportingMode(ch, 0x35, false); // Core Buttons and Accelerometer with 16 Extension bytes: 35 BB BB AA AA AA EE EE ...
@@ -1003,7 +1003,7 @@ static void handleL2capData(uint16_t ch, uint16_t channelID, uint8_t* data, uint
     case BTCODE_HID:
       if(!wiimoteConnected){
         setPlayerLEDs(ch, 0b0001);
-        UNVERBOSE_PRINT("Wiimote detected\n");
+        UNVERBOSE_PRINT("Wiimote detected.\n");
         wiimoteConnected = true;
         if (useAccelerometer)
           setDataReportingMode(ch, 0x31, false); // Core Buttons and Accelerometer: 31 BB BB AA AA AA
