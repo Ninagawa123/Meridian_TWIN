@@ -1,3 +1,6 @@
+#ifndef __MERIDIAN_KEYS_H__
+#define __MERIDIAN_KEYS_H__
+
 // Wifiアクセスポイントの設定
 #define WIFI_AP_SSID "xxxxxxxx"      // アクセスポイントのWIFI_AP_SSID
 #define WIFI_AP_PASS "xxxxxxxx"       // アクセスポイントのパスワード
@@ -10,3 +13,5 @@
 #define FIXED_IP_ADDR "192. 168. 1. xx"    // ESP32のIPアドレスを固定する場合のESPのIPアドレス
 #define FIXED_IP_GATEWAY "192. 168. 1. xx" // ESP32のIPアドレスを固定する場合のルーターのゲートウェイ
 #define FIXED_IP_SUBNET "255. 255. 255. 0" // ESP32のIPアドレスを固定する場合のサブネット
+
+#endif                                  // __MERIDIAN_KEYS_H__
