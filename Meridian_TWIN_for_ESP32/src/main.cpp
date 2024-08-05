@@ -12,8 +12,8 @@
 //================================================================================================================
 
 // ヘッダファイルの読み込み
-#include "config.h"
 #include "main.h"
+#include "config.h"
 #include "keys.h"
 #include "mrd_bt.h"
 #include "mrd_msg.h"
@@ -90,19 +90,19 @@ void loop() {
   // @[1-1] UDPの受信待ち受けループ
   if (flg.udp_receive_mode) // UDPの受信実施フラグの確認（モード確認）
   {
-    unsigned long startMillis = millis();
+    unsigned long start_tmp = millis();
     flg.udp_busy = false; // UDP使用中フラグをセット
     flg.udp_rcvd = false; // UDP受信完了フラグをクリア
     while (!flg.udp_rcvd) {
       // UDP受信処理
-      if (mrd_wifi_udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
+      if (mrd_wifi_udp_receive(r_udp_meridim.bval, MRDM_BYTE, udp)) // 受信確認
       {
         flg.udp_rcvd = true; // UDP受信完了フラグをセット
       }
 
       // タイムアウト抜け処理
-      unsigned long currentMillis = millis();
-      if (currentMillis - startMillis >= UDP_TIMEOUT) {
+      unsigned long current_tmp = millis();
+      if (current_tmp - start_tmp >= UDP_TIMEOUT) {
         if (millis() > MONITOR_SUPPRESS_DURATION) { // 起動直後はエラー表示を抑制
           Serial.println("UDP timeout");
         }
@@ -114,45 +114,52 @@ void loop() {
   }
   flg.udp_busy = false; // UDP使用中フラグをクリア
 
+  // @[1-end] この時点で r_udp_meridim にupdから届いた最新データが格納されている.
+
   //------------------------------------------------------------------------------------
   //  [ 2 ] UDP受信品質チェック
   //------------------------------------------------------------------------------------
   mrd.monitor_check_flow("[2]", monitor.flow); // 動作チェック用シリアル表示
 
-  // @[2-1] チェックサムを確認
-  if (mrd.cksm_rslt(r_udp_meridim.sval, MRDM_LEN)) // Check sum OK!
-  {
-    mrd.monitor_check_flow("CsOK", monitor.flow); // デバグ用フロー表示
+  // @[2-1] UDP受信データ r_udp_meridim のチェックサムを確認.
+  if (mrd.cksm_rslt(r_udp_meridim.sval, MRDM_LEN)) {
+    // UDP受信配列から UDP送信配列にデータを転写
+    memcpy(s_spi_meridim.bval, r_udp_meridim.bval, MRDM_BYTE + 4);
 
-    // @[2-2] UDP受信配列から UDP送信配列にデータを転写
-    memcpy(s_udp_meridim.bval, r_udp_meridim.bval, MRDM_LEN * 2);
+    // エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をサゲる
+    s_spi_meridim.bval[MRD_ERR_u] &= 0b10111111;
 
-    // @[2-3a] エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をサゲる
-    s_udp_meridim.bval[MRD_ERR_u] &= B10111111;
-  } else // チェックサムがNGならバッファから転記せず前回のデータを使用する
-  {
-    // @[2-3b] エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をアゲる
+  } else { // チェックサムがNGならバッファから転記せず前回のデータを使用する
+    // エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をアゲる
+    s_spi_meridim.bval[MRD_ERR_u] |= 0b01000000;
     err.pc_esp++;
-    s_udp_meridim.bval[MRD_ERR_u] |= B01000000;
-    mrd.monitor_check_flow("CsErr*", monitor.flow); // デバグ用フロー表示
   }
+  // @[2-2] この時点で最新データは s_spi_meridim に転記済み.
 
-  // @[2-4] シーケンス番号チェック
-  mrdsq.r_expect = mrd.seq_predict_num(mrdsq.r_expect); // シーケンス番号予想値の生成
+  // @[2-3] シーケンス番号チェック
+  mrdsq.r_expect = mrd_seq_predict_num(mrdsq.r_expect); // シーケンス番号予想値の生成
 
-  mrd_msg_seq_number(mrdsq.r_expect, int(s_udp_meridim.usval[MRD_SEQENTIAL]),
-                     monitor.seq_num); // シーケンス番号のシリアルモニタ表示
+  // シーケンス番号のシリアルモニタ表示
+  mrd_msg_seq_number(mrdsq.r_expect, r_udp_meridim.usval[MRD_SEQ], monitor.seq_num);
 
-  if (mrd.seq_compare_nums(mrdsq.r_expect, int(s_udp_meridim.usval[MRD_SEQENTIAL]))) {
-    s_udp_meridim.bval[MRD_ERR_u] &= B11111011; // [MRD_ERR] 10番bit[ESP受信のスキップ検出]をサゲる
-    flg.meridim_rcvd = true;                    // Meridim受信成功フラグをセット
-  } else { // 受信シーケンス番号の値が予想と違ったら
-    mrdsq.r_expect = int(s_udp_meridim.usval[MRD_SEQENTIAL]); // 現在の受信値を予想結果としてキープ
-    s_udp_meridim.bval[MRD_ERR_u] |= B00000100; // Meridim[MRD_ERR]
-                                                // 10番ビット[ESP受信のスキップ検出]をアゲる
-    err.esp_skip++;
-    flg.meridim_rcvd = false; // Meridim受信成功フラグをクリア
+  // @[2-4] シーケンス番号予想値と受信値が合致しているかのチェック
+  if (mrd.seq_compare_nums(mrdsq.r_expect, r_udp_meridim.usval[MRD_SEQ])) { // 予想通りなら
+    s_spi_meridim.bval[MRD_ERR_u] &= 0b11111011; // 10番bit [ESP受信のスキップ検出] をサゲる
+    flg.meridim_rcvd = true;                     // Meridim受信成功フラグをセット
+  } else { // 受信シーケンス番号の値が予想と違ったら,
+    mrdsq.r_expect = r_udp_meridim.usval[MRD_SEQ]; // 現在の受信値を予想結果としてキープ
+    s_spi_meridim.bval[MRD_ERR_u] |= 0b00000100; // 10番ビット[ESP受信のスキップ検出]をアゲる
+    if (mrdsq.r_past != r_udp_meridim.usval[MRD_SEQ]) {
+      Serial.println("SqNG*");
+      err.esp_skip++;
+      flg.meridim_rcvd = false; // Meridim受信成功フラグをクリア
+    }
   }
+  mrdsq.r_past = r_udp_meridim.usval[MRD_SEQ];
+
+  // @[2-end] この時点での最新データは s_spi_meridim.
+  //          チェックサムとシーケンス番号チェックに適合しなかった場合は前回のデータ.
+  //          エラーフラグを操作済みのため、s_spi_meridimのチェックサムは合わない.
 
   //------------------------------------------------------------------------------------
   //  [ 3 ] 受信値による処理
@@ -184,20 +191,19 @@ void loop() {
   }
 
   // @[4-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）
-  // → すでにPCから受け取った値がs_spi_meridim.sval[1]に入っているのでここでは何もしない
+  // → すでにPCから受け取った値がs_spi_meridim.sval[MRD_SEQ]に入っているのでここでは何もしない
 
   // @[4-4] チェックサムの更新
   mrd_writedim90_cksm(s_spi_meridim);
 
-  // [check!] ここで"s_spi_meridim"のデータが完成し, SPI送信準備が完成
-
+  // @[4-end] ここで SPIに送信するs_spi_meridim のデータが完成.
   //------------------------------------------------------------------------------------
-  //  [ 5 ] SPI送受信の実行
+  //  [ 5 ] SPI送受信の実行(送信後に受信の待ち受け)
   //------------------------------------------------------------------------------------
   mrd.monitor_check_flow("[5]", monitor.flow); // 動作チェック用シリアル表示
 
-  flg.spi_rcvd = false; // SPI受信完了フラグをクリア
-  while (!flg.spi_rcvd) {
+  flg.spi_rcvd = false;   // SPI受信完了フラグをクリア
+  while (!flg.spi_rcvd) { // SPIを送信しつつ, ダミーではないデータを待ち受ける
     // @[5-1] SPI通信のトランザクションがなければデータをキューに補充
     if (slave.remained() == 0) {
       memcpy(s_spi_meridim_dma, s_spi_meridim.bval, MRDM_BYTE + 4);
@@ -213,12 +219,18 @@ void loop() {
         {
           memcpy(s_udp_meridim.bval, tmp_meridim.bval, MRDM_BYTE); // DMAからUDP送信配列に転記
           flg.spi_rcvd = true; // SPI受信完了フラグをセット
+        } else { // チェックサムが合わなければエラーフラグを立てて前回のデータを準備
+          s_udp_meridim.bval[MRD_ERR_u] |= 0b00010000; // 12番ビット[ESP32のSPI受信エラー]をアゲる
+          mrd_writedim90_cksm(s_udp_meridim); // チェックサムの更新
+          flg.spi_rcvd = true;                // SPI受信完了フラグをセット
         }
       }
     }
     delay(1);
   }
 
+  // @[5-end] s_spi_meridim のSPIに送信が完了し,s_udp_meridimにチェック済みの受信データが格納される
+  //          SPI受信失敗があれば、前回のs_udp_meridimをエラーフラグとチェックサムを更新して再送
   //------------------------------------------------------------------------------------
   //  [ 6 ] UDP送信データ作成
   //------------------------------------------------------------------------------------
@@ -242,7 +254,7 @@ void loop() {
   if (flg.udp_send_mode) // UDPの送信実施フラグの確認（モード確認）
   {
     flg.udp_busy = true; // UDP使用中フラグをセット
-    mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE);
+    mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp);
     flg.udp_busy = false; // UDP使用中フラグをクリア
     flg.udp_rcvd = false; // UDP受信完了フラグをクリア
   }
