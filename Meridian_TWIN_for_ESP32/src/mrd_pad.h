@@ -1,8 +1,10 @@
 #ifndef __MERIDIAN_JOYPAD_H__
 #define __MERIDIAN_JOYPAD_H__
 
-// ヘッダファイルの読み込み
+// コンフィグファイルの読み込み
 #include "config.h"
+
+// ヘッダファイルの読み込み
 #include "main.h"
 #include "mrd_bt.h"
 
@@ -34,7 +36,7 @@ void mrd_bt_wiimote_receive(PadUnion &a_pad_array); // 関数の予約
 /// trueの場合は既存のデータにビット単位でOR演算を行い, falseの場合は新しいデータで上書きする.
 /// @param a_monitor データをシリアルモニタに表示するかどうか.
 /// @return ジョイパッドが未対応のタイプの場合はfalseを返し, それ以外はtrueを返す.
-bool mrd_pad_reader(PadUnion &a_pad_array, PadReceiverType a_pad_type, bool a_marge, bool a_monitor) {
+bool mrd_pad_reader(PadUnion &a_pad_array, PadType a_pad_type, bool a_marge, bool a_monitor) {
   if (a_pad_type == WIIMOTE) // Wiimote
   {
     mrd_bt_wiimote_receive(a_pad_array);
@@ -59,13 +61,13 @@ bool mrd_pad_reader(PadUnion &a_pad_array, PadReceiverType a_pad_type, bool a_ma
 /// @return 常にtrueを返す.
 bool mrd_writedim90_pad(Meridim90Union &a_meridim, bool a_marge, PadUnion a_pad) {
   if (a_marge) { // ボタン値を受信Meridimとマージする
-    a_meridim.usval[MRD_CONTROL_BUTTONS] = a_meridim.usval[MRD_CONTROL_BUTTONS] | a_pad.usval[0];
+    a_meridim.usval[MRD_PAD_BUTTONS] = a_meridim.usval[MRD_PAD_BUTTONS] | a_pad.usval[0];
   } else { // ボタン値をマージしない（新しい値で更新する）
-    a_meridim.usval[MRD_CONTROL_BUTTONS] = a_pad.usval[0];
+    a_meridim.usval[MRD_PAD_BUTTONS] = a_pad.usval[0];
   }
 
   for (int i = 1; i < 4; i++) { // アナログ値の転記
-    a_meridim.usval[i + MRD_CONTROL_BUTTONS] = a_pad.usval[i];
+    a_meridim.usval[i + MRD_PAD_BUTTONS] = a_pad.usval[i];
   }
   return true;
 }

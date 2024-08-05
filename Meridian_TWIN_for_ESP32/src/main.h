@@ -25,7 +25,7 @@ enum ImuAhrsType { // 6軸9軸センサ種の列挙型(NO_IMU, MPU6050_IMU, MPU9
   BNO055_AHRS = 3  // BNO055
 };
 
-enum PadReceiverType { // リモコン種の列挙型(NONE, PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH)
+enum PadType { // リモコン種の列挙型(NONE, PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH)
   NONE = 0,            // リモコンなし
   PC = 0,              // PCからのPD入力情報を使用
   MERIMOTE = 1,        // MERIMOTE(未導入)
@@ -102,8 +102,9 @@ MrdFlags flg;
 
 // シーケンス番号理用の変数
 struct MrdSq {
-  int s_increment = 0; // フレーム毎に0-59999をカウントし, 送信
-  int r_expect = 0;    // フレーム毎に0-59999をカウントし, 受信値と比較
+  uint16_t s_increment = 0; // フレーム毎に0-59999をカウントし, 送信
+  uint16_t r_expect = 0;    // フレーム毎に0-59999をカウントし, 受信値と比較
+  uint16_t r_past = 0;      // 前回のシーケンス番号をキープ
 };
 MrdSq mrdsq;
 
@@ -146,6 +147,7 @@ PadUnion pad_i2c = {0};   // pad値のi2c送受信用配列
 
 struct PadValue // リモコンのアナログ入力データ
 {
+  unsigned short btn = 0;
   unsigned short stick_R = 0;
   int stick_R_x = 0;
   int stick_R_y = 0;
@@ -173,8 +175,11 @@ MrdMonitor monitor;
 //================================================================================================================
 
 // 予約用
-void Core0_BT_r(void *args);
-// IPAddress makeIPAddress(const char *ip_str);
+// void Core0_BT_r(void *args);
+IPAddress makeIPAddress(const char *ip_str);
+void udp_send();
+void udp_receive();
+void bt_settings();
 void Core0_BT_r(void *args);
 
 /// @brief meridim配列にチェックサムを算出して書き込む.
@@ -183,6 +188,24 @@ void Core0_BT_r(void *args);
 bool mrd_writedim90_cksm(Meridim90Union &a_meridim) {
   a_meridim.sval[89] = mrd.cksm_val(a_meridim.sval, 90);
   return true;
+}
+
+uint16_t mrd_seq_predict_num(uint16_t a_previous_num) {
+  uint16_t x_tmp = a_previous_num + 1;
+  if (x_tmp > 59999) // Reset counter
+  {
+    x_tmp = 0;
+  }
+  return x_tmp;
+}
+
+///@brief Compare expected seq number and received seq number.(0 to 59,000)
+///@param[in] predict_seq_num Predict sequence number.
+///@param[in] received_seq_num Received sequence number.
+///@return true OK
+///@return false NG
+bool mrd_seq_compare_nums(uint16_t a_predict_num, uint16_t a_received_num) {
+  return (a_predict_num == a_received_num);
 }
 
 #endif //__MERIDIAN_MAIN_FUNC__

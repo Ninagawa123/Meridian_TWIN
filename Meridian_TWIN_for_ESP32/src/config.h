@@ -49,7 +49,6 @@
 //================================================================================================================
 //  Meridim90配列 一覧表
 //================================================================================================================
-//
 // [00]      マスターコマンド デフォルトは90 で配列数も同時に示す
 // [01]      シーケンス番号
 // [02]-[04] IMU/AHRS:acc＿x,acc＿y,acc＿z    加速度x,y,z
@@ -75,10 +74,6 @@
 // [80]-[MRDM_LEN-3] free (Meridim90では[87]まで)
 // [MRDM_LEN-2] ERROR CODE
 // [MRDM_LEN-1] チェックサム
-
-//-------------------------------------------------------------------------
-//  各種設定
-//-------------------------------------------------------------------------
 
 // Meridimの基本設定
 #define MRDM_LEN       90  // Meridim配列の長さ設定（デフォルトは90）
@@ -108,15 +103,15 @@
 #define MONITOR_FLOW              0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
 #define MONITOR_ALL_ERROR         0 // 全経路の受信エラー率を表示
 #define MONITOR_SERVO_ERR         0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
-#define MONITOR_SEQ_NUMBER        0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
-#define MONITOR_PAD               1 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
+#define MONITOR_SEQ_NUMBER        1 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
+#define MONITOR_PAD               0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
 #define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // SPI設定
 #define SPI0_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
 
 // JOYPAD関連設定
-#define MOUNT_PAD        NONE // ESP32へのジョイパッドの搭載 NONE, PC, WIIMOTE
+#define MOUNT_PAD        NONE // ESP32へのジョイパッドの搭載 NONE:0, PC:0, WIIMOTE:5
 #define PAD_INTERVAL     10 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
 #define PAD_BUTTON_MARGE 0 // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
 #define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する
@@ -124,7 +119,17 @@
 // PC接続関連設定
 #define SERIAL_PC_BPS 115200 // PCとのシリアル速度（モニタリング表示用）
 
-// 固定値, マスターコマンド定義
+// ピンアサイン
+#define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
+#define PIN_EN_L          33 // サーボL系統のENピン
+#define PIN_EN_R          4  // サーボR系統のENピン
+#define PIN_CHIPSELECT_SD 15 // SDカード用のCSピン
+#define PIN_I2C0_SDA      22 // I2CのSDAピン
+#define PIN_I2C0_SCL      21 // I2CのSCLピン
+
+//-------------------------------------------------------------------------
+//  固定値, マスターコマンド定義
+//-------------------------------------------------------------------------
 #define MCMD_DUMMY_DATA              -32768 // SPI送受信用のダミーデータ判定用
 #define MCMD_UPDATE_YAW_CENTER       10002 // センサの推定ヨー軸を現在値センターとしてリセット
 #define MCMD_ENTER_TRIM_MODE         10003 // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
@@ -142,38 +147,30 @@
 #define MCMD_ENTER_SDCARD_READ_MODE  10015 // SDCARD読み出しモードのスタート
 #define MCMD_EXIT_SDCARD_READ_MODE   10016 // SDCARD読み出しモードの終了
 
-// ピンアサイン
-#define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
-#define PIN_EN_L          33 // サーボL系統のENピン
-#define PIN_EN_R          4  // サーボR系統のENピン
-#define PIN_CHIPSELECT_SD 15 // SDカード用のCSピン
-#define PIN_I2C0_SDA      22 // I2CのSDAピン
-#define PIN_I2C0_SCL      21 // I2CのSCLピン
-
 //-------------------------------------------------------------------------
 //  Meridim90 配列アクセス対応キー
 //-------------------------------------------------------------------------
-#define MRD_MASTER             0  // マスターコマンド
-#define MRD_SEQENTIAL          1  // シーケンス番号
-#define MRD_ACC_X              2  // 加速度センサX値
-#define MRD_ACC_Y              3  // 加速度センサY値
-#define MRD_ACC_Z              4  // 加速度センサZ値
-#define MRD_GYRO_X             5  // ジャイロセンサX値
-#define MRD_GYRO_Y             6  // ジャイロセンサY値
-#define MRD_GYRO_Z             7  // ジャイロセンサZ値
-#define MRD_MAG_X              8  // 磁気コンパスX値
-#define MRD_MAG_Y              9  // 磁気コンパスY値
-#define MRD_MAG_Z              10 // 磁気コンパスZ値
-#define MRD_TEMP               11 // 温度センサ値
-#define MRD_DIR_ROLL           12 // DMP推定ロール方向値
-#define MRD_DIR_PITCH          13 // DMP推定ピッチ方向値
-#define MRD_DIR_YAW            14 // DMP推定ヨー方向値
-#define MRD_CONTROL_BUTTONS    15 // リモコンの基本ボタン値
-#define MRD_CONTROL_STICK_L    16 // リモコンの左スティックアナログ値
-#define MRD_CONTROL_STICK_R    17 // リモコンの右スティックアナログ値
-#define MRD_CONTROL_L2R2ANALOG 18 // リモコンのL2R2ボタンアナログ値
-#define MRD_MOTION_FRAMES      19 // モーション設定のフレーム数
-#define MRD_STOP_FRAMES_MS     19 // ボード停止時のフレーム数(MCMD_STOP_BOARD_DURINGで指定)
+#define MRD_MASTER         0  // マスターコマンド
+#define MRD_SEQ            1  // シーケンス番号
+#define MRD_ACC_X          2  // 加速度センサX値
+#define MRD_ACC_Y          3  // 加速度センサY値
+#define MRD_ACC_Z          4  // 加速度センサZ値
+#define MRD_GYRO_X         5  // ジャイロセンサX値
+#define MRD_GYRO_Y         6  // ジャイロセンサY値
+#define MRD_GYRO_Z         7  // ジャイロセンサZ値
+#define MRD_MAG_X          8  // 磁気コンパスX値
+#define MRD_MAG_Y          9  // 磁気コンパスY値
+#define MRD_MAG_Z          10 // 磁気コンパスZ値
+#define MRD_TEMP           11 // 温度センサ値
+#define MRD_DIR_ROLL       12 // DMP推定ロール方向値
+#define MRD_DIR_PITCH      13 // DMP推定ピッチ方向値
+#define MRD_DIR_YAW        14 // DMP推定ヨー方向値
+#define MRD_PAD_BUTTONS    15 // リモコンの基本ボタン値
+#define MRD_PAD_STICK_L    16 // リモコンの左スティックアナログ値
+#define MRD_PAD_STICK_R    17 // リモコンの右スティックアナログ値
+#define MRD_PAD_L2R2VAL    18 // リモコンのL2R2ボタンアナログ値
+#define MRD_MOTION_FRAMES  19 // モーション設定のフレーム数
+#define MRD_STOP_FRAMES_MS 19 // ボード停止時のフレーム数(MCMD_STOP_BOARD_DURINGで指定)
 
 #define C_HEAD_Y_CMD     20 // 頭ヨーのコマンド
 #define C_HEAD_Y_VAL     21 // 頭ヨーの値
