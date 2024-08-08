@@ -262,6 +262,13 @@ MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画�
 また, 「DEMO」「Enable」にチェックを入れると, 画面内のロボットがサインカーブで構成されたダンスのデモを行います.  
 ここでさらに「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
   
+## おまけ：wiiリモコンへのESP32単体対応  
+  
+ESP32のBluetooth機能を使って, wiiリモコンおよびヌンチャクを動作させることができます.  
+ただし, メインの通信に1~5%程度のエラーが発生します.  
+ESP32のconfig.hで"#define MOUNT_PAD WIIMOTE"と設定してください.  
+ボード起動時にwiiリモコンの1,2ボタン同時押しでペアリングできます.  
+Homeボタンはヌンチャクのスティックレバーのキャリブレーションとなります.  
   
 ## トラブルシューティング
   
@@ -402,17 +409,20 @@ Arduino UnoなどとM5StampPICOをSCK同士、SDA同士、V5、GNDをそれぞ�
 実行後にシリアルモニタで下図のように動作確認ができます。  
 
 <img width="400" alt="Merimote_Receiver" src="https://github.com/Ninagawa123/Merimote/assets/8329123/2bd1d101-ddce-4497-9dcd-9cdfd1a659a0">
-
-### BlueRetroを使えばよいのでは？
+  
+### BlueRetroを使えばよいのでは？  
 MeridianはBlueRetro準拠に移行予定です。  
 一方、Merimoteはコードベースで内容のカスタマイズができて便利な面も多いので、必要に応じて育てていこうと思います。  
-
-## Update情報
-
-#### Update 20240506 v1.1.0
+  
+## Update情報  
+  
+#### Update 20240809 v1.1.1  
+変数名や関数名、関数パラメータを調整しました。  
+  
+#### Update 20240506 v1.1.0  
 関数を機能ごとにヘッダファイルとして切り出し、モジュール構造としました。  
-
-#### Update 20240325 v1.0.1
+  
+#### Update 20240325 v1.0.1  
 esp32側のpratformio.ini内、lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため、  
 hideakitai/ESP32DMASPI@0.3.0 にアップデートしました。  
   
