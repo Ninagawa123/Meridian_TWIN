@@ -1,10 +1,8 @@
 #ifndef __MERIDIAN_WIFI_H__
 #define __MERIDIAN_WIFI_H__
 
-// コンフィグファイルの読み込み
-#include "config.h"
-
 // ヘッダファイルの読み込み
+#include "config.h"
 #include "keys.h"
 #include "main.h"
 
@@ -20,8 +18,10 @@ WiFiUDP udp; // wifi設定
 /// @brief wifiを初期化する.
 /// @param a_ssid WifiアクセスポイントのSSID.
 /// @param a_pass Wifiアクセスポイントのパスワード.
+/// @param a_serial 出力先シリアルの指定.
 /// @return 初期化に成功した場合はtrueを, 失敗した場合はfalseを返す.
-bool mrd_wifi_init(const char *a_ssid, const char *a_pass) {
+bool mrd_wifi_init(WiFiUDP &a_udp, const char *a_ssid, const char *a_pass,
+                   HardwareSerial &a_serial) {
   WiFi.disconnect(true, true); // WiFi接続をリセット
   delay(100);
   WiFi.begin(a_ssid, a_pass); // Wifiに接続
@@ -31,11 +31,11 @@ bool mrd_wifi_init(const char *a_ssid, const char *a_pass) {
     i++;
     delay(50);     // 接続が完了するまでループで待つ
     if (i > 200) { // 10秒でタイムアウト
-      Serial.println("Wifi init TIMEOUT.");
+      a_serial.println("Wifi init TIMEOUT.");
       return false;
     }
   }
-  udp.begin(UDP_RESV_PORT);
+  a_udp.begin(UDP_RESV_PORT);
   return true;
 }
 

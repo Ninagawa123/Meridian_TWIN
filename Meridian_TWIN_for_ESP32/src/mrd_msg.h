@@ -3,8 +3,8 @@
 
 // ヘッダファイルの読み込み
 #include "config.h"
-#include "main.h"
 #include "keys.h"
+#include "main.h"
 
 // ライブラリ導入
 #include <WiFi.h>
@@ -15,146 +15,114 @@
 
 /// @brief 指定された秒数だけキャパシタの充電プロセスを示すメッセージを表示する.
 /// @param a_mill 充電プロセスの期間を秒単位で指定.
-void mrd_msg_charging(int a_mill) {
-  Serial.print("Charging the capacitor.");
+/// @param a_serial 出力先シリアルの指定.
+void mrd_msg_charging(int a_mill, HardwareSerial &a_serial) {
+  a_serial.print("Charging the capacitor.");
   for (int i = 0; i < a_mill; i++) {
     if (i % 100 == 0) { // 100msごとにピリオドを表示
-      Serial.print(".");
+      a_serial.print(".");
     }
     delay(1);
   }
-  Serial.println();
+  a_serial.println();
 }
 
-/// ★ TWIN用新変数
 /// @brief システムのバージョン情報と通信速度の設定を表示するためのメッセージを出力する.
-void mrd_msg_twin_esp_hello(String a_version) {
-  Serial.println();
-  Serial.print("Hi, This is ");
-  Serial.println(a_version);
-  Serial.print("Set PC-USB ");
-  Serial.print(SERIAL_PC_BPS);
-  Serial.println(" bps");
-  Serial.print("Set SPI0   ");
-  Serial.print(SPI0_SPEED);
-  Serial.println(" bps");
-}
-
-/// @brief システムに接続されているIMU/AHRSセンサーのタイプを表示する.
-/// @param a_imuahrs_type 接続されているセンサーのタイプを示す列挙型.
-void mrd_msg_print_imuahrs(ImuAhrsType a_imuahrs_type) {
-  Serial.print("IMU/AHRS Sensor mounted: ");
-
-  switch (a_imuahrs_type) {
-  case NO_IMU:
-    Serial.println("None. ");
-    break;
-  case MPU6050_IMU:
-    Serial.println("MPU6050(GY-521) ");
-    break;
-  case MPU9250_IMU:
-    Serial.println("MPU9250(GY-6050/GY-9250) ");
-    break;
-  case BNO055_AHRS:
-    Serial.println("BNO055 ");
-    break;
-  default:
-    break;
-  }
+/// @param a_version バージョン情報.
+/// @param a_pc_speed PCとのUSBシリアル通信速度.
+/// @param a_spi_speed SPIの通信速度.
+/// @param a_serial 出力先シリアルの指定.
+void mrd_msg_twin_esp_hello(String a_version, int a_pc_speed, int a_spi_speed,
+                            HardwareSerial &a_serial) {
+  a_serial.println();
+  a_serial.print("Hi, This is ");
+  a_serial.println(a_version);
+  a_serial.print("Set PC-USB ");
+  a_serial.print(a_pc_speed);
+  a_serial.println(" bps");
+  a_serial.print("Set SPI0   ");
+  a_serial.print(a_spi_speed);
+  a_serial.println(" bps");
 }
 
 /// @brief wifiの接続開始メッセージを出力する.
-void mrd_msg_esp_wifi() {
-  Serial.println("WiFi connecting to => " + String(WIFI_AP_SSID)); // WiFi接続完了通知
+/// @param a_ssid 接続先のSSID.
+/// @param a_serial 出力先シリアルの指定.
+void mrd_msg_esp_wifi(const char *a_ssid, HardwareSerial &a_serial) {
+  a_serial.println("WiFi connecting to => " + String(a_ssid)); // WiFi接続完了通知
 }
 
 /// @brief wifiの接続完了メッセージと各IPアドレスを出力する.
-void mrd_msg_esp_ip(bool mode_fixed_ip) {
-  Serial.println("WiFi successfully connected.");                      // WiFi接続完了通知
-  Serial.println("PC's IP address target => " + String(WIFI_SEND_IP)); // 送信先PCのIPアドレスの表示
+/// @param mode_fixed_ip 固定IPかどうか. true:固定IP, false:動的IP.
+/// @param a_ssid 接続先のSSID.
+/// @param a_fixedip 固定IPの場合の値.
+/// @param a_serial 出力先シリアルの指定.
+void mrd_msg_esp_ip(bool mode_fixed_ip, const char *a_ssid, const char *a_fixedip,
+                    HardwareSerial &a_serial) {
+  a_serial.println("WiFi successfully connected."); // WiFi接続完了通知
+  a_serial.println("PC's IP address target => " +
+                   String(WIFI_SEND_IP)); // 送信先PCのIPアドレスの表示
 
   if (mode_fixed_ip) {
-    Serial.println("ESP32's IP address => " + String(FIXED_IP_ADDR) +
-                   " (*Fixed)"); // ESP32自身のIPアドレスの表示
+    a_serial.println("ESP32's IP address => " + String(FIXED_IP_ADDR) +
+                     " (*Fixed)"); // ESP32自身のIPアドレスの表示
   } else {
-    Serial.print("ESP32's IP address => "); // ESP32自身のIPアドレスの表示
-    Serial.println(WiFi.localIP().toString());
+    a_serial.print("ESP32's IP address => "); // ESP32自身のIPアドレスの表示
+    a_serial.println(WiFi.localIP().toString());
   }
 }
 
 /// @brief システムに接続設定したジョイパッドのタイプを表示する.
-void mrd_msg_mounted_pad() {
-  Serial.print("Pad Receiver mounted : ");
+/// @param a_serial 出力先シリアルの指定.
+void mrd_msg_mounted_pad(HardwareSerial &a_serial) {
+  a_serial.print("Pad Receiver mounted : ");
 
   if (MOUNT_PAD == MERIMOTE) {
-    Serial.println("Merimote.");
+    a_serial.println("Merimote.");
   } else if (MOUNT_PAD == BLUERETRO) {
-    Serial.println("BlueRetro.");
+    a_serial.println("BlueRetro.");
   } else if (MOUNT_PAD == SBDBT) {
-    Serial.println("SBDBT.");
+    a_serial.println("SBDBT.");
   } else if (MOUNT_PAD == KRR5FH) {
-    Serial.println("KRC-5FH.");
+    a_serial.println("KRC-5FH.");
   } else {
-    Serial.println("None (PC).");
+    a_serial.println("None (PC).");
   }
 }
 
 /// @brief システムの動作開始を示すメッセージを出力する.
-void mrd_msg_lite_flow_start() {
-  Serial.println();
-  Serial.println("-) Meridian -LITE- system on ESP32 now flows. (-");
+/// @param a_serial 出力先シリアルの指定.
+void mrd_msg_TWIN_ESP_flow_start(HardwareSerial &a_serial) {
+  a_serial.println();
+  a_serial.println("-) Meridian TWIN system on side ESP32 now flows. (-");
 }
 
 //------------------------------------------------------------------------------------
 //  イベントメッセージ
 //------------------------------------------------------------------------------------
 
-/// @brief サーボモーターのエラーを検出した場合にエラーメッセージを表示する.
-/// @param a_line サーボモーターが接続されているUARTライン（L, R, C）.
-/// @param a_num エラーが発生しているサーボの番号.
-/// @param a_disp_error エラーメッセージを表示するかどうかのブール値.
-/// @return エラーメッセージを表示した場合はtrueを, 表示しなかった場合はfalseを返す.
-bool mrd_msg_servo_err(UartLine a_line, int a_num, bool a_disp_error) {
-  if (a_disp_error) {
-    Serial.print("Servo err ");
-    if (a_line == L) {
-      Serial.print("L_");
-      Serial.println(a_num);
-      return true;
-    } else if (a_line == R) {
-      Serial.print("R_");
-      Serial.println(a_num);
-      return true;
-    } else if (a_line == C) {
-      Serial.print("C_");
-      Serial.println(a_num);
-      return true;
-    }
-  }
-  return false;
-}
-
 /// @brief システム内の様々な通信エラーとスキップ数をモニタリングし, シリアルポートに出力する.
+/// @param mrd_disp_all_err モニタリング表示のオンオフ.
 /// @param a_err エラーデータの入った構造体.
-/// @param mrd_disp_all_error モニタリング表示のオンオフ.
+/// @param a_serial 出力先シリアルの指定.
 /// @return エラーメッセージを表示した場合はtrueを, 表示しなかった場合はfalseを返す.
-bool mrd_msg_all_err(MrdErr a_err, bool mrd_disp_all_error) {
-  if (mrd_disp_all_error) {
-    Serial.print("[ERR] es>pc:");
-    Serial.print(a_err.esp_pc);
-    Serial.print(" pc>es:");
-    Serial.print(a_err.pc_esp);
-    Serial.print(" es>ts:");
-    Serial.print(a_err.esp_tsy);
-    Serial.print(" ts>es:");
-    Serial.print(a_err.esp_tsy);
-    Serial.print(" tsSkp:");
-    Serial.print(a_err.tsy_skip);
-    Serial.print(" esSkp:");
-    Serial.print(a_err.esp_skip);
-    Serial.print(" pcSkp:");
-    Serial.print(a_err.pc_skip);
-    Serial.println();
+bool mrd_msg_all_err(bool mrd_disp_all_err, MrdErr a_err, HardwareSerial &a_serial) {
+  if (mrd_disp_all_err) {
+    a_serial.print("[ERR] es>pc:");
+    a_serial.print(a_err.esp_pc);
+    a_serial.print(" pc>es:");
+    a_serial.print(a_err.pc_esp);
+    a_serial.print(" es>ts:");
+    a_serial.print(a_err.esp_tsy);
+    a_serial.print(" ts>es:");
+    a_serial.print(a_err.esp_tsy);
+    a_serial.print(" tsSkp:");
+    a_serial.print(a_err.tsy_skip);
+    a_serial.print(" esSkp:");
+    a_serial.print(a_err.esp_skip);
+    a_serial.print(" pcSkp:");
+    a_serial.print(a_err.pc_skip);
+    a_serial.println();
     return true;
   }
   return false;
@@ -163,13 +131,15 @@ bool mrd_msg_all_err(MrdErr a_err, bool mrd_disp_all_error) {
 /// @brief 期待するシーケンス番号と実施に受信したシーケンス番号を表示する.
 /// @param a_seq_expect 期待するシーケンス番号.
 /// @param a_seq_rcvd 実際に受信したシーケンス番号.
+/// @param a_disp_seq_num 表示するかどうかのブール値.
+/// @param a_serial 出力先シリアルの指定.
 /// @return エラーメッセージを表示した場合はtrueを, 表示しなかった場合はfalseを返す.
-bool mrd_msg_seq_number(uint16_t a_seq_expect, uint16_t a_seq_rcvd, bool mrd_disp_seq_num) {
-  if (mrd_disp_seq_num) {
-    Serial.print("Seq ep/rv ");
-    Serial.print(a_seq_expect);
-    Serial.print("/");
-    Serial.println(a_seq_rcvd);
+bool mrd_msg_seq_number(uint16_t a_seq_expect, uint16_t a_seq_rcvd, bool a_disp, HardwareSerial &a_serial) {
+  if (a_disp) {
+    a_serial.print("Seq ep/rv ");
+    a_serial.print(a_seq_expect);
+    a_serial.print("/");
+    a_serial.println(a_seq_rcvd);
     return true;
   }
   return false;

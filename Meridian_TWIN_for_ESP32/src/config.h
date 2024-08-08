@@ -1,6 +1,6 @@
 
-#ifndef __MERIDIAN_CONFIG__
-#define __MERIDIAN_CONFIG__
+#ifndef __MERIDIAN_CONFIG_H__
+#define __MERIDIAN_CONFIG_H__
 
 //================================================================================================================
 //  MERIDIAN TWIN ESP32の配線
@@ -101,23 +101,23 @@
 
 // シリアルモニタリング
 #define MONITOR_FLOW              0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
-#define MONITOR_ALL_ERROR         0 // 全経路の受信エラー率を表示
-#define MONITOR_SERVO_ERR         0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
-#define MONITOR_SEQ_NUMBER        1 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
+#define MONITOR_ALL_ERR           0 // 全経路の受信エラー率を表示
+#define MONITOR_SEQ_NUMBER        0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
 #define MONITOR_PAD               0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
-#define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
+#define MONITOR_SUPPRESS_DURATION 20000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // SPI設定
 #define SPI0_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
 
+// PC接続関連設定
+#define SERIAL_PC_BPS 1000000 // PCとのシリアル速度（モニタリング表示用）
+
 // JOYPAD関連設定
-#define MOUNT_PAD        NONE // ESP32へのジョイパッドの搭載 NONE:0, PC:0, WIIMOTE:5
+#define MOUNT_PAD        NONE // ESP32へのジョイパッドの搭載 NONE:0, PC:0, WIIMOTE:5, WIIMOTE_N:6
+#define PAD_INIT_TIMEOUT 10000 // 起動時のJOYPADの接続確立のタイムアウト(ms)
 #define PAD_INTERVAL     10 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
 #define PAD_BUTTON_MARGE 0 // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
 #define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する
-
-// PC接続関連設定
-#define SERIAL_PC_BPS 115200 // PCとのシリアル速度（モニタリング表示用）
 
 // ピンアサイン
 #define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
@@ -126,18 +126,20 @@
 #define PIN_CHIPSELECT_SD 15 // SDカード用のCSピン
 #define PIN_I2C0_SDA      22 // I2CのSDAピン
 #define PIN_I2C0_SCL      21 // I2CのSCLピン
+#define PIN_LED_BT        23 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
 
 //-------------------------------------------------------------------------
 //  固定値, マスターコマンド定義
 //-------------------------------------------------------------------------
 #define MCMD_DUMMY_DATA              -32768 // SPI送受信用のダミーデータ判定用
+#define MCMD_TEST_VALUE              -32767 // テスト用の仮設変数
 #define MCMD_UPDATE_YAW_CENTER       10002 // センサの推定ヨー軸を現在値センターとしてリセット
 #define MCMD_ENTER_TRIM_MODE         10003 // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
-#define MCMD_CLEAR_SERVO_ERROR_ID    10004 // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
+#define MCMD_CLEAR_SERVO_ERR_ID      10004 // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
 #define MCMD_BOARD_TRANSMIT_ACTIVE   10005 // ボードが定刻で送信を行うモード（PC側が待ち受け）
 #define MCMD_BOARD_TRANSMIT_PASSIVE  10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
 #define MCMD_RESET_MRD_TIMER         10007 // フレーム管理時計mrd_t_milを現在時刻にリセット
-#define MCMD_STOP_BOARD_DURING       10008 // ボードの末端処理をmeridim[MRD_STOP_FRAMES_MS]ミリ秒止める.
+#define MCMD_STOP_BOARD_DURING       10008 // ボードの末端処理をmeridim[MRD_STOP_FRAMES_MS]ミリ秒止める
 #define MCMD_ENTER_EEPROM_WRITE_MODE 10009 // EEPROM書き込みモードのスタート
 #define MCMD_EXIT_EEPROM_WRITE_MODE  10010 // EEPROM書き込みモードの終了
 #define MCMD_ENTER_EEPROM_READ_MODE  10011 // EEPROM読み出しモードのスタート
@@ -245,4 +247,4 @@
 // #define MRD_ERR         88 // エラーコード (MRDM_LEN - 2)
 // #define MRD_CKSM        89 // チェックサム (MRDM_LEN - 1)
 
-#endif // __MERIDIAN_CONFIG__
+#endif // __MERIDIAN_CONFIG_H__

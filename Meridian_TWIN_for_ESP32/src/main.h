@@ -1,5 +1,5 @@
-#ifndef __MERIDIAN_MAIN_FUNC__
-#define __MERIDIAN_MAIN_FUNC__
+#ifndef __MERIDIAN_MAIN_H__
+#define __MERIDIAN_MAIN_H__
 
 // ヘッダファイルの読み込み
 #include "config.h"
@@ -25,15 +25,15 @@ enum ImuAhrsType { // 6軸9軸センサ種の列挙型(NO_IMU, MPU6050_IMU, MPU9
   BNO055_AHRS = 3  // BNO055
 };
 
-enum PadType { // リモコン種の列挙型(NONE, PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH)
-  NONE = 0,            // リモコンなし
-  PC = 0,              // PCからのPD入力情報を使用
-  MERIMOTE = 1,        // MERIMOTE(未導入)
-  BLUERETRO = 2,       // BLUERETRO(未導入)
-  SBDBT = 3,           // SBDBT(未導入)
-  KRR5FH = 4,          // KRR5FH
-  WIIMOTE = 5,         // WIIMOTE 単体横持ち
-  WIIMOTE2 = 6         // WIIMOTE+Analog
+enum PadType {   // リモコン種の列挙型(NONE, PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH)
+  NONE = 0,      // リモコンなし
+  PC = 0,        // PCからのPD入力情報を使用
+  MERIMOTE = 1,  // MERIMOTE(未導入)
+  BLUERETRO = 2, // BLUERETRO(未導入)
+  SBDBT = 3,     // SBDBT(未導入)
+  KRR5FH = 4,    // KRR5FH
+  WIIMOTE = 5,   // WIIMOTE / WIIMOTE + Nunchuk
+  WIIMOTE_C = 6, // WIIMOTE+Classic
 };
 
 enum BinHexDec { // 数値表示タイプの列挙型(Bin, Hex, Dec)
@@ -97,6 +97,7 @@ struct MrdFlags {
   bool spi_rcvd = true;               // SPIのデータ受信判定
   bool bt_busy = false;      // Bluetoothの受信中フラグ（UDPコンフリクト回避用）
   bool meridim_rcvd = false; // Meridimが正しく受信できたか.
+  bool test_value = false;   // テスト用の仮設変数. 意味を持たない.
 };
 MrdFlags flg;
 
@@ -163,8 +164,7 @@ PadValue pad_analog;
 // モニタリング設定
 struct MrdMonitor {
   bool flow = MONITOR_FLOW;           // フローを表示
-  bool all_err = MONITOR_ALL_ERROR;   // 全経路の受信エラー率を表示
-  bool servo_err = MONITOR_SERVO_ERR; // サーボエラーを表示
+  bool all_err = MONITOR_ALL_ERR;   // 全経路の受信エラー率を表示
   bool seq_num = MONITOR_SEQ_NUMBER;  // シーケンス番号チェックを表示
   bool pad = MONITOR_PAD;             // リモコンのデータを表示
 };
@@ -175,12 +175,8 @@ MrdMonitor monitor;
 //================================================================================================================
 
 // 予約用
-// void Core0_BT_r(void *args);
-IPAddress makeIPAddress(const char *ip_str);
-void udp_send();
-void udp_receive();
-void bt_settings();
-void Core0_BT_r(void *args);
+bool execute_master_command_from_PC(Meridim90Union a_meridim, bool a_flg_exe);
+bool execute_master_command_from_Tsy(Meridim90Union a_meridim, bool a_flg_exe);
 
 /// @brief meridim配列にチェックサムを算出して書き込む.
 /// @param a_meridim Meridim配列の共用体. 参照渡し.
@@ -190,6 +186,9 @@ bool mrd_writedim90_cksm(Meridim90Union &a_meridim) {
   return true;
 }
 
+///@brief Generate expected sequence number from input.
+///@param a_previous_num Previous sequence number.
+///@return Expected sequence number. (0 to 59,999)
 uint16_t mrd_seq_predict_num(uint16_t a_previous_num) {
   uint16_t x_tmp = a_previous_num + 1;
   if (x_tmp > 59999) // Reset counter
@@ -199,13 +198,4 @@ uint16_t mrd_seq_predict_num(uint16_t a_previous_num) {
   return x_tmp;
 }
 
-///@brief Compare expected seq number and received seq number.(0 to 59,000)
-///@param[in] predict_seq_num Predict sequence number.
-///@param[in] received_seq_num Received sequence number.
-///@return true OK
-///@return false NG
-bool mrd_seq_compare_nums(uint16_t a_predict_num, uint16_t a_received_num) {
-  return (a_predict_num == a_received_num);
-}
-
-#endif //__MERIDIAN_MAIN_FUNC__
+#endif //__MERIDIAN_MAIN_H__
