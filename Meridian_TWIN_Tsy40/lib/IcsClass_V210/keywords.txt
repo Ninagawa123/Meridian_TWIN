@@ -1,0 +1,69 @@
+#######################################
+# Syntax Coloring Map IcsClass
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+IcsBaseClass	KEYWORD1
+IcsHardSerialClass	KEYWORD1
+KRR_BUTTON	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin		KEYWORD2
+synchronize	KEYWORD2
+
+setPos		KEYWORD2
+setFree		KEYWORD2
+
+setStrc		KEYWORD2
+setSpd		KEYWORD2
+setCur		KEYWORD2
+setTmp		KEYWORD2
+
+getStrc 	KEYWORD2
+getSpd 		KEYWORD2
+getCur 		KEYWORD2
+getTmp 		KEYWORD2
+getPos		KEYWORD2
+
+setID		KEYWORD2
+getID		KEYWORD2
+
+getKrrButton	KEYWORD2
+getKrrAnalog	KEYWORD2
+getKrrAllData	KEYWORD2
+
+degPos	KEYWORD2
+posDeg	KEYWORD2
+degPos100	KEYWORD2
+posDeg100	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+MAX_POS	LITERAL1
+MIN_POS	LITERAL1
+
+ICS_FALSE	LITERAL1
+
+KRR_BUTTON_NONE	LITERAL1
+KRR_BUTTON_UP	LITERAL1
+KRR_BUTTON_DOWN	LITERAL1
+KRR_BUTTON_RIGHT	LITERAL1
+KRR_BUTTON_LEFT	LITERAL1
+KRR_BUTTON_TRIANGLE	LITERAL1
+KRR_BUTTON_CROSS	LITERAL1
+KRR_BUTTON_CIRCLE	LITERAL1
+KRR_BUTTON_SQUARE	LITERAL1
+KRR_BUTTON_S1	LITERAL1
+KRR_BUTTON_S2	LITERAL1
+KRR_BUTTON_S3	LITERAL1
+KRR_BUTTON_S4	LITERAL1
+KRR_BUTTON_FALSE	LITERAL1
+
