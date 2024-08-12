@@ -99,8 +99,8 @@
 
 // EEPROMの設定
 #define EEPROM_BYTE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     1   // 起動時にEEPROMにconfig.hの内容をセット(mrd_eeprom_set)
-#define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
+#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_eeprom_set)
+#define EEPROM_PROTECT 1   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
 #define EEPROM_LOAD    0   // 起動時にEEPROMの内容を諸設定にロードする(未導入)
 #define EEPROM_DUMP    1   // 起動時のEEPROM内容のダンプ表示
 #define EEPROM_STYLE   Hex // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
