@@ -23,7 +23,7 @@ constexpr unsigned short PAD_TABLE_KRC5FH_TO_COMMON[16] = //
 /// @return 更新されたジョイパッドの状態を64ビット整数で返す.
 uint64_t mrd_pad_read_krc(uint a_interval) {
   static uint64_t pre_val_tmp = 0;        // 前回の値を保持する静的変数
-  int8_t pad_analog_tmp[4]={0};               // アナログ入力のデータ組み立て用
+  int8_t pad_analog_tmp[4] = {0};         // アナログ入力のデータ組み立て用
   static unsigned long last_time_tmp = 0; // 最後に関数が呼ばれた時間を記録
   unsigned long current_time_tmp = millis();
 
@@ -131,11 +131,16 @@ PadUnion mrd_pad_reader(PadType a_type, uint a_interval) {
 //------------------------------------------------------------------------------------
 
 /// @brief meridim配列にPADデータを書き込む.
+/// @param a_type 使用するジョイパッドのタイプを示す列挙型（MERIMOTE, BLUERETRO, SBDBT, KRR5FH）.
 /// @param a_meridim Meridim配列の共用体. 参照渡し.
 /// @param a_pad_array PAD受信値の格納用配列.
 /// @param a_marge PADボタンデータをマージするかどうかのブール値.
 /// trueの場合は既存のデータにビット単位でOR演算を行い, falseの場合は新しいデータで上書きする.
-bool meriput90_pad(Meridim90Union &a_meridim, PadUnion a_pad_array, bool a_marge) {
+bool meriput90_pad(PadType a_type, Meridim90Union &a_meridim, PadUnion a_pad_array, bool a_marge) {
+
+  if (a_type == PC) {
+    return false;
+  }
 
   // ボタンデータの処理 (マージ or 上書き)
   if (a_marge) {

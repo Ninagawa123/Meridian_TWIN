@@ -134,7 +134,7 @@
 #define SPI0_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
 
 // JOYPAD関連設定
-#define MOUNT_PAD        KRR5FH // ジョイパッドの搭載 NONE, PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
+#define MOUNT_PAD        PC // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
 #define PAD_INTERVAL     4 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
 #define PAD_BUTTON_MARGE 1 // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
 #define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する

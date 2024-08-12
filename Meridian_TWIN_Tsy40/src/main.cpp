@@ -241,7 +241,7 @@ void loop() {
     pad_new = mrd_pad_reader(MOUNT_PAD, PAD_INTERVAL);
 
     // @[7-2] コントローラの値をmeridimに格納する
-    meriput90_pad(s_spi_meridim, pad_new, PAD_BUTTON_MARGE);
+    meriput90_pad(MOUNT_PAD, s_spi_meridim, pad_new, PAD_BUTTON_MARGE);
 
     // @[7-end] ここでs_spi_meridim にリモコンやセンサのデータが格納完了.
 
