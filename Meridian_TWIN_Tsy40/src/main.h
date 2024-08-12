@@ -146,9 +146,9 @@ typedef union {
                               // [0]button, [1]pad.stick_L_x:pad.stick_L_y,
                               // [2]pad.stick_R_x:pad.stick_R_y, [3]pad.L2_val:pad.R2_val
 } PadUnion;
-PadUnion pad_array = {0};  // PAD値の格納用配列(一次転記)
-PadUnion pad_new = {0}; // PAD値の格納用配列(二次転記)
-PadUnion pad_i2c = {0};    // PAD値のi2c送受信用配列
+PadUnion pad_array = {0}; // PAD値の格納用配列(一次転記)
+PadUnion pad_new = {0};   // PAD値の格納用配列(二次転記)
+PadUnion pad_i2c = {0};   // PAD値のi2c送受信用配列
 
 // リモコンのアナログ入力データ用の構造体
 struct PadValue {
@@ -168,19 +168,19 @@ PadValue pad_analog;
 struct AhrsValue {
   Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire); // BNO055のインスタンス
   MPU6050 mpu6050;                                        // MPU6050のインスタンス
-  uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
-  uint8_t devStatus;      // return status after each device operation (0 = success,
-                          // !0 = error)
-  uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
-  uint8_t fifoBuffer[64]; // FIFO storage buffer
-  Quaternion q;           // [w, x, y, z]         quaternion container
-  VectorFloat gravity;    // [x, y, z]            gravity vector
-  float ypr[3];           // [roll, pitch, yaw]   roll/pitch/yaw container and gravity
-                          // vector
-  float yaw_origin = 0;   // ヨー軸の補正センター値
-  float yaw_source = 0;   // ヨー軸のソースデータ保持用
-  float read
-      [16]; // mpuからの読み込んだ一次データacc_x,y,z,gyro_x,y,z,mag_x,y,z,gr_x,y,z,rpy_r,p,y,temp
+  uint8_t mpuIntStatus;                // holds actual interrupt status byte from MPU
+  uint8_t devStatus;                   // return status after each device operation (0 = success,
+                                       // !0 = error)
+  uint16_t packetSize;                 // expected DMP packet size (default is 42 bytes)
+  uint8_t fifoBuffer[64];              // FIFO storage buffer
+  Quaternion q;                        // [w, x, y, z]         quaternion container
+  VectorFloat gravity;                 // [x, y, z]            gravity vector
+  float ypr[3];                        // [roll, pitch, yaw]   roll/pitch/yaw container and gravity
+                                       // vector
+  float yaw_origin = 0;                // ヨー軸の補正センター値
+  float yaw_source = 0;                // ヨー軸のソースデータ保持用
+  float read[16];                      // mpuから読み込んだ一次データ
+                                       // acc_x,y,z,gyro_x,y,z,mag_x,y,z,gr_x,y,z,rpy_r,p,y,temp
   float zeros[16] = {0};               // リセット用
   float ave_data[16];                  // 上記の移動平均値を入れる
   float result[16];                    // 加工後の最新のmpuデータ（二次データ）
@@ -226,6 +226,11 @@ struct ServoParam {
   float ixr_tgt_past[IXR_MAX] = {0}; // R系統サーボの前回の値
   float ixc_tgt_past[IXC_MAX] = {0}; // C系統サーボの前回の値
 
+  // 各サーボの実行コマンド値(degree)
+  float ixl_cmd[IXL_MAX] = {0}; // L系統サーボのコマンド
+  float ixr_cmd[IXR_MAX] = {0}; // R系統サーボのコマンド
+  float ixc_cmd[IXC_MAX] = {0}; // C系統サーボのコマンド
+
   // サーボのエラーカウンタ配列
   int ixl_err[IXL_MAX] = {0}; // L系統サーボのエラーカウンタ配列
   int ixr_err[IXR_MAX] = {0}; // R系統サーボのエラーカウンタ配列
@@ -256,15 +261,14 @@ MrdMsgHandler mrd_disp(Serial);
 #include "mrd_sd.h"
 MrdSdHandler mrd_sd(Serial);
 
-
 //================================================================================================================
 //  関 数 各 種
 //================================================================================================================
 
 // 予約関数
 
-bool execute_MasterCommand_1(bool a_flg_exe);
-bool execute_MasterCommand_2(bool a_flg_exe);
+bool execute_MasterCommand_1(Meridim90Union a_meridim, bool a_flg_exe);
+bool execute_MasterCommand_2(Meridim90Union a_meridim, bool a_flg_exe);
 void mrd_countup_errs();
 
 #endif //__MERIDIAN_MAIN_H__

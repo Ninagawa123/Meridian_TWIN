@@ -40,7 +40,7 @@ public:
   /// @param a_spi0 SPI0の通信速度(Hz).
   /// @param a_i2c0 I2C0の通信速度(Hz).
   /// @param a_i2c1 I2C1の通信速度(Hz).
-  void hello_tsy(String a_version, int a_pc, int a_spi0, int a_i2c0, int a_i2c1) {
+  void hello_twin_tsy(String a_version, int a_pc, int a_spi0, int a_i2c0, int a_i2c1) {
     m_serial.println();
     m_serial.print("Hi, This is ");
     m_serial.println(a_version);
@@ -221,7 +221,7 @@ public:
   }
 
   /// @brief システムの動作開始を示すメッセージを出力する.
-  void flow_start() {
+  void flow_start_twin_tsy() {
     m_serial.println();
     m_serial.println("-) Meridian TWIN system on side Teensy now flows. (-");
   }
