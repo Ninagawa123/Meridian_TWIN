@@ -556,4 +556,4 @@ float IXC_TRIM[IXC_MAX] = {
 #define MRD_ERR_CODE     88 // エラーコード
 #define MRD_CHECKSUM     89 // チェックサム
 
-#endif
+#endif // __MERIDIAN_CONFIG__

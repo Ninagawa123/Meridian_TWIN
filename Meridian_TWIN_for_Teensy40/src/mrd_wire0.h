@@ -237,4 +237,4 @@ float mrd_wire0_setyaw(float yaw) {
   { return 0; }
 }
 
-#endif
+#endif // __MERIDIAN_WIRE0_H__

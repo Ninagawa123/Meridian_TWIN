@@ -96,4 +96,4 @@ bool mrd_wire1_startIntervalTimer(bool a_wire1_init) {
 //  各種オペレーション
 //------------------------------------------------------------------------------------
 
-#endif
+#endif // __MERIDIAN_WIRE1_H__

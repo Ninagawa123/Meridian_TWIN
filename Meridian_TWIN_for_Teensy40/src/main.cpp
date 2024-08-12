@@ -477,4 +477,4 @@ void mrd_countup_errs() {
   increment_err(0, err.pc_skip);  // PC受信のカウントのスキップ
 }
 
-#endif
+#endif // __MERIDIAN_MAIN__

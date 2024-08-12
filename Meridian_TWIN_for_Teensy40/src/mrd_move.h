@@ -25,4 +25,4 @@ bool mrd_move_init(Meridim90Union mrd_s_meridim)
 //  各種オペレーション
 //------------------------------------------------------------------------------------
 
-#endif
+#endif // __MERIDIAN_MOVEMENT_H__

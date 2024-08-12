@@ -307,4 +307,4 @@ int8_t mrd_eeprom_load_byte(int index_y, int index_x, int low_high) //
   return int8_t(EEPROM.read(index_y * 180 + index_x * 2 + low_high));
 }
 
-#endif
+#endif // __MERIDIAN_EEPROM_H__
