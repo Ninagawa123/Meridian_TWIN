@@ -8,93 +8,58 @@
 //  KONDO ICSサーボ関連の処理
 //================================================================================================================
 
-void mrd_sv_drive_ics_double(Meridim90Union mrd_s_meridim) {
-  for (int i = 0; i < sv.num_max; i++) // ICS_L系統の処理
-  {                                    // 接続したサーボの数だけ繰り返す. 最大は15
-    int k = 0;
-    if (sv.ixl_mount[i]) {
-      if (r_spi_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
-      {
-        k = ics_L.setPos(sv.ixl_id[i], mrd.Deg2Krs(sv.ixl_tgt[i], sv.ixl_trim[i], sv.ixl_cw[i]));
-        if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-        {
-          k = mrd.Deg2Krs(sv.ixl_tgt_past[i], sv.ixl_trim[i], sv.ixl_cw[i]);
-          if (sv.ixl_err[i] < 100) {
-            sv.ixl_err[i]++;
-          }
-          if (sv.ixl_err[i] >= SERVO_LOST_ERR_WAIT) {
-            s_spi_meridim.ubval[MRD_ERR_l] =
-                min(uint8_t(i + 100),
-                    uint8_t(149)); // Meridim[MRD_ERR]
-                                   // エラーを出したサーボIndex（100をID[L00]として[L49]まで）
-            mrd_disp.servo_err(L, i, MONITOR_ERR_SERVO);
-          }
-        } else {
-          sv.ixl_err[i] = 0;
-        }
-      } else // 1以外ならとりあえずサーボを脱力し位置を取得. 手持ちの最大は15
-      {
-        k = ics_L.setFree(sv.ixl_id[i]); // サーボからの返信信号を受け取れていれば値を更新
-        if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-        {
-          k = mrd.Deg2Krs(sv.ixl_tgt_past[i], sv.ixl_trim[i], sv.ixl_cw[i]);
-          sv.ixl_err[i]++;
-          if (sv.ixl_err[i] >= SERVO_LOST_ERR_WAIT) {
-            s_spi_meridim.ubval[MRD_ERR_l] =
-                min(uint8_t(i + 100),
-                    uint8_t(149)); // Meridim[MRD_ERR]
-                                   // エラーを出したサーボIndex（100をID[L00]として[L49]まで）
-            mrd_disp.servo_err(L, i, MONITOR_ERR_SERVO);
-          }
-        } else {
-          sv.ixl_err[i] = 0;
-        }
-      }
-      sv.ixl_tgt[i] = mrd.Krs2Deg(k, sv.ixl_trim[i], sv.ixl_cw[i]);
-    }
-    delayMicroseconds(2);
+/// @brief ICSサーボの実行処理を行う関数
+/// @param a_servo_id サーボのインデックス番号
+/// @param a_cmnd サーボのコマンド
+/// @param a_tgt サーボの目標位置
+/// @param a_tgt_past 前回のサーボの目標位置
+/// @param a_tgt_trim サーボの補正値
+/// @param a_cw サーボの回転方向補正値
+/// @param a_err_cnt サーボのエラーカウント
+/// @param a_stat サーボのステータス
+/// @param ics サーボクラスのインスタンス
+float mrd_servo_process_ics(int a_servo_id, int a_cmnd, float a_tgt, float a_tgt_past, int a_trim,
+                            int a_cw, int &a_err_cnt, uint16_t &a_stat, IcsHardSerialClass &ics) {
+  int val_tmp = 0;
+  if (a_cmnd == 1) { // コマンドが1ならPos指定
+    val_tmp = ics.setPos(a_servo_id, mrd.Deg2Krs(a_tgt, a_trim, a_cw));
+  } else { // コマンドが0等なら脱力して値を取得
+    val_tmp = ics.setFree(a_servo_id);
+  }
 
-    if (sv.ixr_mount[i]) {
-      if (r_spi_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
-      {
-        k = ics_R.setPos(sv.ixr_id[i], mrd.Deg2Krs(sv.ixr_tgt[i], sv.ixr_trim[i], sv.ixr_cw[i]));
-        if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-        {
-          k = mrd.Deg2Krs(sv.ixr_tgt_past[i], sv.ixr_trim[i], sv.ixr_cw[i]);
-          if (sv.ixr_err[i] < 10) {
-            sv.ixr_err[i]++;
-          }
-          if (sv.ixr_err[i] >= SERVO_LOST_ERR_WAIT) {
-            s_spi_meridim.ubval[MRD_ERR_l] =
-                min(uint8_t(i + 200),
-                    uint8_t(249)); // Meridim[MRD_ERR]
-                                   // エラーを出したサーボIndex（200をID[R00]として[R49]まで）
-            mrd_disp.servo_err(R, i, MONITOR_ERR_SERVO);
-          }
-        } else {
-          sv.ixr_err[i] = 0;
-        }
-      } else // 1以外ならとりあえずサーボを脱力し位置を取得
-      {
-        k = ics_R.setFree(sv.ixr_id[i]);
-        if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-        {
-          k = mrd.Deg2Krs(sv.ixr_tgt_past[i], sv.ixr_trim[i], sv.ixr_cw[i]);
-          sv.ixr_err[i]++;
-          if (sv.ixr_err[i] >= SERVO_LOST_ERR_WAIT) {
-            s_spi_meridim.ubval[MRD_ERR_l] =
-                min(uint8_t(i + 200),
-                    uint8_t(249)); // Meridim[MRD_ERR]
-                                   // エラーを出したサーボIndex（200をID[R00]として[R49]まで）
-            mrd_disp.servo_err(R, i, MONITOR_ERR_SERVO);
-          }
-        } else {
-          sv.ixr_err[i] = 0;
-        }
-      }
-      sv.ixr_tgt[i] = mrd.Krs2Deg(k, sv.ixr_trim[i], sv.ixr_cw[i]);
+  if (val_tmp == -1) { // サーボからの返信信号を受け取れなかった場合
+    val_tmp = mrd.Deg2Krs(a_tgt_past, a_trim, a_cw);
+    a_err_cnt++;
+    if (a_err_cnt >= SERVO_LOST_ERR_WAIT) { // 一定以上の連続エラーで通信不能とみなす
+      a_err_cnt = SERVO_LOST_ERR_WAIT;
+      a_stat = 1;
     }
-    delayMicroseconds(2);
+  } else {
+    a_err_cnt = 0;
+    a_stat = 0;
+  }
+
+  return mrd.Krs2Deg(val_tmp, a_trim, a_cw);
+}
+
+/// @brief ICSサーボを駆動する関数
+/// @param a_meridim Meridimデータの参照
+/// @param a_sv サーボパラメータの配列
+void mrd_servo_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
+  for (int i = 0; i < a_sv.num_max; i++) {
+    // L系統サーボの処理
+    if (a_sv.ixl_mount[i]) {
+      a_sv.ixl_tgt[i] = mrd_servo_process_ics(
+          a_sv.ixl_id[i], a_meridim.sval[(i * 2) + 20], a_sv.ixl_tgt[i], a_sv.ixl_tgt_past[i],
+          a_sv.ixl_trim[i], a_sv.ixl_cw[i], a_sv.ixl_err[i], a_sv.ixl_stat[i], ics_L);
+    }
+    // R系統サーボの処理
+    if (a_sv.ixr_mount[i]) {
+      a_sv.ixr_tgt[i] = mrd_servo_process_ics(
+          a_sv.ixr_id[i], a_meridim.sval[(i * 2) + 50], a_sv.ixr_tgt[i], a_sv.ixr_tgt_past[i],
+          a_sv.ixr_trim[i], a_sv.ixr_cw[i], a_sv.ixr_err[i], a_sv.ixr_stat[i], ics_R);
+    }
+    delayMicroseconds(1); //Teensyの場合には必要かも
   }
 }
 
