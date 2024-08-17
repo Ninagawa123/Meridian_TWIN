@@ -101,7 +101,7 @@
 
 // シリアルモニタリング
 #define MONITOR_FLOW              0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
-#define MONITOR_ALL_ERR           0 // 全経路の受信エラー率を表示
+#define MONITOR_ERR_ALL           0 // 全経路の受信エラー率を表示
 #define MONITOR_SEQ               0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
 #define MONITOR_PAD               0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
 #define MONITOR_SUPPRESS_DURATION 20000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)

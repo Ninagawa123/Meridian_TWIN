@@ -176,7 +176,7 @@ void loop() {
   mrdsq.r_past = r_udp_meridim.usval[MRD_SEQ];
 
   // @[2-5] エラーリポートの表示
-  mrd_disp.all_err(MONITOR_ALL_ERR, err);
+  mrd_disp.all_err(MONITOR_ERR_ALL, err);
 
   // @[2-end] この時点での最新データは s_spi_meridim.
   //          チェックサムとシーケンス番号チェックに適合しなかった場合は前回のデータ.
