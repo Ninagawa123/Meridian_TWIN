@@ -238,7 +238,7 @@ void loop() {
     meriput90_ahrs(s_spi_meridim, ahrs.result);
 
     //------------------------------------------------------------------------------------
-    //  [ 7 ] コントローラの読み取り
+    //  [ 7 ] リモコンの読み取り
     //------------------------------------------------------------------------------------
     mrd.monitor_check_flow("[7]", monitor.flow); // 動作チェック用シリアル表示
 
@@ -329,12 +329,15 @@ void loop() {
     mrdsq.s_increment = mrd.seq_increase_num(mrdsq.s_increment);
     s_spi_meridim.usval[MRD_SEQ] = u_short(mrdsq.s_increment);
 
-    // @[12-6] カスタムデータを配列格納
+    // @[12-6] エラーが出たサーボのインデックス番号を格納
+    s_spi_meridim.ubval[MRD_ERR_l] = mrd_servos_make_errcode_3lines(sv);
 
-    // @[12-7] チェックサムを追加
+    // @[12-7] カスタムデータを配列格納
+
+    // @[12-8] チェックサムを追加
     s_spi_meridim.sval[MRDM_LEN - 1] = mrd.cksm_val(s_spi_meridim.sval, MRDM_LEN);
 
-    // @[12-8] 送信データのSPIバッファへのバイト型書き込み
+    // @[12-9] 送信データのSPIバッファへのバイト型書き込み
     memcpy(s_spi_meridim_dma.bval, s_spi_meridim.bval, MRDM_BYTE);
 
     //------------------------------------------------------------------------------------

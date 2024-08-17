@@ -70,7 +70,7 @@ bool mrd_servo_begin(UartLine a_line, int mrd_servo_type) {
 bool mrd_servo_drive(Meridim90Union a_meridim, int sv_L_type, int sv_R_type, int sv_C_type) {
   if (sv_L_type == 43 && sv_R_type == 43) // ICSサーボがL系R系に設定されていた場合はLR均等送信を実行
   {
-    mrd_sv_drive_ics_double(a_meridim);
+    mrd_servo_drive_ics_double(a_meridim, sv);
     return true;
   } else {
     return false;
@@ -103,6 +103,26 @@ void mrd_servo_load_param_lite(UnionEEPROM a_eeprom_data, ServoParam &a_sv) {
 //------------------------------------------------------------------------------------
 //  各種オペレーション
 //------------------------------------------------------------------------------------
+
+/// @brief サーボパラメータからエラーのあるサーボのインデックス番号を作る.
+/// @param a_sv サーボパラメータの構造体.
+/// @return uint8_tで番号を返す.
+///         100-149(L系統 0-49),200-249(R系統 0-49),150-199(C系統 0-49)
+uint8_t mrd_servos_make_errcode_3lines(ServoParam a_sv) {
+  uint8_t servo_ix_tmp = 0;
+  for (int i = 0; i < 15; i++) {
+    if (a_sv.ixl_stat[i]) {
+      servo_ix_tmp = uint8_t(i + 100);
+    }
+    if (a_sv.ixr_stat[i]) {
+      servo_ix_tmp = uint8_t(i + 200);
+    }
+    if (a_sv.ixc_stat[i]) {
+      servo_ix_tmp = uint8_t(i + 150);
+    }
+  }
+  return servo_ix_tmp;
+}
 
 /// @brief すべてのサーボモーターをオフ（フリー状態）に設定する.
 bool mrd_servos_all_off(Meridim90Union a_meridim) {
