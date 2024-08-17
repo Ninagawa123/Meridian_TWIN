@@ -73,16 +73,31 @@ PlatformIOのファイルメニューより「フォルダーを開く」とし,
 主なファイル構成は下記になります.  
 
 ```  
-MERIDIAN_TWIN_FOR_TEENSY40
-│  
-├─ lib  
-│   └ ICSClass_V210 (サーボ用ライブラリ)
-│  
-├─ src  
-│   ├ config.h (Meridian設定ファイル)  
-│   ├ main.cpp (Meridian本体)  
-│   └ main.h  (Meridianヘッダファイル)  
-└ platfomio.ini (ボード設定ファイル)  </p>
+MERIDIAN_TWIN_Tsy40
+ │  
+ ├─ lib/  
+ │   └ ICSClass_V210 (サーボ用ライブラリ)
+ │  
+ ├─ src/  
+ │   ├ config.h      (設定ファイル)
+ │   ├ main.h        (ヘッダファイル)
+ │   ├ main.cpp      (Meridian本体)
+ │   ├ mrd_disp.h    (以下各種コード)
+ │   ├ mrd_eeprom.h  
+ │   ├ mrd_hwtimer.h  
+ │   ├ mrd_pad.h  
+ │   ├ mrd_sd.h  
+ │   ├ mrd_servo.h   
+ │   ├ mrd_wire0.h  
+ │   ├ mrd_wire1.h  
+ │   ├ mrd_util.h   
+ │   ├ mrd_move.h  
+ │   │
+ │   └ mrd_module/
+ │         └ (各種モジュール)
+ │
+ ├─ .clang-format (コード自動整形設定ファイル)
+ └─ platfomio.ini (ボード設定ファイル)  </p>
 ```
 
 #### Teensy4.0に導入されるライブラリ
@@ -101,8 +116,8 @@ MERIDIAN_TWIN_FOR_TEENSY40
 [https://kondo-robot.com/faq/ics-library-a2](https://kondo-robot.com/faq/ics-library-a2)  
   
 #### サーボのマウントを設定する
-Teensy4.0用のソースコードの「src/config.h」を開き,155行目ごろから始まるサーボ設定のところで,各サーボのマウントありなしを変更します.   
-接続しているサーボIDは1に, 接続していないIDは0に設定します.  
+Teensy4.0用のソースコードの「src/config.h」を開き,183行目ごろから始まるサーボ設定のところで,各サーボのマウントありなしを変更します.   
+接続しているサーボIDに該当する箇所にサーボタイプの数値を入力します. KHR-3HV標準のKRSサーボの場合は43番です. サーボを接続していない箇所には0を設定します.  
 サーボのマウント設定により, KHR-3HVのフルセットがなくてもICSサーボが最低１つあればデモをテストすることができます.  
   
 #### ロボットの姿勢とサーボを設定する  
@@ -121,33 +136,43 @@ Teensy4.0用のソースコードの「src/config.h」を開き,155行目ごろ�
 #### センサーを接続する  
 MPU/AHRSセンサをMeridianボードのI2Cピンに接続します.  
 今のところキャリブレーション済みのMPU6050(GY-521)のみ対応しています.  
-センサーがない場合は, Teensy4.0のソースコード設定でセンサの接続をオフにすることができます.  
+センサーがない場合は, Teensy4.0のconfig.hでセンサの接続をオフにすることができます.(#define MOUNT_IMUAHRS NO_IMU)  
   
 #### Teensy4.0にソースコードを書き込む
 Teensy4.0とPCをUSBケーブルで接続し, PlatformIOの下にある「チェックマーク」のボタンを押して内容をビルドし,[SUCCESS]が表示されることを確認します. その後, 「→」ボタンを押してTeensy4.0にコードを書き込みます.(ボードは自動的に認識されます.)  
-センサーやリモコンなどの機器の接続について, 「src/config.h」にて詳細に設定できます.    
+センサーやリモコンなどの機器の接続について, 「src/config.h」にて詳細を設定できます.    
   
 ### ESP32DevkitCの準備
 
 #### PlatformIOでESP32用のプロジェクトファイルを開く  
-PlatformIOのファイルメニューより「フォルダーを開く」とし, 先ほど展開したファイルの中から「Meridian_TWIN_for_ESP32」のディレクトリを選択します.  
+PlatformIOのファイルメニューより「フォルダーを開く」とし, 先ほど展開したファイルの中から「Meridian_for_ESP32」のディレクトリを選択します.  
 (Meridian_TWIN_for_Teensy40と間違えないよう注意.)  
 
 主なファイル構成は下記になります.  
-  
-<p>MERIDIAN_TWIN_FOR_ESP  <br>
-  ├ lib  <br>
-  │  └ ESP32Wiimote (wiiリモコン用ライブラリ)  <br>
-  ├ src  <br>
-  │  ├ config.h (Meridian設定ファイル)  <br>
-  │  ├ main.cpp (Meridian本体)  <br>
-  │  └ main.h  (Meridianヘッダファイル)  <br>
-  └ platfomio.ini (ボード設定ファイル)  </p>
+
+```  
+MERIDIAN_TWIN_ESP32  
+ ├─ lib/  
+ │  └ ESP32Wiimote (wiiリモコン用ライブラリ)  
+ │  
+ ├─ src/  
+ │   ├ config.h      (設定ファイル)
+ │   ├ key.h         (wifi パスワード等)  
+ │   ├ main.h        (ヘッダファイル)  
+ │   ├ main.cpp      (Meridian本体)
+ │   ├ mrd_bt_pad.h  (以下各種コード)  
+ │   ├ mrd_disp.h   
+ │   ├ mrd_eeprom.h  
+ │   └ mrd_wifi.h  
+ │  
+ ├─ .clang-format (コード自動整形設定ファイル)  
+ └─ platfomio.ini (ボード設定ファイル)  
+```
 
 #### ESP32に導入されるライブラリ  
 下記のライブラリはファイルを開く際に自動的に導入されます.  
 - **Meridian@^0.1.0 by Ninagawa123**  
-- **ESP32DMASPI@0.1.2 by hideakitai**  
+- **ESP32DMASPI@0.3.0 by hideakitai**  
   
 PlatformIOで"MeridianTWIN_ESP32"等の名前で新規プロジェクトを作成し, BoardはEspressif ESP32 Dev Module, FrameWorkにはArduinoを選択します.  
   
@@ -183,39 +208,40 @@ ESP32とPCをUSBケーブルで接続し, PlatformIOの下にある「チェッ�
 #### ESP32のIPアドレスを調べる  
 PlatformIOで画面下のコンセントアイコンからシリアルモニタを開き, ESP32DevKitC本体のENボタンを押します.  
 wifi接続に成功すると  
-> Hello, This is Meridian_TWIN_for_ESP32_20230710.  
-> WiFi connected to  => xxxxxxx  
-> PC's IP address is  => 192.168.1.xxx  
-> ESP32's IP address is  => 192.168.1.xxx  
-> ESP32's Bluetooth Mac Address is => xx:xx:xx:xx:xx:xx  
+> Hi, This is Meridian_TWIN_for_ESP32_vX.X.X_20XX.XX.XX
+> Set PC-USB 1000000 bps
+> Set SPI0   6000000 bps
+> WiFi connecting to => xxxxxxx 
+> WiFi successfully connected.
+> PC's IP address target => 192.168.1.xxx
+> ESP32's IP address => 192.168.1.xxx
+> 
+> -) Meridian TWIN system on side ESP32 now flows. (-
   
-と表示され, 「ESP32's IP address =>」にESP32本体のIPアドレスが表示されます.このxxの番号をメモしておきます.  
+と表示され, 「ESP32's IP address =>」にESP32本体のIPアドレスが表示されます.この番号をメモしておきます.  
   
-#### ESP32にソースコードを書き込む  
-PS4リモコンを使用する場合は, 「src/config.h」にESP32のBluetooth Mac Addressを記入します.  
-更新したファイルをセーブし, ESP32に書き込みます.  
-　　
 #### platformio.ini  
 platformio.iniでは以下の設定を行なっています.
 - platformのバージョン指定
-- PCとのSerial通信速度設定を115200に指定
+- ESP32内部システムからのエラーコードシリアル出力の抑制
+- PCとのSerial通信速度設定を1,000,000に指定
 - ライブラリの指定
 - OTA（無線経由のプログラム書き込み機能）の無効化によるパーティション拡張
   
 #### 設定の確認    
 他にも, 接続するリモコンやシリアルモニタなどについての設定が可能です.  
-Bluetoothリモコンを接続しない場合は必ずMOUNT_JOYPADを0に設定してください.
+Wiiリモコンを接続しない場合は必ず「src/config.h」内のMOUNT_PADをNONEに設定してください.  
   
 #### 各種設定の確認  
-Teensy40, ESP32両方の「src/config.h」内のコメントを参考に適宜変更してください.  
-Teensy40は主にサーボやセンサーなどのハードウェア接続の設定や制御システムの基本設定,  
+Teensy4.0, ESP32両方の「src/config.h」内のコメントを参考に適宜変更してください.  
+Teensy4.0は主にサーボやセンサーなどのハードウェア接続の設定や制御システムの基本設定,  
 ESP32は主に通信系のWifiとBluetoothリモコンの設定になります.  
   
 これでMeridian Board側の設定は完了です.  
   
   
 ## Meridian consoleを実行する  
-Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.  
+Meridianで受け取るデータを表示できるコンソールを用意しました. python3が使える環境で実行可能です.  
 https://github.com/Ninagawa123/Meridian_console  
 ![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img.jpg)  
   
@@ -269,6 +295,7 @@ ESP32のBluetooth機能を使って, wiiリモコンおよびヌンチャクを�
 ESP32のconfig.hで"#define MOUNT_PAD WIIMOTE"と設定してください.  
 ボード起動時にwiiリモコンの1,2ボタン同時押しでペアリングできます.  
 Homeボタンはヌンチャクのスティックレバーのキャリブレーションとなります.  
+(ESP32の23番ピンをLEDアノード用の出力にしてあり, ペアリング中は点滅, ペアリング確立で点灯します.)  
   
 ## トラブルシューティング
   
@@ -308,6 +335,10 @@ Teensy4.0との相性問題で,通信中に正しいデータが取得できな�
 
 ## Update
 
+#### Update 20240817 v1.1.1
+命名規則を取り入れ, 変数名をアップデートしました.  
+Wiiリモコンがつかえるおまけ機能を復活させました.  
+  
 #### Update 20240506 v1.1.0
 コードの内容を大幅にリファクタリングし, アップデートしました.
 コードを機能ごとのファイルに分け, モージュール化しました. これにより追加機能の開発に取り組みやすくなりました.  
@@ -416,7 +447,7 @@ MeridianはBlueRetro準拠に移行予定です。
   
 ## Update情報  
   
-#### Update 20240809 v1.1.1  
+#### Update 20240817 v1.1.1  
 変数名や関数名、関数パラメータを調整しました。  
   
 #### Update 20240506 v1.1.0  
