@@ -27,7 +27,6 @@ public:
 
   /// @brief 指定された秒数だけキャパシタの充電プロセスを示すメッセージを表示する.
   /// @param a_mill 充電プロセスの期間を秒単位で指定.
-  /// @param m_serial 出力先シリアルの指定.
   void charging(int a_mill) {
     m_serial.print("Charging the capacitor.");
     for (int i = 0; i < a_mill; i++) {
@@ -43,7 +42,6 @@ public:
   /// @param a_version バージョン情報.
   /// @param a_pc_speed PCとのUSBシリアル通信速度.
   /// @param a_spi_speed SPIの通信速度.
-  /// @param m_serial 出力先シリアルの指定.
   void hello_twin_esp(String a_version, int a_pc_speed, int a_spi_speed) {
     m_serial.println();
     m_serial.print("Hi, This is ");
@@ -58,7 +56,6 @@ public:
 
   /// @brief wifiの接続開始メッセージを出力する.
   /// @param a_ssid 接続先のSSID.
-  /// @param m_serial 出力先シリアルの指定.
   void esp_wifi(const char *a_ssid) {
     m_serial.println("WiFi connecting to => " + String(a_ssid)); // WiFi接続完了通知
   }
@@ -67,7 +64,6 @@ public:
   /// @param a_flg_fixed_ip 固定IPかどうか. true:固定IP, false:動的IP.
   /// @param a_ssid 接続先のSSID.
   /// @param a_fixedip 固定IPの場合の値.
-  /// @param m_serial 出力先シリアルの指定.
   void esp_ip(bool a_flg_fixed_ip, const char *a_ssid, const char *a_fixedip) {
     m_serial.println("WiFi successfully connected."); // WiFi接続完了通知
     m_serial.println("PC's IP address target => " +
@@ -83,7 +79,6 @@ public:
   }
 
   /// @brief システムに接続設定したジョイパッドのタイプを表示する.
-  /// @param m_serial 出力先シリアルの指定.
   void mounted_pad() {
     m_serial.print("Pad Receiver mounted : ");
 
@@ -101,7 +96,6 @@ public:
   }
 
   /// @brief システムの動作開始を示すメッセージを出力する.
-  /// @param m_serial 出力先シリアルの指定.
   void flow_start_twin_esp() {
     m_serial.println();
     m_serial.println("-) Meridian TWIN system on side ESP32 now flows. (-");
@@ -114,7 +108,6 @@ public:
   /// @brief システム内の様々な通信エラーとスキップ数をモニタリングし, シリアルポートに出力する.
   /// @param mrd_disp_all_err モニタリング表示のオンオフ.
   /// @param a_err エラーデータの入った構造体.
-  /// @param m_serial 出力先シリアルの指定.
   /// @return エラーメッセージを表示した場合はtrueを, 表示しなかった場合はfalseを返す.
   bool all_err(bool mrd_disp_all_err, MrdErr a_err) {
     if (mrd_disp_all_err) {
@@ -142,7 +135,6 @@ public:
   /// @param a_seq_expect 期待するシーケンス番号.
   /// @param a_seq_rcvd 実際に受信したシーケンス番号.
   /// @param a_disp_seq_num 表示するかどうかのブール値.
-  /// @param m_serial 出力先シリアルの指定.
   /// @return エラーメッセージを表示した場合はtrueを, 表示しなかった場合はfalseを返す.
   bool seq_number(uint16_t a_seq_expect, uint16_t a_seq_rcvd, bool a_disp) {
     if (a_disp) {
