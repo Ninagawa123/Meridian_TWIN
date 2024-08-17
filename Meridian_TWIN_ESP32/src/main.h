@@ -113,9 +113,6 @@ MrdSq mrdsq;
 // タイマー管理用の変数
 struct MrdTimer {
   long frame_ms = FRAME_DURATION; // 1フレームあたりの単位時間(ms)
-  unsigned long mrd_mil = 0;      // フレーム管理時計の時刻 Meridian Clock.
-  unsigned long now_mil = 0;      // 現在時刻を取得
-  unsigned long now_mic = 0;      // 現在時刻を取得
   int loop_count = 0;             // サイン計算用の循環カウンタ
   int loop_count_dlt = 2; // サイン計算用の循環カウンタを1フレームにいくつ進めるか
   int loop_count_max = 359999; // 循環カウンタの最大値
