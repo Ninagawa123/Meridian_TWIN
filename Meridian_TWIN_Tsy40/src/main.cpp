@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_MAIN__
 #define __MERIDIAN_MAIN__
 
-#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2024.0812" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2024.08.17" // バージョン表示
 
 // Meridian_TWIN_for_Teensy By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
@@ -10,8 +10,8 @@
 // 20240414 SPI通信を1フレームあたり2回,往復実行するように修正.変数を構造化
 // 20240503 第三次リファクタリング
 // 20240502 モジュールごとにファイルを分割
-// 20240812 変数, 関数, ファイル名等を大幅に変更. 
-// 20240813 コメント修正
+// 20240812 変数, 関数, ファイル名等を大幅に変更.
+// 20240817 EEPROMのコードを調整中
 
 //================================================================================================================
 //  初期設定
@@ -42,7 +42,7 @@ void setup() {
 
   // シリアルモニターの確立待ち
   unsigned long start_time = millis();
-  while (!Serial && (millis() - start_time < SERIAL_TIMEOUT)) { // タイムアウトもチェック
+  while (!Serial && (millis() - start_time < SERIAL_PC_TIMEOUT)) { // タイムアウトもチェック
     delay(1);
   }
 
@@ -78,26 +78,31 @@ void setup() {
   mrd_disp.servo_bps_3lines(SERVO_BAUDRATE_L, SERVO_BAUDRATE_R, SERVO_BAUDRATE_C);
 
   // サーボ用UART設定
-  mrd_servo_begin(L, MOUNT_L_SERVO_TYPE); // サーボモータの通信初期設定. Serial2
-  mrd_servo_begin(R, MOUNT_R_SERVO_TYPE); // サーボモータの通信初期設定. Serial3
-  mrd_servo_begin(C, MOUNT_C_SERVO_TYPE); // サーボモータの通信初期設定. Serial1
-  mrd_disp.servo_protcol(L, MOUNT_L_SERVO_TYPE);
-  mrd_disp.servo_protcol(R, MOUNT_R_SERVO_TYPE);
-  mrd_disp.servo_protcol(C, MOUNT_C_SERVO_TYPE);
+  mrd_servo_begin(L, MOUNT_SERVO_TYPE_L); // サーボモータの通信初期設定. Serial2
+  mrd_servo_begin(R, MOUNT_SERVO_TYPE_R); // サーボモータの通信初期設定. Serial3
+  mrd_servo_begin(C, MOUNT_SERVO_TYPE_C); // サーボモータの通信初期設定. Serial1
+  mrd_disp.servo_protcol(L, MOUNT_SERVO_TYPE_L);
+  mrd_disp.servo_protcol(R, MOUNT_SERVO_TYPE_R);
+  mrd_disp.servo_protcol(C, MOUNT_SERVO_TYPE_C);
 
   // マウントされたサーボIDの表示
   mrd_disp.servo_mounts_3lines(sv);
 
-  // EEPROMの読み書きテスト
+  // EEPROMのゼロフォーマット
   // mrd_eeprom_zero_format(EEPROM_PROTECT, EEPROM_BYTE, Serial);// ゼロフォーマット
 
-  mrd_eeprom_set(mrd_eeprom_make_data_from_config(), EEPROM_BYTE);
-
-  mrd_eeprom_dump_serial(mrd_eeprom_load(EEPROM_BYTE, Serial), EEPROM_BYTE, EEPROM_STYLE, Serial);
-  // EEPROMの開始, ダンプ表示
-  // mrd_eeprom_dump_at_boot(EEPROM_DUMP, EEPROM_BYTE, EEPROM_STYLE); // 内容のダンプ表示
-  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(), // EEPROMのリードライトテスト
+  // EEPROMのリードライトテスト
+  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config_lite(), // EEPROMのリードライトテスト
   //                            CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_STYLE);
+
+  // EEPROMにconfig.h設定のサーボパラメータを書き込む
+  // mrd_eeprom_set(mrd_eeprom_make_data_from_config_lite(sv), EEPROM_BYTE);
+
+  // EEPROM内容のダンプ表示
+  // mrd_eeprom_dump_serial(mrd_eeprom_load(EEPROM_BYTE, Serial), EEPROM_BYTE, EEPROM_STYLE, Serial);
+
+  // EEPROMからサーボパラメータをロードして反映
+  // mrd_servo_load_param_lite(mrd_eeprom_load(EEPROM_BYTE, Serial), sv);
 
   // 配列のリセット
   memset(s_spi_meridim.bval, 0, MRDM_BYTE + 4);     // 配列要素を0でリセット
@@ -168,13 +173,13 @@ void loop() {
 
     // @[1-3] シーケンス番号チェック
     mrdsq.r_expect = mrd.seq_predict_num(mrdsq.r_expect); // シーケンス番号予想値の生成
-    if (mrd.seq_compare_nums(mrdsq.r_expect, int(r_spi_meridim.usval[MRD_SEQENTIAL]))) {
+    if (mrd.seq_compare_nums(mrdsq.r_expect, int(r_spi_meridim.usval[MRD_SEQ]))) {
       // 受信シーケンス番号の値が予想と合致なら
       mrd_clearBit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_9_BOARD_SKIP); // エラービットをサゲる
       flg.spi_rcvd = true; // SPI受信フラグをアゲる
     } else {
       // 受信シーケンス番号の値が予想と違うなら
-      mrdsq.r_expect = int(r_spi_meridim.usval[MRD_SEQENTIAL]); // 現在の受信値を予想値として更新
+      mrdsq.r_expect = int(r_spi_meridim.usval[MRD_SEQ]); // 現在の受信値を予想値として更新
       mrd_setBit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_9_BOARD_SKIP); // エラービットをアゲる
       flg.spi_rcvd = false; // SPI受信フラグをサゲる
     }
@@ -213,7 +218,7 @@ void loop() {
     // @[4-1] 積み残しがあればここで処理
 
     // @[4-end] ここまでの処理は r_spi_meridim に受信したデータに基づいて行う.
-    
+
     //------------------------------------------------------------------------------------
     //  [ 5 ] 受信SPIデータを送信SPIデータに転記
     //------------------------------------------------------------------------------------
@@ -259,9 +264,9 @@ void loop() {
 
     // @[8-2] Teensyによる次回動作の計算
     // 以下はリモコンの左十字キー左右でL系統0番サーボ（首部）を30度左右にふるサンプル
-    if (s_spi_meridim.sval[MRD_CONTROL_BUTTONS] == 32) {
+    if (s_spi_meridim.sval[MRD_PAD_BUTTONS] == 32) {
       sv.ixl_tgt[0] = -30.00; // -30度
-    } else if (s_spi_meridim.sval[MRD_CONTROL_BUTTONS] == 128) {
+    } else if (s_spi_meridim.sval[MRD_PAD_BUTTONS] == 128) {
       sv.ixl_tgt[0] = 30.00; // +30度
     }
 
@@ -287,7 +292,7 @@ void loop() {
     mrd.monitor_check_flow("[10]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[10-1] Meridim配列のサーボコマンドを調べ,優先度を比較する.(強制トルクオフなど)
-    //         必要に応じてサーボ配列(sv)の命令を上書きする.  
+    //         必要に応じてサーボ配列(sv)の命令を上書きする.
 
     //------------------------------------------------------------------------------------
     //   [ 11 ] サーボ動作の実行
@@ -295,7 +300,7 @@ void loop() {
     mrd.monitor_check_flow("[11]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[11-1] サーボコマンド用の配列に基づき, サーボ命令の実行およびサーボ角度戻り値の取得
-    mrd_servos_drive(s_spi_meridim, MOUNT_L_SERVO_TYPE, MOUNT_R_SERVO_TYPE, MOUNT_C_SERVO_TYPE);
+    mrd_servo_drive(s_spi_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, MOUNT_SERVO_TYPE_C);
 
     // @[11-end] サーボの動作結果が s_spi_meridim に格納完了している.
 
@@ -322,7 +327,7 @@ void loop() {
 
     // @[12-5] Meridimのシーケンス番号をカウントアップして送信用に格納
     mrdsq.s_increment = mrd.seq_increase_num(mrdsq.s_increment);
-    s_spi_meridim.usval[MRD_SEQENTIAL] = u_short(mrdsq.s_increment);
+    s_spi_meridim.usval[MRD_SEQ] = u_short(mrdsq.s_increment);
 
     // @[12-6] カスタムデータを配列格納
 
@@ -340,7 +345,7 @@ void loop() {
     // @[13-1] SPI送受信の実行
     TsyDMASPI0.transfer(s_spi_meridim_dma.bval, r_spi_meridim_dma.bval, MRDM_BYTE + 4);
 
-    // @[13-end] SPI送信が完了. ここで受信したデータは前回のものであるため, 一旦無視する.  
+    // @[13-end] SPI送信が完了. ここで受信したデータは前回のものであるため, 一旦無視する.
 
     //------------------------------------------------------------------------------------
     //   [ 14 ] フレーム終端処理
@@ -399,8 +404,8 @@ bool execute_MasterCommand_1(Meridim90Union a_meridim, bool a_flg_exe) {
 
   // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
 
-  // コマンド:MCMD_CLEAR_SERVO_ERR_ID (10004) 通信エラーサーボIndexのクリア
-  if (a_meridim.sval[MRD_MASTER] == MCMD_CLEAR_SERVO_ERR_ID) {
+  // コマンド:MCMD_ERR_CLEAR_SERVO_ID (10004) 通信エラーサーボIndexのクリア
+  if (a_meridim.sval[MRD_MASTER] == MCMD_ERR_CLEAR_SERVO_ID) {
     r_spi_meridim.bval[MRD_ERR_l] = 0;
     s_spi_meridim.bval[MRD_ERR_l] = 0;
     for (int i = 0; i < IXL_MAX; i++) {
@@ -419,12 +424,20 @@ bool execute_MasterCommand_1(Meridim90Union a_meridim, bool a_flg_exe) {
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
   }
 
-  // コマンド:MCMD_ENTER_EEPROM_WRITE_MODE (10009) EEPROMの書き込みモードスタート
-  if (a_meridim.sval[MRD_MASTER] == MCMD_ENTER_EEPROM_WRITE_MODE) {
+  // コマンド:MCMD_EEPROM_ENTER_WRITE (10009) EEPROMの書き込みモードスタート
+  if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_ENTER_WRITE) {
     flg.eeprom_write_mode = true; // 書き込みモードのフラグをアゲる
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
   }
 
+  // コマンド:MCMD_EEPROM_SAVE_TRIM (10101) 現在のサーボ位置をトリム値としてEEPROMに書き込む
+  if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_SAVE_TRIM) {
+    eeprom_write_data = mrd_eeprom_load(EEPROM_BYTE, Serial);//ベースとなるデータを読み込む
+    eeprom_write_data = mrd_eeprom_make_trim_from_current_lite(eeprom_write_data, sv);
+    mrd_eeprom_write_all(eeprom_write_data, flg.eeprom_protect, Serial);
+    s_spi_meridim.sval[MRD_MASTER] = MCMD_ACK; // コマンド実行成功信号を追記
+    Serial.println("EEPROM WRITE TRIM!!");
+  }
   return true;
 }
 
@@ -444,12 +457,12 @@ bool execute_MasterCommand_2(Meridim90Union a_meridim, bool a_spi_rcvd) {
 
   // コマンド:[1] サーボオン 通常動作
 
-  // コマンド:MCMD_UPDATE_YAW_CENTER (10002) IMU/AHRSのヨー軸リセット
-  if (a_meridim.sval[MRD_MASTER] == MCMD_UPDATE_YAW_CENTER) {
+  // コマンド:MCMD_SENSOR_YAW_CALIB (10002) IMU/AHRSのヨー軸リセット
+  if (a_meridim.sval[MRD_MASTER] == MCMD_SENSOR_YAW_CALIB) {
     ahrs.yaw_origin = mrd_wire0_setyaw(ahrs.ypr[0]);
   }
 
-  // コマンド:MCMD_ENTER_TRIM_MODE (10003) トリムモードに入る（既存のものは廃止し, 検討中）
+  // コマンド:MCMD_SENSOR_ALL_CALIB (10003) センサの3軸について現在値を原点としてリセット
 
   // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に（SSH的な動作）
   if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE) {
@@ -458,18 +471,18 @@ bool execute_MasterCommand_2(Meridim90Union a_meridim, bool a_spi_rcvd) {
   }
 
   // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10007) フレーム管理時計tmr.mrd_milを現在時刻にリセット
-  if (a_meridim.sval[MRD_MASTER] == MCMD_RESET_MRD_TIMER) {
+  if (a_meridim.sval[MRD_MASTER] == MCMD_FRAMETIMER_RESET) {
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
   }
 
   // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10008) ボードの末端処理を指定時間だけ止める.
-  if (a_meridim.sval[MRD_MASTER] == MCMD_STOP_BOARD_DURING) {
+  if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_STOP_DURING) {
     flg.stop_board_during = true; // ボードの処理停止フラグをアゲる
     // ボードの末端処理をmeridim[2]ミリ秒だけ止める.
     Serial.print("Stop teensy's processing during ");
-    Serial.print(int(r_spi_meridim.sval[MRD_STOP_FRAMES_MS]));
+    Serial.print(int(r_spi_meridim.sval[MRD_STOP_FRAMES]));
     Serial.println(" ms.");
-    for (int i = 0; i < int(r_spi_meridim.sval[MRD_STOP_FRAMES_MS]); i++) {
+    for (int i = 0; i < int(r_spi_meridim.sval[MRD_STOP_FRAMES]); i++) {
       delay(1);
     }
     flg.stop_board_during = false; // ボードの処理停止フラグをサゲる

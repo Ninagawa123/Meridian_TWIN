@@ -112,27 +112,42 @@ bool mrd_eeprom_dump_serial(UnionEEPROM a_data, int a_len_byte, int a_bhd, Strea
 //------------------------------------------------------------------------------------
 
 /// @brief config.hにあるサーボの諸設定からEEPROM格納用の配列データを作成する.
+/// @param a_sv サーボパラメータの構造体.
 /// @return config.hから作成したEEPROM格納用の配列データを返す.
-UnionEEPROM mrd_eeprom_make_data_from_config() {
+UnionEEPROM mrd_eeprom_make_data_from_config_lite(ServoParam a_sv) {
   UnionEEPROM array_tmp = {0};
   for (int i = 0; i < 15; i++) {
     // 左サーボの情報を格納
     array_tmp.sauval[1][20 + i * 2] =
-        ((sv.ixl_mount[i] != 0) << 15) |     // bit16: マウント有無 (0以外なら1)
-        ((sv.ixl_id[i] & 0x7F) << 8) |       // bit15-9: ID (7ビット)
-        ((sv.ixl_cw[i] == -1 ? 1 : 0) << 8); // bit8: 正逆 (1ビット)
+        ((a_sv.ixl_mount[i] != 0) << 15) |     // bit16: マウント有無 (0以外なら1)
+        ((a_sv.ixl_id[i] & 0x7F) << 8) |       // bit15-9: ID (7ビット)
+        ((a_sv.ixl_cw[i] == -1 ? 1 : 0) << 8); // bit8: 正逆 (1ビット)
     // 各サーボの直立デフォルト値 degree
-    array_tmp.saval[1][21 + i * 2] = short(mrd.float2HfShort(sv.ixl_trim[i]));
+    array_tmp.saval[1][21 + i * 2] = short(mrd.float2HfShort(a_sv.ixl_trim[i]));
 
     // 右サーボの情報を格納
     array_tmp.sauval[1][50 + i * 2] =
-        ((sv.ixl_mount[i] != 0) << 15) |     // bit16: マウント有無 (0以外なら1)
-        ((sv.ixl_id[i] & 0x7F) << 8) |       // bit15-9: ID (7ビット)
-        ((sv.ixl_cw[i] == -1 ? 1 : 0) << 8); // bit8: 正逆 (1ビット)
+        ((a_sv.ixr_mount[i] != 0) << 15) |     // bit16: マウント有無 (0以外なら1)
+        ((a_sv.ixr_id[i] & 0x7F) << 8) |       // bit15-9: ID (7ビット)
+        ((a_sv.ixr_cw[i] == -1 ? 1 : 0) << 8); // bit8: 正逆 (1ビット)
     // 各サーボの直立デフォルト値 degree
-    array_tmp.saval[1][51 + i * 2] = short(mrd.float2HfShort(sv.ixr_trim[i]));
+    array_tmp.saval[1][51 + i * 2] = short(mrd.float2HfShort(a_sv.ixr_trim[i]));
   };
   return array_tmp;
+}
+
+/// @brief 現在のサーボ位置からEEPROM格納用のトリムデータを作成し、EEPROM配列に入れる.
+/// @param a_data EEPROM書き込み用の配列データ.
+/// @param a_sv サーボパラメータの構造体.
+/// @return EEPROM格納用の配列データを返す.
+UnionEEPROM mrd_eeprom_make_trim_from_current_lite(UnionEEPROM a_data, ServoParam a_sv) {
+  for (int i = 0; i < 15; i++) {
+    // L系統サーボの直立デフォルト値 degree
+    a_data.saval[1][21 + i * 2] = short(mrd.float2HfShort(a_sv.ixl_tgt[i] - a_sv.ixl_trim[i]));
+    // R系統サーボの直立デフォルト値 degree
+    a_data.saval[1][51 + i * 2] = short(mrd.float2HfShort(a_sv.ixr_tgt[i] - a_sv.ixr_trim[i]));
+  };
+  return a_data;
 }
 
 //------------------------------------------------------------------------------------
@@ -176,7 +191,7 @@ bool mrd_eeprom_zero_format(bool a_flg_protect, int a_len_byte, Stream &a_serial
 /// @param a_flg_protect EEPROMの書き込み許可があるかどうかのブール値.
 /// @param a_serial メッセージ表示用のハードウェアシリアル.
 /// @return EEPROMの書き込みと読み込みが成功した場合はtrueを, 書き込まなかった場合はfalseを返す.
-bool mrd_eeprom_write(UnionEEPROM a_data, bool a_flg_protect, Stream &a_serial) {
+bool mrd_eeprom_write_all(UnionEEPROM a_data, bool a_flg_protect, Stream &a_serial) {
   if (a_flg_protect) { // EEPROM書き込み実施フラグをチェック
     return false;
   }
@@ -225,7 +240,7 @@ bool mrd_eeprom_write(UnionEEPROM a_data, bool a_flg_protect, Stream &a_serial) 
 bool mrd_eeprom_set(UnionEEPROM a_data, int a_len_byte) //
 {
   if (flg.eeprom_set) {
-    // a_data = mrd_eeprom_make_data_from_config();
+    // a_data = mrd_eeprom_make_data_from_config_lite();
 
     // EEPROM書き込み
     for (int i = 0; i < a_len_byte; i++) // データを書き込む時はbyte型
@@ -268,7 +283,7 @@ bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, int a_len_byte, bool 
   a_serial.println("Try to write EEPROM: ");
   mrd_eeprom_dump_serial(a_write_data, a_len_byte, a_bhd, a_serial); // 書き込み内容をダンプ表示
 
-  if (mrd_eeprom_write(a_write_data, a_protect, a_serial)) {
+  if (mrd_eeprom_write_all(a_write_data, a_protect, a_serial)) {
     a_serial.println("...Write OK.");
   } else {
     a_serial.println("...Write failed.");

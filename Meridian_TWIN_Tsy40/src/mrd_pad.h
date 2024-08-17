@@ -144,14 +144,14 @@ bool meriput90_pad(PadType a_type, Meridim90Union &a_meridim, PadUnion a_pad_arr
 
   // ボタンデータの処理 (マージ or 上書き)
   if (a_marge) {
-    a_meridim.usval[MRD_CONTROL_BUTTONS] |= a_pad_array.usval[0];
+    a_meridim.usval[MRD_PAD_BUTTONS] |= a_pad_array.usval[0];
   } else {
-    a_meridim.usval[MRD_CONTROL_BUTTONS] = a_pad_array.usval[0];
+    a_meridim.usval[MRD_PAD_BUTTONS] = a_pad_array.usval[0];
   }
 
   // アナログ入力データの処理 (上書きのみ)
   for (int i = 1; i < 4; i++) {
-    a_meridim.usval[MRD_CONTROL_BUTTONS + i] = a_pad_array.usval[i];
+    a_meridim.usval[MRD_PAD_BUTTONS + i] = a_pad_array.usval[i];
   }
   return true;
 }

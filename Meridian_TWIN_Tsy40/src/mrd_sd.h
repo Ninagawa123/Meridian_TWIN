@@ -7,7 +7,7 @@
 
 // ライブラリ導入
 #include <SD.h> // SDカード用
-File myFile;    // SDカード用
+File sdfile;    // SDカード用
 
 //================================================================================================================
 //  SDメモリ 関連の処理
@@ -66,10 +66,10 @@ public:
   /// @return SDカードの読み書きが成功した場合はtrueを, 失敗した場合はfalseを返す.
   bool check_rw(bool a_sd_mount, int a_chipselect, bool a_flg_rw) {
     if (a_sd_mount && a_flg_rw) {
-      myFile = SD.open("/test.txt", FILE_WRITE);
+      sdfile = SD.open("/test.txt", FILE_WRITE);
       delay(1); // SPI安定化検証用
 
-      if (myFile) {
+      if (sdfile) {
         m_serial.print("Checking SD card r/w...");
         // SD書き込みテスト用のランダムな4桁の数字を生成
         randomSeed(long(analogRead(A0) + analogRead(A1) * 1000 +
@@ -79,19 +79,19 @@ public:
         m_serial.print(" write code ");
         m_serial.print(randNumber);
         // ファイルへの書き込みを実行
-        myFile.println(randNumber);
+        sdfile.println(randNumber);
         delayMicroseconds(1); // SPI安定化検証用
-        myFile.close();
+        sdfile.close();
         m_serial.print(" and");
         delayMicroseconds(10); // SPI安定化検証用
         // ファイルからの読み込みを実行
-        myFile = SD.open("/test.txt");
-        if (myFile) {
+        sdfile = SD.open("/test.txt");
+        if (sdfile) {
           m_serial.print(" read code ");
-          while (myFile.available()) {
-            m_serial.write(myFile.read());
+          while (sdfile.available()) {
+            m_serial.write(sdfile.read());
           }
-          myFile.close();
+          sdfile.close();
         }
         SD.remove("/test.txt");
         delay(10);

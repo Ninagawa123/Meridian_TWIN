@@ -95,35 +95,36 @@
 #define CHARGE_TIME    200 // 起動時のコンデンサチャージ待機時間（単位ms）
 
 // 動作モード
-#define MODE_SPI_TRANS 1 // ESP32とのSPI通信を行う（1:ON, 0:OFF）
+#define MODE_SPI_TRANS 1 // Tsy-ESP32間のSPI通信を行う（1:ON, 0:OFF）
 
 // EEPROMの設定
 #define EEPROM_BYTE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_eeprom_set)
-#define EEPROM_PROTECT 1   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
+#define EEPROM_SET     0 // 起動時にconfig.hの内容をEEPROMにセット(1:する, 0:しない)
+#define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
 #define EEPROM_LOAD    0   // 起動時にEEPROMの内容を諸設定にロードする(未導入)
 #define EEPROM_DUMP    0   // 起動時のEEPROM内容のダンプ表示
 #define EEPROM_STYLE   Hex // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
 
-// 動作チェックモード
+// 起動時のチェック
 #define CHECK_SD_RW     1 // 起動時のSDカードリーダーの読み書きチェック
 #define CHECK_EEPROM_RW 0 // EEPROMの動作チェック
 
 // シリアルモニタリング
 #define MONITOR_FRAME_DELAY       1 // シリアルモニタでフレーム遅延時間を表示（0:OFF, 1:ON）
 #define MONITOR_FLOW              0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
-#define MONITOR_SERVO_ERR         0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
-#define MONITOR_SEQ_NUMBER        0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
-#define MONITOR_ALL_ERR           0 // 全経路の受信エラー率を表示（0:OFF, 1:ON）
+#define MONITOR_ERR_SERVO         0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
+#define MONITOR_ERR_ALL           0 // 全経路の受信エラー率を表示（0:OFF, 1:ON）
+#define MONITOR_SEQ               0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
 #define MONITOR_PAD               0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
 #define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_ESP32 1 // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
-#define MOUNT_SD    1 // SDカードリーダーの有無 (0:なし, 1:あり)
+#define MOUNT_ESP32   1 // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
+#define MOUNT_SD      1           // SDカードリーダーの有無 (0:なし, 1:あり)
+#define MOUNT_IMUAHRS MPU6050_IMU // IMU/AHRSの搭載状況 NO_IMU, MPU6050_IMU, MPU9250_IMU.BNO055_AHRS
+#define MOUNT_PAD     PC // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
 
 // I2C設定, I2Cセンサ関連設定
-#define MOUNT_IMUAHRS      MPU6050_IMU // IMU/AHRSの搭載状況 NO_IMU, MPU6050_IMU, MPU9250_IMU.BNO055_AHRS
 #define I2C0_SPEED         400000 // I2Cの速度（400kHz推奨）
 #define IMUAHRS_INTERVAL   10     // IMU/AHRSのセンサの読み取り間隔(ms)
 #define IMUAHRS_STOCK      4 // MPUで移動平均を取る際の元にする時系列データの個数
@@ -133,31 +134,37 @@
 // SPI設定
 #define SPI0_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
 
+// PC接続関連設定
+#define SERIAL_PC_BPS     6000000 // PCとのシリアル速度（モニタリング表示用）
+#define SERIAL_PC_TIMEOUT 2000    // PCとのシリアル接続確立タイムアウト(ms)
+
 // JOYPAD関連設定
-#define MOUNT_PAD        PC // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
-#define PAD_INTERVAL     4 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define PAD_BUTTON_MARGE 1 // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
-#define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する
+#define PAD_INTERVAL 4 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define PAD_BUTTON_MARGE                                                                           \
+  1 // JOYPADのボタンデータをMeridim受信値に 0:論理積, 1:Meridim受信値に論理和
+#define PAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
 
+// ピンアサイン
+#define PIN_ERR_LED       2 // LEDピン番号 処理が時間内に収まっていない場合に点灯
+#define PIN_EN_L          6  // ICSサーボ信号の左系のENピン番号（固定）
+#define PIN_EN_R          5  // ICSサーボ信号の右系のENピン番号（固定）
+#define PIN_EN_C          23 // 半二重サーボ信号の3系のENピン番号（固定）
+#define PIN_CHIPSELECT_SD 9  // SDカードSPI通信用のChipSelectのピン番号
+
+//-------------------------------------------------------------------------
+// サーボ設定
+//-------------------------------------------------------------------------
 // コマンドサーボの種類
-// 00: マウントなし
-// 01: Single PWM (Not yet.)
-// 11: I2C_PCA9685 to PWM (Not yet.)
-// 21: FUTABA_RSxTTL (Not yet.)
-// 31: DYNAMIXEL Protocol 1.0 (Not yet.)
-// 32: DYNAMIXEL Protocol 2.0 (Not yet.)
-// 43: KONDO_ICS 3.5/3.6
-// 44: KONDO_PMX (Not yet.)
-// 51: JRPROPO_XBUS (Not yet.)
-// 61: FEETECH_STS (Not yet.)
-// 62: FEETECH_SCS (Not yet.)
-#define MOUNT_L_SERVO_TYPE 43 // L系統
-#define MOUNT_R_SERVO_TYPE 43 // R系統
-#define MOUNT_C_SERVO_TYPE 0  // C系統(旧C系統)
 
-// サーボ関連設定
-#define ICS_BAUDRATE 1250000 // ICSサーボの通信速度1.25M ★ あとでけす
-#define ICS_TIMEOUT  3       // ICS返信待ちのタイムアウト時間. ★ あとでけす
+// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
+// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
+// 51: JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
+#define MOUNT_SERVO_TYPE_L 43 // L系統
+#define MOUNT_SERVO_TYPE_R 43 // R系統
+#define MOUNT_SERVO_TYPE_C 0  // C系統(旧C系統)
 
 // サーボ関連設定
 #define SERVO_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
@@ -168,61 +175,18 @@
 #define SERVO_TIMEOUT_C     2       // R系統のICS返信待ちのタイムアウト時間
 #define SERVO_LOST_ERR_WAIT 6 // 連続何フレームサーボ信号をロストしたら異常とするか
 
-// PC接続関連設定
-#define SERIAL_PC_BPS  6000000 // PCとのシリアル速度（モニタリング表示用）
-#define SERIAL_TIMEOUT 2000    // PCとのシリアル接続確立タイムアウトms
-
-// 固定値, マスターコマンド定義
-#define MCMD_DUMMY_DATA         -32768 // SPI送受信用のダミーデータ判定用
-#define MCMD_UPDATE_YAW_CENTER  10002 // センサの推定ヨー軸を現在値センターとしてリセット
-#define MCMD_ENTER_TRIM_MODE    10003 // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
-#define MCMD_CLEAR_SERVO_ERR_ID 10004 // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
-#define MCMD_BOARD_TRANSMIT_ACTIVE                                                                 \
-  10005 // ボードが定刻で送信を行うモード（PC側が受信待ち.デフォルト）
-#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
-#define MCMD_RESET_MRD_TIMER        10007 // フレーム管理時計mrd_t_milを現在時刻にリセット
-#define MCMD_STOP_BOARD_DURING                                                                     \
-  10008 // ボードの末端処理をmeridim[MRD_STOP_FRAMES_MS]ミリ秒だけ止める.
-#define MCMD_ENTER_EEPROM_WRITE_MODE 10009 // EEPROM書き込みモードのスタート
-#define MCMD_EXIT_EEPROM_WRITE_MODE  10010 // EEPROM書き込みモードの終了
-#define MCMD_ENTER_EEPROM_READ_MODE  10011 // EEPROM読み出しモードのスタート
-#define MCMD_EXIT_EEPROM_READ_MODE   10012 // EEPROM読み出しモードの終了
-#define MCMD_ENTER_SDCARD_WRITE_MODE 10013 // SDCARD書き込みモードのスタート
-#define MCMD_EXIT_SDCARD_WRITE_MODE  10014 // SDCARD書き込みモードの終了
-#define MCMD_ENTER_SDCARD_READ_MODE  10015 // SDCARD読み出しモードのスタート
-#define MCMD_EXIT_SDCARD_READ_MODE   10016 // SDCARD読み出しモードの終了
-
-// エラービット MRD_ERR_CODEの上位8bit分
-#define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし、1:エラー検出)
-#define ERRBIT_14_PC_ESP       14 // PC → ESP32 のUDP受信エラー
-#define ERRBIT_13_ESP_TSY      13 // ESP32 → TeensyのSPI受信エラー
-#define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
-#define ERRBIT_11_BOARD_DELAY  11 // Teensy or ESP32の処理ディレイ (末端で捕捉)
-#define ERRBIT_10_UDP_ESP_SKIP 10 // PC → ESP32 のUDPフレームスキップエラー
-#define ERRBIT_9_BOARD_SKIP    9 // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
-#define ERRBIT_8_PC_SKIP       8 // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
-
-// ピンアサイン
-#define PIN_ERR_LED       2 // LEDピン番号 処理が時間内に収まっていない場合に点灯
-#define PIN_EN_L          6  // ICSサーボ信号の左系のENピン番号（固定）
-#define PIN_EN_R          5  // ICSサーボ信号の右系のENピン番号（固定）
-#define PIN_EN_C          23 // 半二重サーボ信号の3系のENピン番号（固定）
-#define PIN_CHIPSELECT_SD 9  // SDカードSPI通信用のChipSelectのピン番号
-
-//-------------------------------------------------------------------------
-//---- サ ー ボ 設 定  -----------------------------------------------------
-//-------------------------------------------------------------------------
-
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
 #define IXR_MAX 15 // R系統の最大サーボ数. 標準は15.
 #define IXC_MAX 15 // C系統の最大サーボ数. 標準は15.
 
 // L系統のサーボのマウントの設定
-// 0: マウントなし        01: Single PWM,    11: I2C_PCA9685 to PWM
-// 21: FUTABA_RSxTTL,   31: DYNAMIXEL 1.0, 32: DYNAMIXEL 2.0
-// 43: KONDO_ICS 3.5/6, 44: KONDO_PMX,     51: JRPROPO_XBUS
-// 61: FEETECH_STS,     62: FEETECH_SCS
+// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
+// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
+// 51: JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
 int IXL_MT[IXL_MAX] = {
     43, // [00]頭ヨー
     43, // [01]左肩ピッチ
@@ -242,10 +206,12 @@ int IXL_MT[IXL_MAX] = {
 };
 
 // R系統のサーボのマウントの設定
-// 0: マウントなし        01: Single PWM,    11: I2C_PCA9685 to PWM
-// 21: FUTABA_RSxTTL,   31: DYNAMIXEL 1.0, 32: DYNAMIXEL 2.0
-// 43: KONDO_ICS 3.5/6, 44: KONDO_PMX,     51: JRPROPO_XBUS
-// 61: FEETECH_STS,     62: FEETECH_SCS
+// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
+// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
+// 51: JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
 int IXR_MT[IXR_MAX] = {
     43, // [00]腰ヨー
     43, // [01]右肩ピッチ
@@ -265,10 +231,12 @@ int IXR_MT[IXR_MAX] = {
 };
 
 // C系統のサーボのマウントの設定
-// 0: マウントなし        01: Single PWM,    11: I2C_PCA9685 to PWM
-// 21: FUTABA_RSxTTL,   31: DYNAMIXEL 1.0, 32: DYNAMIXEL 2.0
-// 43: KONDO_ICS 3.5/6, 44: KONDO_PMX,     51: JRPROPO_XBUS
-// 61: FEETECH_STS,     62: FEETECH_SCS
+// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
+// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
+// 51: JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
 int IXC_MT[IXC_MAX] = {
     0, // [00]
     0, // [01]
@@ -461,62 +429,89 @@ float IXC_TRIM[IXC_MAX] = {
 };
 
 //-------------------------------------------------------------------------
+//  固定値, マスターコマンド定義
+//-------------------------------------------------------------------------
+#define MCMD_TORQUE_ALL_OFF         0 // すべてのサーボトルクをオフにする（脱力）
+#define MCMD_DUMMY_DATA             -32768 // SPI送受信用のダミーデータ判定用
+#define MCMD_TEST_VALUE             -32767 // テスト用の仮設変数
+#define MCMD_SENSOR_YAW_CALIB       10002 // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_SENSOR_ALL_CALIB       10003 // センサの3軸について現在値を原点としてリセット
+#define MCMD_ERR_CLEAR_SERVO_ID     10004 // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
+#define MCMD_BOARD_TRANSMIT_ACTIVE  10005 // ボードが定刻で送信を行うモード（PC側が受信待ち）
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
+#define MCMD_FRAMETIMER_RESET       10007 // フレームタイマーを現在時刻にリセット
+#define MCMD_BOARD_STOP_DURING      10008 // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
+#define MCMD_EEPROM_ENTER_WRITE     10009 // EEPROM書き込みモードのスタート
+#define MCMD_EEPROM_EXIT_WRITE      10010 // EEPROM書き込みモードの終了
+#define MCMD_EEPROM_ENTER_READ      10011 // EEPROM読み出しモードのスタート
+#define MCMD_EEPROM_EXIT_READ       10012 // EEPROM読み出しモードの終了
+#define MCMD_SDCARD_ENTER_WRITE     10013 // SDCARD書き込みモードのスタート
+#define MCMD_SDCARD_EXIT_WRITE      10014 // SDCARD書き込みモードの終了
+#define MCMD_SDCARD_ENTER_READ      10015 // SDCARD読み出しモードのスタート
+#define MCMD_SDCARD_EXIT_READ       10016 // SDCARD読み出しモードの終了
+#define MCMD_EEPROM_SAVE_TRIM       10101 // 現在の姿勢をトリム値としてサーボに書き込む
+#define MCMD_EEPROM_LOAD_TRIM       10102 // EEPROMのトリム値をサーボに反映する
+#define MCMD_NAK                    32766 // コマンド実行の失敗を応答
+#define MCMD_ACK                    32767 // コマンド実行の成功を応答
+
+//-------------------------------------------------------------------------
 //---- Meridim90 配列アクセス対応キー  ---------------------------------------
 //-------------------------------------------------------------------------
-#define MRD_MASTER             0  // マスターコマンド
-#define MRD_SEQENTIAL          1  // シーケンス番号
-#define MRD_ACC_X              2  // 加速度センサX値
-#define MRD_ACC_Y              3  // 加速度センサY値
-#define MRD_ACC_Z              4  // 加速度センサZ値
-#define MRD_GYRO_X             5  // ジャイロセンサX値
-#define MRD_GYRO_Y             6  // ジャイロセンサY値
-#define MRD_GYRO_Z             7  // ジャイロセンサZ値
-#define MRD_MAG_X              8  // 磁気コンパスX値
-#define MRD_MAG_Y              9  // 磁気コンパスY値
-#define MRD_MAG_Z              10 // 磁気コンパスZ値
-#define MRD_TEMP               11 // 温度センサ値
-#define MRD_DIR_ROLL           12 // DMP推定ロール方向値
-#define MRD_DIR_PITCH          13 // DMP推定ピッチ方向値
-#define MRD_DIR_YAW            14 // DMP推定ヨー方向値
-#define MRD_CONTROL_BUTTONS    15 // リモコンの基本ボタン値
-#define MRD_CONTROL_STICK_L    16 // リモコンの左スティックアナログ値
-#define MRD_CONTROL_STICK_R    17 // リモコンの右スティックアナログ値
-#define MRD_CONTROL_L2R2ANALOG 18 // リモコンのL2R2ボタンアナログ値
-#define MRD_MOTION_FRAMES      19 // モーション設定のフレーム数
-#define MRD_STOP_FRAMES_MS     19 // ボード停止時のフレーム数(MCMD_STOP_BOARD_DURINGで指定)
-#define HEAD_Y_CMD             20 // 頭ヨーのコマンド
-#define HEAD_Y_VAL             21 // 頭ヨーの値
-#define L_SHOULDER_P_CMD       22 // 左肩ピッチのコマンド
-#define L_SHOULDER_P_VAL       23 // 左肩ピッチの値
-#define L_SHOULDER_R_CMD       24 // 左肩ロールのコマンド
-#define L_SHOULDER_R_VAL       25 // 左肩ロールの値
-#define L_ELBOW_Y_CMD          26 // 左肘ヨーのコマンド
-#define L_ELBOW_Y_VAL          27 // 左肘ヨーの値
-#define L_ELBOW_P_CMD          28 // 左肘ピッチのコマンド
-#define L_ELBOW_P_VAL          29 // 左肘ピッチの値
-#define L_HIPJOINT_Y_CMD       30 // 左股ヨーのコマンド
-#define L_HIPJOINT_Y_VAL       31 // 左股ヨーの値
-#define L_HIPJOINT_R_CMD       32 // 左股ロールのコマンド
-#define L_HIPJOINT_R_VAL       33 // 左股ロールの値
-#define L_HIPJOINT_P_CMD       34 // 左股ピッチのコマンド
-#define L_HIPJOINT_P_VAL       35 // 左股ピッチの値
-#define L_KNEE_P_CMD           36 // 左膝ピッチのコマンド
-#define L_KNEE_P_VAL           37 // 左膝ピッチの値
-#define L_ANKLE_P_CMD          38 // 左足首ピッチのコマンド
-#define L_ANKLE_P_VAL          39 // 左足首ピッチの値
-#define L_ANKLE_R_CMD          40 // 左足首ロールのコマンド
-#define L_ANKLE_R_VAL          41 // 左足首ロールの値
-#define L_SERVO_ID11_CMD       42 // 追加サーボ用のコマンド
-#define L_SERVO_ID11_VAL       43 // 追加サーボ用の値
-#define L_SERVO_ID12_CMD       44 // 追加サーボ用のコマンド
-#define L_SERVO_ID12_VAL       45 // 追加サーボ用の値
-#define L_SERVO_ID13_CMD       46 // 追加サーボ用のコマンド
-#define L_SERVO_ID13_VAL       47 // 追加サーボ用の値
-#define L_SERVO_ID14_CMD       48 // 追加サーボ用のコマンド
-#define L_SERVO_ID14_VAL       49 // 追加サーボ用の値
-#define WAIST_Y_CMD            50 // 腰ヨーのコマンド
-#define WAIST_Y_VAL            51 // 腰ヨーの値
+#define MRD_MASTER        0  // マスターコマンド
+#define MRD_SEQ           1  // シーケンス番号
+#define MRD_ACC_X         2  // 加速度センサX値
+#define MRD_ACC_Y         3  // 加速度センサY値
+#define MRD_ACC_Z         4  // 加速度センサZ値
+#define MRD_GYRO_X        5  // ジャイロセンサX値
+#define MRD_GYRO_Y        6  // ジャイロセンサY値
+#define MRD_GYRO_Z        7  // ジャイロセンサZ値
+#define MRD_MAG_X         8  // 磁気コンパスX値
+#define MRD_MAG_Y         9  // 磁気コンパスY値
+#define MRD_MAG_Z         10 // 磁気コンパスZ値
+#define MRD_TEMP          11 // 温度センサ値
+#define MRD_DIR_ROLL      12 // DMP推定ロール方向値
+#define MRD_DIR_PITCH     13 // DMP推定ピッチ方向値
+#define MRD_DIR_YAW       14 // DMP推定ヨー方向値
+#define MRD_PAD_BUTTONS   15 // リモコンの基本ボタン値
+#define MRD_PAD_STICK_L   16 // リモコンの左スティックアナログ値
+#define MRD_PAD_STICK_R   17 // リモコンの右スティックアナログ値
+#define MRD_PAD_L2R2VAL   18 // リモコンのL2R2ボタンアナログ値
+#define MRD_MOTION_FRAMES 19 // モーション設定のフレーム数
+#define MRD_STOP_FRAMES   19 // ボード停止時のフレーム数(MCMD_BOARD_STOP_DURINGで指定)
 
+#define C_HEAD_Y_CMD     20 // 頭ヨーのコマンド
+#define C_HEAD_Y_VAL     21 // 頭ヨーの値
+#define L_SHOULDER_P_CMD 22 // 左肩ピッチのコマンド
+#define L_SHOULDER_P_VAL 23 // 左肩ピッチの値
+#define L_SHOULDER_R_CMD 24 // 左肩ロールのコマンド
+#define L_SHOULDER_R_VAL 25 // 左肩ロールの値
+#define L_ELBOW_Y_CMD    26 // 左肘ヨーのコマンド
+#define L_ELBOW_Y_VAL    27 // 左肘ヨーの値
+#define L_ELBOW_P_CMD    28 // 左肘ピッチのコマンド
+#define L_ELBOW_P_VAL    29 // 左肘ピッチの値
+#define L_HIPJOINT_Y_CMD 30 // 左股ヨーのコマンド
+#define L_HIPJOINT_Y_VAL 31 // 左股ヨーの値
+#define L_HIPJOINT_R_CMD 32 // 左股ロールのコマンド
+#define L_HIPJOINT_R_VAL 33 // 左股ロールの値
+#define L_HIPJOINT_P_CMD 34 // 左股ピッチのコマンド
+#define L_HIPJOINT_P_VAL 35 // 左股ピッチの値
+#define L_KNEE_P_CMD     36 // 左膝ピッチのコマンド
+#define L_KNEE_P_VAL     37 // 左膝ピッチの値
+#define L_ANKLE_P_CMD    38 // 左足首ピッチのコマンド
+#define L_ANKLE_P_VAL    39 // 左足首ピッチの値
+#define L_ANKLE_R_CMD    40 // 左足首ロールのコマンド
+#define L_ANKLE_R_VAL    41 // 左足首ロールの値
+#define L_SERVO_IX11_CMD 42 // 追加サーボ用のコマンド
+#define L_SERVO_IX11_VAL 43 // 追加サーボ用の値
+#define L_SERVO_IX12_CMD 44 // 追加サーボ用のコマンド
+#define L_SERVO_IX12_VAL 45 // 追加サーボ用の値
+#define L_SERVO_IX13_CMD 46 // 追加サーボ用のコマンド
+#define L_SERVO_IX13_VAL 47 // 追加サーボ用の値
+#define L_SERVO_IX14_CMD 48 // 追加サーボ用のコマンド
+#define L_SERVO_IX14_VAL 49 // 追加サーボ用の値
+
+#define C_WAIST_Y_CMD    50 // 腰ヨーのコマンド
+#define C_WAIST_Y_VAL    51 // 腰ヨーの値
 #define R_SHOULDER_P_CMD 52 // 右肩ピッチのコマンド
 #define R_SHOULDER_P_VAL 53 // 右肩ピッチの値
 #define R_SHOULDER_R_CMD 54 // 右肩ロールのコマンド
@@ -537,23 +532,34 @@ float IXC_TRIM[IXC_MAX] = {
 #define R_ANKLE_P_VAL    69 // 右足首ピッチの値
 #define R_ANKLE_R_CMD    70 // 右足首ロールのコマンド
 #define R_ANKLE_R_VAL    71 // 右足首ロールの値
-#define R_SERVO_ID11_CMD 72 // 追加テスト用のコマンド
-#define R_SERVO_ID11_VAL 73 // 追加テスト用の値
-#define R_SERVO_ID12_CMD 74 // 追加テスト用のコマンド
-#define R_SERVO_ID12_VAL 75 // 追加テスト用の値
-#define R_SERVO_ID13_CMD 76 // 追加テスト用のコマンド
-#define R_SERVO_ID13_VAL 77 // 追加テスト用の値
-#define R_SERVO_ID14_CMD 78 // 追加テスト用のコマンド
-#define R_SERVO_ID14_VAL 79 // 追加テスト用の値
-#define MRD_USERDATA_80  80 // ユーザー定義用
-#define MRD_USERDATA_81  81 // ユーザー定義用
-#define MRD_USERDATA_82  82 // ユーザー定義用
-#define MRD_USERDATA_83  83 // ユーザー定義用
-#define MRD_USERDATA_84  84 // ユーザー定義用
-#define MRD_USERDATA_85  85 // ユーザー定義用
-#define MRD_USERDATA_86  86 // ユーザー定義用
-#define MRD_USERDATA_87  87 // ユーザー定義用
-#define MRD_ERR_CODE     88 // エラーコード
-#define MRD_CHECKSUM     89 // チェックサム
+#define R_SERVO_IX11_CMD 72 // 追加テスト用のコマンド
+#define R_SERVO_IX11_VAL 73 // 追加テスト用の値
+#define R_SERVO_IX12_CMD 74 // 追加テスト用のコマンド
+#define R_SERVO_IX12_VAL 75 // 追加テスト用の値
+#define R_SERVO_IX13_CMD 76 // 追加テスト用のコマンド
+#define R_SERVO_IX13_VAL 77 // 追加テスト用の値
+#define R_SERVO_IX14_CMD 78 // 追加テスト用のコマンド
+#define R_SERVO_IX14_VAL 79 // 追加テスト用の値
+
+#define MRD_USERDATA_80 80 // ユーザー定義用
+#define MRD_USERDATA_81 81 // ユーザー定義用
+#define MRD_USERDATA_82 82 // ユーザー定義用
+#define MRD_USERDATA_83 83 // ユーザー定義用
+#define MRD_USERDATA_84 84 // ユーザー定義用
+#define MRD_USERDATA_85 85 // ユーザー定義用
+#define MRD_USERDATA_86 86 // ユーザー定義用
+#define MRD_USERDATA_87 87 // ユーザー定義用
+// #define MRD_ERR         88 // エラーコード (MRDM_LEN - 2)
+// #define MRD_CKSM        89 // チェックサム (MRDM_LEN - 1)#define MRD_ERR_CODE     88 //
+
+// エラービット MRD_ERR_CODEの上位8bit分
+#define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし、1:エラー検出)
+#define ERRBIT_14_PC_ESP       14 // PC → ESP32 のUDP受信エラー
+#define ERRBIT_13_ESP_TSY      13 // ESP32 → TeensyのSPI受信エラー
+#define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
+#define ERRBIT_11_BOARD_DELAY  11 // Teensy or ESP32の処理ディレイ (末端で捕捉)
+#define ERRBIT_10_UDP_ESP_SKIP 10 // PC → ESP32 のUDPフレームスキップエラー
+#define ERRBIT_9_BOARD_SKIP    9 // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_8_PC_SKIP       8 // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
 
 #endif // __MERIDIAN_CONFIG__
