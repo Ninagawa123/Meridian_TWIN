@@ -208,15 +208,16 @@ ESP32とPCをUSBケーブルで接続し, PlatformIOの下にある「チェッ�
 #### ESP32のIPアドレスを調べる  
 PlatformIOで画面下のコンセントアイコンからシリアルモニタを開き, ESP32DevKitC本体のENボタンを押します.  
 wifi接続に成功すると  
-> Hi, This is Meridian_TWIN_for_ESP32_vX.X.X_20XX.XX.XX
-> Set PC-USB 1000000 bps
-> Set SPI0   6000000 bps
-> WiFi connecting to => xxxxxxx 
-> WiFi successfully connected.
-> PC's IP address target => 192.168.1.xxx
-> ESP32's IP address => 192.168.1.xxx
-> 
-> -) Meridian TWIN system on side ESP32 now flows. (-
+
+> Hi, This is Meridian_TWIN_for_ESP32_vX.X.X_20XX.XX.XX  
+> Set PC-USB 1000000 bps  
+> Set SPI0   6000000 bps  
+> WiFi connecting to => xxxxxxx  
+> WiFi successfully connected.  
+> PC's IP address target => 192.168.1.xxx  
+> ESP32's IP address => 192.168.1.xxx  
+>  
+> -) Meridian TWIN system on side ESP32 now flows. (-  
   
 と表示され, 「ESP32's IP address =>」にESP32本体のIPアドレスが表示されます.この番号をメモしておきます.  
   
