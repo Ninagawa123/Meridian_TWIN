@@ -206,7 +206,7 @@ void loop() {
     mrd.monitor_check_flow("[3]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[3-1] マスターコマンドの実行
-    execute_MasterCommand_1(r_spi_meridim, flg.spi_rcvd); // Meridmを正しく受信した時のみ実行
+    execute_master_command_1(r_spi_meridim, flg.spi_rcvd); // Meridmを正しく受信した時のみ実行
 
     // @[3-2]EEPROMやSDへの読み書き処理はおそらくここで実施.
     // execute_MasterCommand()関数内でフラグを立て, フラグによって分岐.
@@ -284,7 +284,7 @@ void loop() {
     mrd.monitor_check_flow("[9]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[9-1] マスターコマンドの判定により工程の実行orスキップを分岐
-    execute_MasterCommand_2(s_spi_meridim, flg.spi_rcvd);
+    execute_master_command_2(s_spi_meridim, flg.spi_rcvd);
 
     //------------------------------------------------------------------------------------
     //  [ 10 ] サーボコマンドの書き込み
@@ -397,7 +397,7 @@ void loop() {
 /// @brief Master Commandの第1群を実行する. meridimの受信成功時に実施.
 /// @param a_flg_exe meridimの受信成功フラグ.
 /// @return コマンドを実行した場合はtrue, しなかった場合はfalseを返す.
-bool execute_MasterCommand_1(Meridim90Union a_meridim, bool a_flg_exe) {
+bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe) {
   if (!a_flg_exe) {
     return false;
   }
@@ -444,7 +444,7 @@ bool execute_MasterCommand_1(Meridim90Union a_meridim, bool a_flg_exe) {
 /// @brief Master Commandの実行を行います. 受信フラグに基づき, 異なるコマンドの処理を行います.
 /// @param a_spi_rcvd SPI受信の実行フラグ.
 /// @return コマンドが実行されなかった場合はfalse, それ以外はtrueを返す.
-bool execute_MasterCommand_2(Meridim90Union a_meridim, bool a_spi_rcvd) {
+bool execute_master_command_2(Meridim90Union a_meridim, bool a_spi_rcvd) {
   if (!a_spi_rcvd) {
     return false;
   }

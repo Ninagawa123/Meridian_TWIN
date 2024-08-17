@@ -281,8 +281,8 @@ MrdSdHandler mrd_sd(Serial);
 
 // 予約関数
 
-bool execute_MasterCommand_1(Meridim90Union a_meridim, bool a_flg_exe);
-bool execute_MasterCommand_2(Meridim90Union a_meridim, bool a_flg_exe);
+bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe);
+bool execute_master_command_2(Meridim90Union a_meridim, bool a_flg_exe);
 void mrd_countup_errs();
 
 #endif //__MERIDIAN_MAIN_H__
