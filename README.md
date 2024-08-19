@@ -1,7 +1,7 @@
 # [Meridian_TWIN v1.1.1](https://github.com/Ninagawa123/Meridian_TWIN)
   
-![meridian_logo_800x450](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/f4034bae-70ab-49db-a834-f4bab2ecdad3)
-  
+<img width="800" alt="logo" src="./docs/images/Meridian_logo.png">  
+    
 Meridian計画はヒューマノイドの制御システムについてのオープンソースプロジェクトです.  
 ホビーロボットのデジタルツイン化を簡単に実装することができ, PC上のシミュレーション空間とロボット実機をWIFI経由で10msの更新頻度でデータリンクします.  
   
@@ -9,8 +9,8 @@ Meridian計画はヒューマノイドの制御システムについてのオー
 このデータ配列がデバイス間を高速に廻ることで, リアルタイムな状態データを共有を可能にします.  
 Meridim配列を中間プロトコルとして既存のシステムの間に挟むことで, 複数社のコマンドサーボやセンサ, Unityなどの開発環境, ROSで使用可能な多岐にわたるシミュレーターなどを自由に繋ぎ合わせることができます.  
   
-![meridian_circulate_image](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/c786bec4-3bf4-4f71-8090-dbf179d04758)
-  
+<img width="600" alt="logo" src="./docs/images/circulation_illust.png">  
+    
 当リポジトリで取り扱う ”Meridian_TWIN" はESP32とTeensy4.0を併用するタイプで, 対応ボードはMeridian Board Type.Kとなります.  
 また, ESP32DeckitC単体で動作する簡易バージョンのMeridian_LITE(対応ボードはMeridian Board -LITE-)も開発済みです.  
 Meridianは今後も用途に応じて様々なハードウェア, ソフトウェアに対応させていく予定です.  
@@ -40,7 +40,7 @@ Meridian_TWINは, ハードウェアとして通信用のESP32DevKitC, 制御用
 デモは近藤科学のKRSサーボ(通信速度1.25Mbps)に対応しており, Meiridian Board Type.KはKHR-3HV用に搭載することができます.  
 PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可能です. またUnity(Mac/Win版)でもヒューマノイドの姿勢をリアルタイムに反映させることができます.  
   
-<img width="500" alt="TypeK" src="https://user-images.githubusercontent.com/8329123/180233435-4ed5fcb0-a2c6-4e73-94b1-b842ffb79af4.png">  
+<img width="500" alt="TypeK" src="./docs/images/Meridian_TWIN_Board.png">  
   
   
 ## 開発環境  
@@ -128,10 +128,10 @@ Teensy4.0用のソースコードの「src/config.h」を開き,183行目ごろ�
 左半身および体の中心は下図に順次つつ, 右半身については左半身のミラー方向に回転に合わせます.  
 サーボの回転方向は, サーボの内部の設定変更が望ましいですが, 「src/config.h」でも変更できます.  
 (ESP32用のファイルにも同名のconfig.hが存在しますのでご注意ください.)  
-<img width="600" alt="motorccw" src="https://user-images.githubusercontent.com/8329123/147812253-e6cbe388-f70a-445f-80c0-b4cd899aa15a.png">
+<img width="500" alt="motorccw" src="./docs/images/roid1_direction.png">
   
 #### サーボを接続する
-<img width="600" src="https://raw.githubusercontent.com/Ninagawa123/Meridian_TWIN/main/documents/TypeK_pinassign.png">  
+<img width="600" src="./docs/TypeK_pinassign.png">  
 こちらのピンアサインを参考に, サーボを接続します.  
   
 #### センサーを接続する  
@@ -246,7 +246,7 @@ ESP32は主に通信系のWifiとBluetoothリモコンの設定になります.
 ## Meridian consoleを実行する  
 Meridianで受け取るデータを表示できるコンソールを用意しました. python3が使える環境で実行可能です.  
 https://github.com/Ninagawa123/Meridian_console  
-![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img.jpg)  
+<img width="500" alt="Meridian_console" src="./docs/images/Meridian_console_py.png">
   
 ## Unity版デモを実行する  
   
@@ -254,7 +254,7 @@ Meridian_TWINとUnityを連携させることができます.
 下記のリポジトリの内容をお試しください.  
 [https://github.com/Ninagawa123/Meridian_Unity/tree/main](https://github.com/Ninagawa123/Meridian_Unity/tree/main)  
   
-<img width="500" alt="Meridian_Unity" src="https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/5b486e83-40b8-4556-8a98-8d0ac643effd">
+<img width="500" alt="Meridian_Unity" src="./docs/images/Meridian_unity.png">
 
   
 ## ROS版デモを実行する
@@ -331,7 +331,7 @@ USBバスパワーのみで動作させている場合など, サーボへの電
 
 ####  Meridian Board でサーボが全く反応しない  
 サーボ接続時にコネクタの方向を間違えることで, 半二重回路が破損します.  
-万が一回路が破損した場合には,3系統の回路で代用するか,修理用のキット(BOOTHで販売)で回路を交換してください.    
+万が一回路が破損した場合には,3系統の回路で代用するか, 修理用のキット(BOOTHで販売)で回路を交換してください.    
 
 ####  9軸センサのBNO055がうまく動作しない  
 Teensy4.0との相性問題で,通信中に正しいデータが取得できなくなります.改善方法を探っています.  
@@ -358,7 +358,7 @@ Meridianと親和するリモコン受信機のコードも公開しました. M
 
 https://github.com/Ninagawa123/Merimote?tab=readme-ov-file
   
-<img width="400" alt="merimote" src="https://github.com/user-attachments/assets/562b162e-1b4a-4766-8667-0760f6f7ee3f">
+<img width="300" alt="merimote" src="./docs/images/Merimote_illust.jpg">
 
 ## [Merimote v0.0.1](https://github.com/Ninagawa123/Merimote)  
 Merimoteは主にM5StampPICOを用いたマルチユースのリモコン受信デバイスです.   
