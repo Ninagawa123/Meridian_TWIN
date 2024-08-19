@@ -218,7 +218,7 @@ bool mrd_eeprom_write(UnionEEPROM a_data, bool a_flg_protect, Stream &a_serial) 
   }
   if (flg_renew_tmp) // 変更箇所があれば書き込みを実施
   {
-    // EEPROM.commit(); // 書き込みを確定にcommitがESP32では必要.Teensyでは不要,
+    EEPROM.commit(); // 書き込みを確定にcommitがESP32では必要.Teensyでは不要,
     a_serial.print("Value updated ");
     return true;
   } else {

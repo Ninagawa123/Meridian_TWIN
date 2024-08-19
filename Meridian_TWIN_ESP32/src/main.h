@@ -137,7 +137,7 @@ typedef union // リモコン値格納用
   uint16_t usval[PAD_LEN];    // 上記のunsigned short型
   int8_t bval[PAD_LEN * 2];   // 上記のbyte型
   uint8_t ubval[PAD_LEN * 2]; // 上記のunsigned byte型
-  uint64_t ui64val[1];        // 上記のunsigned int16型
+  uint64_t ui64val;        // 上記のunsigned int16型
                               // [0]button, [1]pad.stick_L_x:pad.stick_L_y,
                               // [2]pad.stick_R_x:pad.stick_R_y, [3]pad.L2_val:pad.R2_val
 } PadUnion;
@@ -175,26 +175,6 @@ MrdMonitor monitor;
 // 予約用
 bool execute_master_command_from_PC(Meridim90Union a_meridim, bool a_flg_exe);
 bool execute_master_command_from_Tsy(Meridim90Union a_meridim, bool a_flg_exe);
-
-/// @brief meridim配列にチェックサムを算出して書き込む.
-/// @param a_meridim Meridim配列の共用体. 参照渡し.
-/// @return 常にtrueを返す.
-bool mrd_writedim90_cksm(Meridim90Union &a_meridim) {
-  a_meridim.sval[89] = mrd.cksm_val(a_meridim.sval, 90);
-  return true;
-}
-
-///@brief Generate expected sequence number from input.
-///@param a_previous_num Previous sequence number.
-///@return Expected sequence number. (0 to 59,999)
-uint16_t mrd_seq_predict_num(uint16_t a_previous_num) {
-  uint16_t x_tmp = a_previous_num + 1;
-  if (x_tmp > 59999) // Reset counter
-  {
-    x_tmp = 0;
-  }
-  return x_tmp;
-}
 
 #include "mrd_disp.h"
 MrdMsgHandler mrd_disp(Serial);

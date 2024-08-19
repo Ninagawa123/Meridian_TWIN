@@ -1,7 +1,7 @@
-#ifndef __MERIDIAN_DISPLEY_MESSAGE_H__
-#define __MERIDIAN_DISPLEY_MESSAGE_H__
+#ifndef __MERIDIAN_DISPLAY_MESSAGE_H__
+#define __MERIDIAN_DISPLAY_MESSAGE_H__
 
-// ヘッダファイルの読み込み
+//  ヘッダファイルの読み込み
 #include "config.h"
 #include "keys.h"
 #include "main.h"
@@ -148,4 +148,4 @@ public:
   }
 };
 
-#endif // __MERIDIAN_DISPLEY_MESSAGE_H__
+#endif // __MERIDIAN_DISPLAY_MESSAGE_H__
