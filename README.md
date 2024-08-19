@@ -194,7 +194,7 @@ Macの場合は画面右上のwifiマークから”ネットワーク”環境�
 #### ESP32書き込み用のCP210ドライバを導入する  
 すでにお手元でESP32 DevkitCに書き込みを行ったことのあるPCであれば問題ないですが, 
 初めての場合, 「CP210x USB - UART ブリッジ VCP ドライバ」が必要になる場合があります. 
-未導入の方は下記サイトより適切なものをインストールをしてください. 
+未導入の方は下記サイトより適切なものをインストールをしてください.  
 [https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads](https://jp.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
 )
   
