@@ -364,11 +364,11 @@ hideakitai/ESP32DMASPI@0.3.0 にアップデートしました.
   
 <hr>  
   
-Meridianと親和するリモコン受信機のコードも公開しました. M5StampPICOをWiiremoteやPS4コントローラーの受信機とし, I2C経由でMeridianにPADデータを流し込めます.
-
-https://github.com/Ninagawa123/Merimote?tab=readme-ov-file
-  
-<img width="300" alt="merimote" src="./docs/images/Merimote_illust.jpg">
-
 ## [Merimote v0.0.1](https://github.com/Ninagawa123/Merimote)  
   
+<img width="300" alt="merimote" src="./docs/images/Merimote_illust.jpg">  
+  
+Meridianと親和するリモコン受信機のコードも公開しました. M5StampPICOをWiiremoteやPS4コントローラーの受信機とし, I2C経由でMeridianにPADデータを流し込めます.  
+  
+[https://github.com/Ninagawa123/Merimote?tab=readme-ov-file](https://github.com/Ninagawa123/Merimote?tab=readme-ov-file
+)
