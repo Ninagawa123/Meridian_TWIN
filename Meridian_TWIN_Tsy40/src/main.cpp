@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_MAIN__
 #define __MERIDIAN_MAIN__
 
-#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2024.08.17" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2024.08.19" // バージョン表示
 
 // Meridian_TWIN_for_Teensy By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
@@ -11,7 +11,7 @@
 // 20240503 第三次リファクタリング
 // 20240502 モジュールごとにファイルを分割
 // 20240812 変数, 関数, ファイル名等を大幅に変更.
-// 20240817 EEPROMのコードを調整中
+// 20240819 EEPROMのコードは調整中.
 
 //================================================================================================================
 //  初期設定
@@ -92,14 +92,16 @@ void setup() {
   // mrd_eeprom_zero_format(EEPROM_PROTECT, EEPROM_BYTE, Serial);// ゼロフォーマット
 
   // EEPROMのリードライトテスト
-  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config_lite(), // EEPROMのリードライトテスト
+  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config_lite(), //
+  // EEPROMのリードライトテスト
   //                            CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_STYLE);
 
   // EEPROMにconfig.h設定のサーボパラメータを書き込む
   // mrd_eeprom_set(mrd_eeprom_make_data_from_config_lite(sv), EEPROM_BYTE);
 
   // EEPROM内容のダンプ表示
-  // mrd_eeprom_dump_serial(mrd_eeprom_load(EEPROM_BYTE, Serial), EEPROM_BYTE, EEPROM_STYLE, Serial);
+  // mrd_eeprom_dump_serial(mrd_eeprom_load(EEPROM_BYTE, Serial), EEPROM_BYTE, EEPROM_STYLE,
+  // Serial);
 
   // EEPROMからサーボパラメータをロードして反映
   // mrd_servo_load_param_lite(mrd_eeprom_load(EEPROM_BYTE, Serial), sv);
@@ -235,7 +237,7 @@ void loop() {
     mrd.monitor_check_flow("[6]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[6-3] 最新のセンサー値を配列に格納する
-    meriput90_ahrs(s_spi_meridim, ahrs.result);
+    mrd_meriput90_ahrs(s_spi_meridim, ahrs.result);
 
     //------------------------------------------------------------------------------------
     //  [ 7 ] リモコンの読み取り
@@ -246,7 +248,7 @@ void loop() {
     pad_new = mrd_pad_reader(MOUNT_PAD, PAD_INTERVAL);
 
     // @[7-2] コントローラの値をmeridimに格納する
-    meriput90_pad(MOUNT_PAD, s_spi_meridim, pad_new, PAD_BUTTON_MARGE);
+    mrd_meriput90_pad(MOUNT_PAD, s_spi_meridim, pad_new, PAD_BUTTON_MARGE);
 
     // @[7-end] ここでs_spi_meridim にリモコンやセンサのデータが格納完了.
 
@@ -411,11 +413,11 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe) {
   if (a_meridim.sval[MRD_MASTER] == MCMD_ERR_CLEAR_SERVO_ID) {
     r_spi_meridim.bval[MRD_ERR_l] = 0;
     s_spi_meridim.bval[MRD_ERR_l] = 0;
-    for (int i = 0; i < IXL_MAX; i++) {
+    int max_tmp = max(IXL_MAX, max(IXR_MAX, IXC_MAX));
+    for (int i = 0; i < max_tmp; i++) {
       sv.ixl_err[i] = 0;
-    }
-    for (int i = 0; i < IXR_MAX; i++) {
       sv.ixr_err[i] = 0;
+      sv.ixc_err[i] = 0;
     }
     Serial.println("Servo Error ID reset.");
   }
@@ -435,7 +437,7 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe) {
 
   // コマンド:MCMD_EEPROM_SAVE_TRIM (10101) 現在のサーボ位置をトリム値としてEEPROMに書き込む
   if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_SAVE_TRIM) {
-    eeprom_write_data = mrd_eeprom_load(EEPROM_BYTE, Serial);//ベースとなるデータを読み込む
+    eeprom_write_data = mrd_eeprom_load(EEPROM_BYTE, Serial); // ベースとなるデータを読み込む
     eeprom_write_data = mrd_eeprom_make_trim_from_current_lite(eeprom_write_data, sv);
     mrd_eeprom_write_all(eeprom_write_data, flg.eeprom_protect, Serial);
     s_spi_meridim.sval[MRD_MASTER] = MCMD_ACK; // コマンド実行成功信号を追記

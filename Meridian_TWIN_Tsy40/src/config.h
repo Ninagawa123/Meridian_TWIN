@@ -122,7 +122,7 @@
 #define MOUNT_ESP32   1 // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
 #define MOUNT_SD      1           // SDカードリーダーの有無 (0:なし, 1:あり)
 #define MOUNT_IMUAHRS MPU6050_IMU // IMU/AHRSの搭載状況 NO_IMU, MPU6050_IMU, MPU9250_IMU.BNO055_AHRS
-#define MOUNT_PAD     PC // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
+#define MOUNT_PAD     KRR5FH // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
 
 // I2C設定, I2Cセンサ関連設定
 #define I2C0_SPEED         400000 // I2Cの速度（400kHz推奨）
@@ -139,10 +139,9 @@
 #define SERIAL_PC_TIMEOUT 2000    // PCとのシリアル接続確立タイムアウト(ms)
 
 // JOYPAD関連設定
-#define PAD_INTERVAL 4 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define PAD_BUTTON_MARGE                                                                           \
-  1 // JOYPADのボタンデータをMeridim受信値に 0:論理積, 1:Meridim受信値に論理和
-#define PAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
+#define PAD_INTERVAL     4 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define PAD_BUTTON_MARGE 1 // JOYPADのボタンデータをMeridim受信値に 0:論理積, 1:論理和
+#define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
 #define PIN_ERR_LED       2 // LEDピン番号 処理が時間内に収まっていない場合に点灯

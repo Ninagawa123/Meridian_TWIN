@@ -18,26 +18,24 @@ IntervalTimer wireTimer1;
 /// @brief MerimoteのI2C通信を通じてジョイパッドデータを読み取る.
 /// @param a_pad_array 処理後のジョイパッドデータを格納する構造体.
 /// @param a_pad_i2c I2C通信から読み取った生データを格納する構造体.
-/// @param a_serial メッセージ表示用のハードウェアシリアル.
+/// @param a_len a_pad_i2cの長さ. デフォルトは5.
 /// @return 正常にデータが読み取れた場合はtrueを, そうでない場合はfalseを返す.
-bool mrd_wire1_read_merimote_i2c(PadUnion &a_pad_array, PadUnion &a_pad_i2c) {
-  int i = 0;
-  Wire1.requestFrom(I2C1_MERIMOTE_ADDR, PAD_LEN * 2);
+bool mrd_wire1_read_merimote_i2c(PadUnion &a_pad_array, PadUnion &a_pad_i2c, int a_len) {
+  int i_tmp = 0;
+  Wire1.requestFrom(I2C1_MERIMOTE_ADDR, a_len * 2);
   while (Wire1.available()) {         // バッファにデータがある間
-    a_pad_i2c.bval[i] = Wire1.read(); // バッファから1バイト読み取り
-    i++;
-    if (i > PAD_LEN * 2) {
+    a_pad_i2c.bval[i_tmp] = Wire1.read(); // バッファから1バイト読み取り
+    i_tmp++;
+    if (i_tmp > a_len * 2) {
       break;
     }
   }
 
-  if (mrd.cksm_val(a_pad_i2c.sval, sizeof(a_pad_i2c.sval))) {
-    for (int i = 0; i < PAD_LEN; i++) {
+  if (mrd.cksm_val(a_pad_i2c.sval, a_len)) {
+    for (int i = 0; i < a_len; i++) {
       a_pad_array.sval[i] = a_pad_i2c.sval[i];
     }
     return true;
-  } else {
-    return false;
   }
   return false;
 }
@@ -63,7 +61,7 @@ bool mrd_wire1_setup(PadType a_type, int a_i2c_bps, Stream &a_serial) {
   } else {
     return false;
   }
-  bool rslt = mrd_wire1_read_merimote_i2c(pad_array, pad_i2c);
+  bool rslt = mrd_wire1_read_merimote_i2c(pad_array, pad_i2c, PAD_LEN);
   if (rslt) {
     a_serial.print("Merimote OK.");
   }
@@ -77,7 +75,7 @@ bool mrd_wire1_setup(PadType a_type, int a_i2c_bps, Stream &a_serial) {
 /// @brief MerimoteのデータをI2C経由で読み取る関数を実行する.
 void mrd_wire1_run() // ※IntervalTimer用の関数のためvoidのみ可
 {
-  mrd_wire1_read_merimote_i2c(pad_array, pad_i2c);
+  mrd_wire1_read_merimote_i2c(pad_array, pad_i2c, PAD_LEN);
 }
 
 /// @brief インターバルタイマーを開始して, 定期的にMerimoteデータの読み取りを行う.

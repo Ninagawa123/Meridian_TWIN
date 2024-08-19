@@ -84,26 +84,26 @@ void mrd_wire0_init_common(int a_i2c_bps) {
 
 /// @brief MPU6050センサーのDMP（デジタルモーションプロセッサ）を初期化し,
 /// ジャイロスコープと加速度センサーのオフセットを設定する.
-/// @param mrd_w_ahrs AHRSの値を保持する構造体.
+/// @param a_ahrs AHRSの値を保持する構造体.
 /// @return DMPの初期化が成功した場合はtrue, 失敗した場合はfalseを返す.
-bool mrd_wire0_init_mpu6050_dmp(AhrsValue &mrd_w_ahrs) {
-  mrd_w_ahrs.mpu6050.initialize();
-  mrd_w_ahrs.devStatus = mrd_w_ahrs.mpu6050.dmpInitialize();
+bool mrd_wire0_init_mpu6050_dmp(AhrsValue &a_ahrs) {
+  a_ahrs.mpu6050.initialize();
+  a_ahrs.devStatus = a_ahrs.mpu6050.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
-  mrd_w_ahrs.mpu6050.setXAccelOffset(-1745);
-  mrd_w_ahrs.mpu6050.setYAccelOffset(-1034);
-  mrd_w_ahrs.mpu6050.setZAccelOffset(966);
-  mrd_w_ahrs.mpu6050.setXGyroOffset(176);
-  mrd_w_ahrs.mpu6050.setYGyroOffset(-6);
-  mrd_w_ahrs.mpu6050.setZGyroOffset(-25);
+  a_ahrs.mpu6050.setXAccelOffset(-1745);
+  a_ahrs.mpu6050.setYAccelOffset(-1034);
+  a_ahrs.mpu6050.setZAccelOffset(966);
+  a_ahrs.mpu6050.setXGyroOffset(176);
+  a_ahrs.mpu6050.setYGyroOffset(-6);
+  a_ahrs.mpu6050.setZGyroOffset(-25);
 
   // make sure it worked (returns 0 if so)
-  if (mrd_w_ahrs.devStatus == 0) {
-    mrd_w_ahrs.mpu6050.CalibrateAccel(6);
-    mrd_w_ahrs.mpu6050.CalibrateGyro(6);
-    mrd_w_ahrs.mpu6050.setDMPEnabled(true);
-    mrd_w_ahrs.packetSize = mrd_w_ahrs.mpu6050.dmpGetFIFOPacketSize();
+  if (a_ahrs.devStatus == 0) {
+    a_ahrs.mpu6050.CalibrateAccel(6);
+    a_ahrs.mpu6050.CalibrateGyro(6);
+    a_ahrs.mpu6050.setDMPEnabled(true);
+    a_ahrs.packetSize = a_ahrs.mpu6050.dmpGetFIFOPacketSize();
     Serial.println("MPU6050 OK.");
     return true;
   }
@@ -112,10 +112,10 @@ bool mrd_wire0_init_mpu6050_dmp(AhrsValue &mrd_w_ahrs) {
 }
 
 /// @brief BNO055センサーの初期化を試みる.
-/// @param mrd_w_ahrs AHRSの値を保持する構造体.
+/// @param a_ahrs AHRSの値を保持する構造体.
 /// @return BNO055センサーの初期化が成功した場合はtrue, それ以外の場合はfalseを返す.
 ///         現在, この関数は常にfalseを返すように設定されている.
-bool mrd_wire0_init_bno055(AhrsValue &mrd_w_ahrs) {
+bool mrd_wire0_init_bno055(AhrsValue &a_ahrs) {
   /*
   else if (mount_ahrs == 3) // BNO055の場合
   {
@@ -140,26 +140,26 @@ bool mrd_wire0_init_bno055(AhrsValue &mrd_w_ahrs) {
 }
 
 /// @brief 指定されたIMU/AHRSタイプに応じて適切なセンサの初期化を行う.
-/// @param mrd_imuahrs_type 使用するセンサのタイプを示す列挙型（MPU6050, MPU9250, BNO055）.
+/// @param a_imuahrs_type 使用するセンサのタイプを示す列挙型（MPU6050, MPU9250, BNO055）.
 /// @param a_i2c_bps I2C通信のクロック速.
-/// @param mrd_w_ahrs AHRSの値を保持する構造体.
+/// @param a_ahrs AHRSの値を保持する構造体.
 /// @return センサが正しく初期化された場合はtrueを, そうでない場合はfalseを返す.
-bool mrd_wire0_setup(ImuAhrsType mrd_imuahrs_type, int a_i2c_bps, AhrsValue &mrd_w_ahrs) {
-  if (mrd_imuahrs_type > 0) // 何らかのセンサを搭載
+bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c_bps, AhrsValue &a_ahrs) {
+  if (a_imuahrs_type > 0) // 何らかのセンサを搭載
   {
     mrd_wire0_init_common(a_i2c_bps);
   }
 
-  if (mrd_imuahrs_type == MPU6050_IMU) // MPU6050
+  if (a_imuahrs_type == MPU6050_IMU) // MPU6050
   {
-    return mrd_wire0_init_mpu6050_dmp(mrd_w_ahrs);
-  } else if (mrd_imuahrs_type == MPU9250_IMU) // MPU9250の場合
+    return mrd_wire0_init_mpu6050_dmp(a_ahrs);
+  } else if (a_imuahrs_type == MPU9250_IMU) // MPU9250の場合
   {
-    // mrd_wire_init_mpu9250_dmp(mrd_w_ahrs)
+    // mrd_wire_init_mpu9250_dmp(a_ahrs)
     return false;
-  } else if (mrd_imuahrs_type == BNO055_AHRS) // BNO055の場合
+  } else if (a_imuahrs_type == BNO055_AHRS) // BNO055の場合
   {
-    // mrd_wire0_init_bno055(mrd_w_ahrs)
+    // mrd_wire0_init_bno055(a_ahrs)
     return false;
   }
   // Serial.println("No IMU/AHRS sensor mounted.");
@@ -178,10 +178,10 @@ void mrd_wire0_run() // ※IntervalTimer用の関数のためvoidのみ可
 
 /// @brief インターバルタイマーを設定し,
 /// 定期的にAHRSセンサーからのデータ読み取りを行う関数を実行する.
-/// @param mrd_wr_check タイマーを開始するかどうかの条件を示すブール値.
+/// @param a_wr_check タイマーを開始するかどうかの条件を示すブール値.
 /// @return タイマーが正しく開始された場合はtrue, それ以外の場合はfalseを返す.
-bool mrd_wire0_intervaltimer_start(bool mrd_wr_check) {
-  if (mrd_wr_check) {
+bool mrd_wire0_intervaltimer_start(bool a_wr_check) {
+  if (a_wr_check) {
     bool rlst =
         wireTimer0.begin(mrd_wire0_run, IMUAHRS_INTERVAL * 1000); // インターバルはマイクロ秒指定
                                                                   // wireTimer.priority(90);
@@ -198,7 +198,7 @@ bool mrd_wire0_intervaltimer_start(bool mrd_wr_check) {
 /// @param a_type 使用するセンサのタイプを示す列挙（MPU6050, MPU9250, BNO055）.
 /// @param a_ahrs_result AHRSから読み取った結果を格納した配列.
 /// @return データの書き込みが成功した場合はtrue, それ以外の場合はfalseを返す.
-bool meriput90_ahrs(Meridim90Union &a_meridim, float a_ahrs_result[]) {
+bool mrd_meriput90_ahrs(Meridim90Union &a_meridim, float a_ahrs_result[]) {
   // if (a_type == MPU6050_IMU) {
   flg.imuahrs_available = false;
   a_meridim.sval[2] = mrd.float2HfShort(a_ahrs_result[0]);   // IMU/AHRS_acc_x
