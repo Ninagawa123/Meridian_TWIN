@@ -75,7 +75,8 @@ PlatformIOのファイルメニューより「フォルダーを開く」とし,
 ```  
 MERIDIAN_TWIN_Tsy40
  │  
- ├─ lib/  
+ ├─ lib/
+ │   ├ gs2d (汎用サーボライブラリ/順次対応)
  │   └ ICSClass_V210 (サーボ用ライブラリ)
  │  
  ├─ src/  
@@ -162,8 +163,9 @@ MERIDIAN_TWIN_ESP32
  │   ├ main.cpp      (Meridian本体)
  │   ├ mrd_bt_pad.h  (以下各種コード)  
  │   ├ mrd_disp.h   
- │   ├ mrd_eeprom.h  
- │   └ mrd_wifi.h  
+ │   ├ mrd_eeprom.h
+ │   ├ mrd_wifi.h
+ │   └ mrd_util.h  
  │  
  ├─ .clang-format (コード自動整形設定ファイル)  
  └─ platfomio.ini (ボード設定ファイル)  
