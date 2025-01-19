@@ -9,7 +9,7 @@
 #include <Meridian.h>                   // Meridianのライブラリ導入
 #include <SPI.h>                        // SDカードやSPI通信用
 #include <TsyDMASPI.h>                  // SPI通信Master用
-#include <arduino.h>
+#include <Arduino.h>
 #include <cstdint>
 MERIDIANFLOW::Meridian mrd; // ライブラリのクラスを mrdという名前でインスタンス化
 
