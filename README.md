@@ -36,8 +36,8 @@ Meridianの概要や変数やライブラリ関数について, 下記に集約�
   
 ## System composition  
   
-Meridian_TWINは, ハードウェアとして通信用のESP32DevKitC, 制御用のTeensy4.0, それらを連結する専用ボードのMeiridian Boardで構成されます.  
-デモは近藤科学のKRSサーボ(通信速度1.25Mbps)に対応しており, Meiridian Board Type.KはKHR-3HV用に搭載することができます.  
+Meridian_TWINは, ハードウェアとして通信用のESP32DevKitC, 制御用のTeensy4.0, それらを連結する専用ボードのMeridian Boardで構成されます.  
+デモは近藤科学のKRSサーボ(通信速度1.25Mbps)に対応しており, Meridian Board Type.KはKHR-3HV用に搭載することができます.  
 PC側はROS1のmelodic/noeticに対応しており, 現在Rvizでの表示が可能です. またUnity(Mac/Win版)でもヒューマノイドの姿勢をリアルタイムに反映させることができます.  
   
 <img width="500" alt="TypeK" src="./docs/images/Meridian_TWIN_Board.png">  
@@ -335,6 +335,11 @@ USBバスパワーのみで動作させている場合など, サーボへの電
 
 ####  9軸センサのBNO055がうまく動作しない  
 Teensy4.0との相性問題で,通信中に正しいデータが取得できなくなります.改善方法を探っています.  
+  
+####  ボードへの書き込み用ビルドが成功しない  
+特にESP32のSPI関連でのビルド失敗が、古いファームウェアの場合に起こりえます。  
+PlatformIOでのボードファームウェアをESP32は6.6.0、Teensyは5.0.0に設定することで動作することが確認できています。  
+<img width="800" alt="SS 2619" src="https://github.com/user-attachments/assets/30562317-8115-4fa5-b3be-0d21d2ef8d2d">
 
 ## Update情報  
 
@@ -344,18 +349,18 @@ Wiiリモコンがつかえるおまけ機能を復活させました.
   
 #### Update 20240506 v1.1.0
 コードの内容を大幅にリファクタリングし, アップデートしました.
-コードを機能ごとのファイルに分け, モージュール化しました. これにより追加機能の開発に取り組みやすくなりました.  
+コードを機能ごとのファイルに分け, モジュール化しました. これにより追加機能の開発に取り組みやすくなりました.  
 
 ![Meridian_TWIN_module_diagram_20240506](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/2d77a89e-ffc8-43b5-8ba3-b4757d01679f)
   
 
 ![Meridan90_flowchart_20240504](https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/f4fb614d-844c-4568-98f5-f2270f87d86c)
 
-また, 通信フローを抜本的に見直し, 送受信の上り, 下りを明確にしました. 具体的には, これまでTeensy-ESP間の通信は1フレームあたり1回でしtが, 通信を2回行うようにしました. これによりPC側からみて, 送信したコマンドの実行結果が入った受信データをリアルタムに受け取れるようになりました.  
+また, 通信フローを抜本的に見直し, 送受信の上り, 下りを明確にしました. 具体的には, これまでTeensy-ESP間の通信は1フレームあたり1回でしたが, 通信を2回行うようにしました. これによりPC側からみて, 送信したコマンドの実行結果が入った受信データをリアルタムに受け取れるようになりました.  
     
   
 #### Update 20240325 v1.0.1  
-esp32側のpratformio.ini内, lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため,   
+esp32側のplatformio.ini内, lib_depsのhideakitai/ESP32DMASPI@0.1.2が自動では検出できなくなったため,   
 hideakitai/ESP32DMASPI@0.3.0 にアップデートしました.   
   
 #### Update 20230710  v1.0.0
