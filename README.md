@@ -1,6 +1,6 @@
 # Meridian_TWIN
   
-<img width="800" alt="logo" src="./docs/images/Meridian_logo.png">  
+<img width=100% alt="logo" src="./docs/images/Meridian_logo.png">  
     
 Meridian_TWIN は, ロボットのリアルタイムなデジタルツイン化を実現する**Meridian**(meridian flow system)の一部です.    
 センサーやサーボを制御しながら, PC等のデバイスとロボットの状態情報を 100 Hz の頻度で共有することができます.  
