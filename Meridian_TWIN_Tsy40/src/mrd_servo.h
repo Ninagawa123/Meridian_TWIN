@@ -22,7 +22,7 @@
 /// @param a_line UART通信ライン（L, R, またはC）.
 /// @param mrd_servo_type サーボのタイプを示す整数値.
 /// @return サーボがサポートされている場合はtrueを, サポートされていない場合はfalseを返す.
-bool mrd_servo_begin(UartLine a_line, int mrd_servo_type) {
+bool mrd_servos_begin(UartLine a_line, int mrd_servo_type) {
   if (mrd_servo_type > 0) {
     switch (mrd_servo_type) {
     case 1: // single PWM
@@ -37,11 +37,11 @@ bool mrd_servo_begin(UartLine a_line, int mrd_servo_type) {
       break;
     case 43: // ICS3.5/3.6(KONDO,KRS)
       if (a_line == L)
-        ics_L.begin(); 
+        ics_L.begin();
       else if (a_line == R)
-        ics_R.begin(); 
+        ics_R.begin();
       else if (a_line == C)
-        ics_C.begin(); 
+        ics_C.begin();
       break;
     case 44: // PMX(KONDO)
       break;
@@ -59,7 +59,6 @@ bool mrd_servo_begin(UartLine a_line, int mrd_servo_type) {
   return false;
 }
 
-
 //------------------------------------------------------------------------------------
 //  サーボ通信フォーメーションの分岐
 //------------------------------------------------------------------------------------
@@ -67,10 +66,10 @@ bool mrd_servo_begin(UartLine a_line, int mrd_servo_type) {
 /// @brief 指定されたサーボにコマンドを分配する.
 /// @param a_meridim meridim配列.
 /// @return サーボの駆動が成功した場合はtrueを, 失敗した場合はfalseを返す.
-bool mrd_servo_drive(Meridim90Union a_meridim, int sv_L_type, int sv_R_type, int sv_C_type) {
+bool mrd_servos_drive(Meridim90Union a_meridim, int sv_L_type, int sv_R_type, int sv_C_type, ServoParam &a_sv) {
   if (sv_L_type == 43 && sv_R_type == 43) // ICSサーボがL系R系に設定されていた場合はLR均等送信を実行
   {
-    mrd_servo_drive_ics_double(a_meridim, sv);
+    mrd_servos_drive_ics_double(a_meridim, a_sv);
     return true;
   } else {
     return false;
@@ -84,18 +83,18 @@ bool mrd_servo_drive(Meridim90Union a_meridim, int sv_L_type, int sv_R_type, int
 /// @param a_eeprom_data EEPROMから読み出したデータを格納したUnionEEPROM配列.
 /// @param a_sv サーボパラメータの構造体.
 /// @return サーボの設定を反映したUnionEEPROM配列を返す.
-void mrd_servo_load_param_lite(UnionEEPROM a_eeprom_data, ServoParam &a_sv) {
+void mrd_servos_load_param_lite(UnionEEPROM a_eeprom_data, ServoParam &a_sv) {
   for (int i = 0; i < 15; i++) {
     // 左サーボの情報を読み出し
-    a_sv.ixl_mount[i] = (a_eeprom_data.sauval[1][20 + i * 2] >> 15) & 0x01;
-    a_sv.ixl_id[i] = (a_eeprom_data.sauval[1][20 + i * 2] >> 8) & 0x7F;
-    a_sv.ixl_cw[i] = (a_eeprom_data.sauval[1][20 + i * 2] & (1 << 8)) ? -1 : 1;
+    a_sv.ixl_mount[i] = (a_eeprom_data.usaval[1][20 + i * 2] >> 15) & 0x01;
+    a_sv.ixl_id[i] = (a_eeprom_data.usaval[1][20 + i * 2] >> 8) & 0x7F;
+    a_sv.ixl_cw[i] = (a_eeprom_data.usaval[1][20 + i * 2] & (1 << 8)) ? -1 : 1;
     a_sv.ixl_trim[i] = mrd.HfShort2float(short(a_eeprom_data.saval[1][21 + i * 2]));
 
     // 右サーボの情報を読み出し
-    a_sv.ixr_mount[i] = (a_eeprom_data.sauval[1][50 + i * 2] >> 15) & 0x01;
-    a_sv.ixr_id[i] = (a_eeprom_data.sauval[1][50 + i * 2] >> 8) & 0x7F;
-    a_sv.ixr_cw[i] = (a_eeprom_data.sauval[1][50 + i * 2] & (1 << 8)) ? -1 : 1;
+    a_sv.ixr_mount[i] = (a_eeprom_data.usaval[1][50 + i * 2] >> 15) & 0x01;
+    a_sv.ixr_id[i] = (a_eeprom_data.usaval[1][50 + i * 2] >> 8) & 0x7F;
+    a_sv.ixr_cw[i] = (a_eeprom_data.usaval[1][50 + i * 2] & (1 << 8)) ? -1 : 1;
     a_sv.ixr_trim[i] = mrd.HfShort2float(short(a_eeprom_data.saval[1][51 + i * 2]));
   }
 }

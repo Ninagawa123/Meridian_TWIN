@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_MAIN__
 #define __MERIDIAN_MAIN__
 
-#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2024.08.19" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2025.05.05" // バージョン表示
 
 // Meridian_TWIN_for_Teensy By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
@@ -12,6 +12,7 @@
 // 20240502 モジュールごとにファイルを分割
 // 20240812 変数, 関数, ファイル名等を大幅に変更.
 // 20240819 EEPROMのコードは調整中.
+// 20250505 トリム調整モードに対応. (Meridian_console.py連携)
 
 //================================================================================================================
 //  初期設定
@@ -21,6 +22,7 @@
 #include "config.h"
 
 #include "main.h"
+#include "mrd_command.h"
 #include "mrd_disp.h"
 #include "mrd_eeprom.h"
 #include "mrd_hwtimer.h"
@@ -78,9 +80,9 @@ void setup() {
   mrd_disp.servo_bps_3lines(SERVO_BAUDRATE_L, SERVO_BAUDRATE_R, SERVO_BAUDRATE_C);
 
   // サーボ用UART設定
-  mrd_servo_begin(L, MOUNT_SERVO_TYPE_L); // サーボモータの通信初期設定. Serial2
-  mrd_servo_begin(R, MOUNT_SERVO_TYPE_R); // サーボモータの通信初期設定. Serial3
-  mrd_servo_begin(C, MOUNT_SERVO_TYPE_C); // サーボモータの通信初期設定. Serial1
+  mrd_servos_begin(L, MOUNT_SERVO_TYPE_L); // サーボモータの通信初期設定. Serial2
+  mrd_servos_begin(R, MOUNT_SERVO_TYPE_R); // サーボモータの通信初期設定. Serial3
+  mrd_servos_begin(C, MOUNT_SERVO_TYPE_C); // サーボモータの通信初期設定. Serial1
   mrd_disp.servo_protcol(L, MOUNT_SERVO_TYPE_L);
   mrd_disp.servo_protcol(R, MOUNT_SERVO_TYPE_R);
   mrd_disp.servo_protcol(C, MOUNT_SERVO_TYPE_C);
@@ -88,23 +90,22 @@ void setup() {
   // マウントされたサーボIDの表示
   mrd_disp.servo_mounts_3lines(sv);
 
-  // EEPROMのゼロフォーマット
-  // mrd_eeprom_zero_format(EEPROM_PROTECT, EEPROM_BYTE, Serial);// ゼロフォーマット
+  // EEPROMにconfigのサーボ設定値を書き込む場合
+  if (EEPROM_SET) {
+    Serial.println("Set EEPROM data from config.");
+    // 書き込みデータの作成と書き込み
+    if (
+        mrd_eeprom_write(mrd_eeprom_make_data_from_config(sv), EEPROM_PROTECT, Serial)) {
+      Serial.println("Write EEPROM succeed.");
+    } else {
+      Serial.println("Write EEPROM failed.");
+    };
+  }
 
-  // EEPROMのリードライトテスト
-  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config_lite(), //
-  // EEPROMのリードライトテスト
-  //                            CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_STYLE);
-
-  // EEPROMにconfig.h設定のサーボパラメータを書き込む
-  // mrd_eeprom_set(mrd_eeprom_make_data_from_config_lite(sv), EEPROM_BYTE);
-
-  // EEPROM内容のダンプ表示
-  // mrd_eeprom_dump_serial(mrd_eeprom_load(EEPROM_BYTE, Serial), EEPROM_BYTE, EEPROM_STYLE,
-  // Serial);
-
-  // EEPROMからサーボパラメータをロードして反映
-  // mrd_servo_load_param_lite(mrd_eeprom_load(EEPROM_BYTE, Serial), sv);
+  // EEPROMからサーボ設定の内容を読み込んで反映する場合
+  if (EEPROM_LOAD) {
+    mrd_eeprom_load_servosettings(sv, true, Serial);
+  }
 
   // 配列のリセット
   memset(s_spi_meridim.bval, 0, MRDM_BYTE + 4);     // 配列要素を0でリセット
@@ -163,27 +164,27 @@ void loop() {
 
     // [1-2] ESP32からのSPI受信データチェックサム確認
     if (mrd.cksm_rslt(r_spi_meridim_dma.sval, MRDM_LEN)) //
-    { // チェックサムがOKならバッファから受信配列に転記
+    {                                                    // チェックサムがOKならバッファから受信配列に転記
       memcpy(r_spi_meridim.bval, r_spi_meridim_dma.bval, MRDM_BYTE);
-      mrd_clearBit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_13_ESP_TSY); // エラービットをサゲる
-      mrd.monitor_check_flow("csOK", monitor.flow); // 動作チェック用シリアル表示
-    } else // チェックサムがNGならバッファから転記せず前回のデータを使用する
+      mrd_clear_bit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_13_ESP_TSY); // エラービットをサゲる
+      mrd.monitor_check_flow("csOK", monitor.flow);                     // 動作チェック用シリアル表示
+    } else                                                              // チェックサムがNGならバッファから転記せず前回のデータを使用する
     {
-      mrd.monitor_check_flow("cs *NG* ", monitor.flow); // 動作チェック用シリアル表示
-      mrd_setBit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_13_ESP_TSY); // エラービットをアゲる
+      mrd.monitor_check_flow("cs *NG* ", monitor.flow);               // 動作チェック用シリアル表示
+      mrd_set_bit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_13_ESP_TSY); // エラービットをアゲる
     }
 
     // @[1-3] シーケンス番号チェック
     mrdsq.r_expect = mrd.seq_predict_num(mrdsq.r_expect); // シーケンス番号予想値の生成
     if (mrd.seq_compare_nums(mrdsq.r_expect, int(r_spi_meridim.usval[MRD_SEQ]))) {
       // 受信シーケンス番号の値が予想と合致なら
-      mrd_clearBit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_9_BOARD_SKIP); // エラービットをサゲる
-      flg.spi_rcvd = true; // SPI受信フラグをアゲる
+      mrd_clear_bit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_9_BOARD_SKIP); // エラービットをサゲる
+      flg.spi_rcvd = true;                                                // SPI受信フラグをアゲる
     } else {
       // 受信シーケンス番号の値が予想と違うなら
-      mrdsq.r_expect = int(r_spi_meridim.usval[MRD_SEQ]); // 現在の受信値を予想値として更新
-      mrd_setBit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_9_BOARD_SKIP); // エラービットをアゲる
-      flg.spi_rcvd = false; // SPI受信フラグをサゲる
+      mrdsq.r_expect = int(r_spi_meridim.usval[MRD_SEQ]);               // 現在の受信値を予想値として更新
+      mrd_set_bit16(r_spi_meridim.usval[MRD_ERR], ERRBIT_9_BOARD_SKIP); // エラービットをアゲる
+      flg.spi_rcvd = false;                                             // SPI受信フラグをサゲる
     }
 
     // @[1-4] 通信エラー処理(エラーカウンタへの反映)
@@ -208,7 +209,8 @@ void loop() {
     mrd.monitor_check_flow("[3]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[3-1] マスターコマンドの実行
-    execute_master_command_1(r_spi_meridim, flg.spi_rcvd); // Meridmを正しく受信した時のみ実行
+    // execute_master_command_1(r_spi_meridim, flg.spi_rcvd); // Meridmを正しく受信した時のみ実行
+    execute_master_command_1(r_spi_meridim, flg.spi_rcvd, sv, Serial);
 
     // @[3-2]EEPROMやSDへの読み書き処理はおそらくここで実施.
     // execute_MasterCommand()関数内でフラグを立て, フラグによって分岐.
@@ -286,7 +288,8 @@ void loop() {
     mrd.monitor_check_flow("[9]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[9-1] マスターコマンドの判定により工程の実行orスキップを分岐
-    execute_master_command_2(s_spi_meridim, flg.spi_rcvd);
+    // execute_master_command_2(s_spi_meridim, flg.spi_rcvd);
+    execute_master_command_2(s_spi_meridim, flg.spi_rcvd, sv, Serial);
 
     //------------------------------------------------------------------------------------
     //  [ 10 ] サーボコマンドの書き込み
@@ -297,69 +300,82 @@ void loop() {
     //         必要に応じてサーボ配列(sv)の命令を上書きする.
 
     //------------------------------------------------------------------------------------
-    //   [ 11 ] サーボ動作の実行
+    //  [ 11 ] サーボ動作の実行
     //------------------------------------------------------------------------------------
     mrd.monitor_check_flow("[11]", monitor.flow); // 動作チェック用シリアル表示
 
     // @[11-1] サーボコマンド用の配列に基づき, サーボ命令の実行およびサーボ角度戻り値の取得
-    mrd_servo_drive(s_spi_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, MOUNT_SERVO_TYPE_C);
+    mrd_servos_drive(s_spi_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, MOUNT_SERVO_TYPE_C, sv);
 
     // @[11-end] サーボの動作結果が s_spi_meridim に格納完了している.
 
     //------------------------------------------------------------------------------------
-    //  [ 12 ] SPI送信用のMeridim配列を作成する
+    //  [ 12 ] MastarCommand group3 の処理
     //------------------------------------------------------------------------------------
     mrd.monitor_check_flow("[12]", monitor.flow); // 動作チェック用シリアル表示
 
-    // @[12-1] マスターコマンドを配列に格納
-    s_spi_meridim.sval[0] = MRDM_LEN; // デフォルトのマスターコマンドは配列数
-
-    // @[12-2] 移動時間を配列に格納
-    // s_spi_meridim.sval[1] = 10 ;//(移動時間）
-
-    // @[12-4] サーボIndexごとにの現在位置もしくは計算結果を配列に格納
-    for (int i = 0; i < 15; i++) {
-      s_spi_meridim.sval[i * 2 + 20] = 0; // 仮に各サーボのコマンドを脱力&ポジション返信に設定
-      s_spi_meridim.sval[i * 2 + 21] =
-          mrd.float2HfShort(sv.ixl_tgt[i]); // 最新のサーボ角度degreeを格納
-      s_spi_meridim.sval[i * 2 + 50] = 0; // 仮に各サーボのコマンドを脱力&ポジション返信に設定
-      s_spi_meridim.sval[i * 2 + 51] =
-          mrd.float2HfShort(sv.ixr_tgt[i]); // 最新のサーボ角度degreeを格納
-    }
-
-    // @[12-5] Meridimのシーケンス番号をカウントアップして送信用に格納
-    mrdsq.s_increment = mrd.seq_increase_num(mrdsq.s_increment);
-    s_spi_meridim.usval[MRD_SEQ] = u_short(mrdsq.s_increment);
-
-    // @[12-6] エラーが出たサーボのインデックス番号を格納
-    s_spi_meridim.ubval[MRD_ERR_l] = mrd_servos_make_errcode_3lines(sv);
-
-    // @[12-7] カスタムデータを配列格納
-
-    // @[12-8] チェックサムを追加
-    s_spi_meridim.sval[MRDM_LEN - 1] = mrd.cksm_val(s_spi_meridim.sval, MRDM_LEN);
-
-    // @[12-9] 送信データのSPIバッファへのバイト型書き込み
-    memcpy(s_spi_meridim_dma.bval, s_spi_meridim.bval, MRDM_BYTE);
+    // @[12-1] マスターコマンドの判定により工程の実行orスキップを分岐, 場合により特殊命令でs_spi_meridim上書き
+    execute_master_command_3(s_spi_meridim, flg.spi_rcvd, sv, flg.meridim_special, Serial);
 
     //------------------------------------------------------------------------------------
-    //  [ 13 ] SPI送信
+    //  [ 13 ] SPI送信用のMeridim配列を作成する
     //------------------------------------------------------------------------------------
     mrd.monitor_check_flow("[13]", monitor.flow); // 動作チェック用シリアル表示
 
-    // @[13-1] SPI送受信の実行
-    TsyDMASPI0.transfer(s_spi_meridim_dma.bval, r_spi_meridim_dma.bval, MRDM_BYTE + 4);
+    if (flg.meridim_special == false) { // 特殊Meridim配列の送信フラグが立っていなければ以下の通常処理
+      // @[13-1] マスターコマンドを配列に格納
+      s_spi_meridim.sval[0] = MRDM_LEN; // デフォルトのマスターコマンドは配列数
 
-    // @[13-end] SPI送信が完了. ここで受信したデータは前回のものであるため, 一旦無視する.
+      // @[13-2] サーボIndexごとにの現在位置もしくは計算結果を配列に格納
+      for (int i = 0; i < 15; i++) {
+        s_spi_meridim.sval[i * 2 + 20] = 0; // 仮に各サーボのコマンドを脱力&ポジション返信に設定
+        s_spi_meridim.sval[i * 2 + 21] =
+            mrd.float2HfShort(sv.ixl_tgt[i]); // 最新のサーボ角度degreeを格納
+        s_spi_meridim.sval[i * 2 + 50] = 0;   // 仮に各サーボのコマンドを脱力&ポジション返信に設定
+        s_spi_meridim.sval[i * 2 + 51] =
+            mrd.float2HfShort(sv.ixr_tgt[i]); // 最新のサーボ角度degreeを格納
+      }
+
+      // @[13-3] エラーが出たサーボのインデックス番号を格納
+      s_spi_meridim.ubval[MRD_ERR_l] = mrd_servos_make_errcode_3lines(sv);
+
+      // @[13-4] 移動時間を配列に格納
+      s_spi_meridim.sval[1] = 10; //(移動時間）
+    }
+
+    // @[13-5] Meridimのシーケンス番号をカウントアップして送信用に格納
+    mrdsq.s_increment = mrd.seq_increase_num(mrdsq.s_increment);
+    s_spi_meridim.usval[MRD_SEQ] = u_short(mrdsq.s_increment);
+
+    // @[13-6] 必要に応じてカスタムデータを配列格納
+
+    // @[13-7] チェックサムを追加
+    s_spi_meridim.sval[MRDM_LEN - 1] = mrd.cksm_val(s_spi_meridim.sval, MRDM_LEN);
+
+    // @[13-8] 送信データのSPIバッファへのバイト型書き込み
+    memcpy(s_spi_meridim_dma.bval, s_spi_meridim.bval, MRDM_BYTE);
+
+    // @[13-9] 特殊Meridim配列の送信フラグが立っていれば下げる
+    flg.meridim_special = false;
 
     //------------------------------------------------------------------------------------
-    //   [ 14 ] フレーム終端処理
+    //  [ 14 ] SPI送信
     //------------------------------------------------------------------------------------
     mrd.monitor_check_flow("[14]", monitor.flow); // 動作チェック用シリアル表示
 
+    // @[14-1] SPI送受信の実行
+    TsyDMASPI0.transfer(s_spi_meridim_dma.bval, r_spi_meridim_dma.bval, MRDM_BYTE + 4);
+
+    // @[14-end] SPI送信が完了. ここで受信したデータは前回のものであるため, 一旦無視する.
+
+    //------------------------------------------------------------------------------------
+    //   [ 15 ] フレーム終端処理
+    //------------------------------------------------------------------------------------
+    mrd.monitor_check_flow("[15]", monitor.flow); // 動作チェック用シリアル表示
+
     if (!flg.udp_board_passive) // パッシブモードの時は末端処理を行わない
     {
-      // @[12-1] count_timerがcount_frameに追いつくまで待機
+      // @[15-1] count_timerがcount_frameに追いつくまで待機
       tmr.count_frame++;
 
       while (true) {
@@ -376,7 +392,7 @@ void loop() {
       }
     }
 
-    // @[14-3] 必要に応じてフレームの遅延累積時間をリセット
+    // @[15-2] 必要に応じてフレームの遅延累積時間をリセット
     if (flg.count_frame_reset) {
 
       __disable_irq(); // 割り込みを無効化
@@ -394,107 +410,6 @@ void loop() {
 //================================================================================================================
 //  関 数 各 種
 //================================================================================================================
-
-//================================================================================================================
-//  Command processing
-//================================================================================================================
-
-/// @brief Master Commandの第1群を実行する. meridimの受信成功時に実施.
-/// @param a_flg_exe meridimの受信成功フラグ.
-/// @return コマンドを実行した場合はtrue, しなかった場合はfalseを返す.
-bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe) {
-  if (!a_flg_exe) {
-    return false;
-  }
-
-  // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
-
-  // コマンド:MCMD_ERR_CLEAR_SERVO_ID (10004) 通信エラーサーボIndexのクリア
-  if (a_meridim.sval[MRD_MASTER] == MCMD_ERR_CLEAR_SERVO_ID) {
-    r_spi_meridim.bval[MRD_ERR_l] = 0;
-    s_spi_meridim.bval[MRD_ERR_l] = 0;
-    int max_tmp = max(IXL_MAX, max(IXR_MAX, IXC_MAX));
-    for (int i = 0; i < max_tmp; i++) {
-      sv.ixl_err[i] = 0;
-      sv.ixr_err[i] = 0;
-      sv.ixc_err[i] = 0;
-    }
-    Serial.println("Servo Error ID reset.");
-  }
-
-  // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005)
-  // UDP受信の通信周期制御をボード側主導に（デフォルト）
-  if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE) {
-    flg.udp_board_passive = false; // UDP送信をアクティブモードに
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
-  }
-
-  // コマンド:MCMD_EEPROM_ENTER_WRITE (10009) EEPROMの書き込みモードスタート
-  if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_ENTER_WRITE) {
-    flg.eeprom_write_mode = true; // 書き込みモードのフラグをアゲる
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
-  }
-
-  // コマンド:MCMD_EEPROM_SAVE_TRIM (10101) 現在のサーボ位置をトリム値としてEEPROMに書き込む
-  if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_SAVE_TRIM) {
-    eeprom_write_data = mrd_eeprom_load(EEPROM_BYTE, Serial); // ベースとなるデータを読み込む
-    eeprom_write_data = mrd_eeprom_make_trim_from_current_lite(eeprom_write_data, sv);
-    mrd_eeprom_write_all(eeprom_write_data, flg.eeprom_protect, Serial);
-    s_spi_meridim.sval[MRD_MASTER] = MCMD_ACK; // コマンド実行成功信号を追記
-    Serial.println("EEPROM WRITE TRIM!!");
-  }
-  return true;
-}
-
-/// @brief Master Commandの実行を行います. 受信フラグに基づき, 異なるコマンドの処理を行います.
-/// @param a_spi_rcvd SPI受信の実行フラグ.
-/// @return コマンドが実行されなかった場合はfalse, それ以外はtrueを返す.
-bool execute_master_command_2(Meridim90Union a_meridim, bool a_spi_rcvd) {
-  if (!a_spi_rcvd) {
-    return false;
-  }
-  // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
-
-  // コマンド:[0] 全サーボ脱力
-  if (a_meridim.sval[MRD_MASTER] == 0) {
-    mrd_servos_all_off(s_spi_meridim);
-  }
-
-  // コマンド:[1] サーボオン 通常動作
-
-  // コマンド:MCMD_SENSOR_YAW_CALIB (10002) IMU/AHRSのヨー軸リセット
-  if (a_meridim.sval[MRD_MASTER] == MCMD_SENSOR_YAW_CALIB) {
-    ahrs.yaw_origin = mrd_wire0_setyaw(ahrs.ypr[0]);
-  }
-
-  // コマンド:MCMD_SENSOR_ALL_CALIB (10003) センサの3軸について現在値を原点としてリセット
-
-  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に（SSH的な動作）
-  if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE) {
-    flg.udp_board_passive = true; // UDP送信パッシブモードフラグをアゲる
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
-  }
-
-  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10007) フレーム管理時計tmr.mrd_milを現在時刻にリセット
-  if (a_meridim.sval[MRD_MASTER] == MCMD_FRAMETIMER_RESET) {
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
-  }
-
-  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10008) ボードの末端処理を指定時間だけ止める.
-  if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_STOP_DURING) {
-    flg.stop_board_during = true; // ボードの処理停止フラグをアゲる
-    // ボードの末端処理をmeridim[2]ミリ秒だけ止める.
-    Serial.print("Stop teensy's processing during ");
-    Serial.print(int(r_spi_meridim.sval[MRD_STOP_FRAMES]));
-    Serial.println(" ms.");
-    for (int i = 0; i < int(r_spi_meridim.sval[MRD_STOP_FRAMES]); i++) {
-      delay(1);
-    }
-    flg.stop_board_during = false; // ボードの処理停止フラグをサゲる
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをアゲる
-  }
-  return true;
-}
 
 /// @brief エラーカウントをインクリメントする関数.
 /// 特定のビット位置に基づいて各種エラーをチェックし, 対応するエラーカウンターを増加させます.

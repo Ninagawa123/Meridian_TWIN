@@ -15,13 +15,11 @@
 
 // EEPROM読み書き用共用体
 typedef union {
-  uint8_t bval[EEPROM_BYTE];                // 1バイト単位で540個のデータを持つ
-  int16_t saval[6][int(EEPROM_BYTE / 6)];   // short型で6*90個の配列データを持つ
-  uint16_t sauval[6][int(EEPROM_BYTE / 6)]; // ushort型で6*90個の配列データを持つ
-  int16_t baval[6][int(EEPROM_BYTE / 3)];   // byte型で6*180個の配列データを持つ
-  uint8_t bauval[6][int(EEPROM_BYTE / 3)];  // ubyte型で6*180個の配列データを持つ
-  int16_t sval[int(EEPROM_BYTE / 2)];       // short型で270個のデータを持つ
-  uint16_t usval[int(EEPROM_BYTE / 2)];     // short型で270個のデータを持つ
+  uint8_t bval[EEPROM_BYTE]; // 1バイト単位で540個のデータを持つ
+  int16_t saval[3][90];      // short型で3*90個の配列データを持つ
+  uint16_t usaval[3][90];    // unsigned short型で3*90個の配列データを持つ
+  int16_t sval[270];         // short型で270個のデータを持つ
+  uint16_t usval[270];       // unsigned short型で270個のデータを持つ
 } UnionEEPROM;
 UnionEEPROM eeprom_write_data; // EEPROM書き込み用
 UnionEEPROM eeprom_read_data;  // EEPROM読み込み用
@@ -111,28 +109,41 @@ bool mrd_eeprom_dump_serial(UnionEEPROM a_data, int a_len_byte, int a_bhd, Strea
 //  EEPROM データ作成
 //------------------------------------------------------------------------------------
 
-/// @brief config.hにあるサーボの諸設定からEEPROM格納用の配列データを作成する.
-/// @param a_sv サーボパラメータの構造体.
-/// @return config.hから作成したEEPROM格納用の配列データを返す.
-UnionEEPROM mrd_eeprom_make_data_from_config_lite(ServoParam a_sv) {
+/// @brief サーボ設定構造体からEEPROM格納用の配列データを作成する
+/// @param a_sv サーボ設定を保持する構造体
+/// @return EEPROM格納用の配列データ(UnionEEPROM型)
+UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
   UnionEEPROM array_tmp = {0};
-  for (int i = 0; i < 15; i++) {
-    // 左サーボの情報を格納
-    array_tmp.sauval[1][20 + i * 2] =
-        ((a_sv.ixl_mount[i] != 0) << 15) |     // bit16: マウント有無 (0以外なら1)
-        ((a_sv.ixl_id[i] & 0x7F) << 8) |       // bit15-9: ID (7ビット)
-        ((a_sv.ixl_cw[i] == -1 ? 1 : 0) << 8); // bit8: 正逆 (1ビット)
-    // 各サーボの直立デフォルト値 degree
-    array_tmp.saval[1][21 + i * 2] = short(mrd.float2HfShort(a_sv.ixl_trim[i]));
 
-    // 右サーボの情報を格納
-    array_tmp.sauval[1][50 + i * 2] =
-        ((a_sv.ixr_mount[i] != 0) << 15) |     // bit16: マウント有無 (0以外なら1)
-        ((a_sv.ixr_id[i] & 0x7F) << 8) |       // bit15-9: ID (7ビット)
-        ((a_sv.ixr_cw[i] == -1 ? 1 : 0) << 8); // bit8: 正逆 (1ビット)
-    // 各サーボの直立デフォルト値 degree
-    array_tmp.saval[1][51 + i * 2] = short(mrd.float2HfShort(a_sv.ixr_trim[i]));
-  };
+  for (int i = 0; i < 15; i++) {
+    // 各サーボのマウント有無と方向(正転・逆転)
+    uint16_t l_tmp = 0;
+    uint16_t r_tmp = 0;
+
+    // bit0 : マウント
+    if (sv.ixl_mount[i])
+      l_tmp |= 0x0001;
+    if (sv.ixr_mount[i])
+      r_tmp |= 0x0001;
+
+    // bit1-7 : サーボ ID
+    l_tmp |= static_cast<uint16_t>(sv.ixl_id[i] & 0x7F) << 1;
+    r_tmp |= static_cast<uint16_t>(sv.ixr_id[i] & 0x7F) << 1;
+
+    // bit8 : サーボ回転方向 (正転なら1, 逆転なら0)
+    if (sv.ixl_cw[i] > 0)
+      l_tmp |= 0x0100;
+    if (sv.ixr_cw[i] > 0)
+      r_tmp |= 0x0100;
+
+    // サーボのマウント有無, ID, 回転方向のデータ格納
+    array_tmp.saval[1][20 + i * 2] = l_tmp;
+    array_tmp.saval[1][50 + i * 2] = r_tmp;
+
+    // 各サーボの直立デフォルト角度(degree → float short*100)の格納
+    array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(a_sv.ixl_trim[i]);
+    array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(a_sv.ixr_trim[i]);
+  }
   return array_tmp;
 }
 
@@ -191,7 +202,7 @@ bool mrd_eeprom_zero_format(bool a_flg_protect, int a_len_byte, Stream &a_serial
 /// @param a_flg_protect EEPROMの書き込み許可があるかどうかのブール値.
 /// @param a_serial メッセージ表示用のハードウェアシリアル.
 /// @return EEPROMの書き込みと読み込みが成功した場合はtrueを, 書き込まなかった場合はfalseを返す.
-bool mrd_eeprom_write_all(UnionEEPROM a_data, bool a_flg_protect, Stream &a_serial) {
+bool mrd_eeprom_write(UnionEEPROM a_data, bool a_flg_protect, Stream &a_serial) {
   if (a_flg_protect) { // EEPROM書き込み実施フラグをチェック
     return false;
   }
@@ -283,7 +294,7 @@ bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, int a_len_byte, bool 
   a_serial.println("Try to write EEPROM: ");
   mrd_eeprom_dump_serial(a_write_data, a_len_byte, a_bhd, a_serial); // 書き込み内容をダンプ表示
 
-  if (mrd_eeprom_write_all(a_write_data, a_protect, a_serial)) {
+  if (mrd_eeprom_write(a_write_data, a_protect, a_serial)) {
     a_serial.println("...Write OK.");
   } else {
     a_serial.println("...Write failed.");
@@ -297,6 +308,65 @@ bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, int a_len_byte, bool 
   mrd_eeprom_dump_serial(a_data_tmp, a_len_byte, a_bhd, a_serial); // 読み込み内容をダンプ表示
   a_serial.println("...Read completed.");
 
+  return true;
+}
+
+/// @brief EEPROMの内容を読み込んで返す.
+/// @return UnionEEPROM のフォーマットで配列を返す.
+UnionEEPROM mrd_eeprom_read() {
+  UnionEEPROM read_data_tmp = {0};      // ゼロ初期化を明示的に行う
+  for (int i = 0; i < EEPROM_BYTE; i++) // データを読み込む時はbyte型
+  {
+    read_data_tmp.bval[i] = EEPROM.read(i);
+  }
+  return read_data_tmp;
+}
+
+/// @brief EEPROMの内容を読み込みサーボ値構造体に反映する.
+/// @param a_sv サーボ設定を保持する構造体.
+/// @param a_monitor シリアルモニタへのデータ表示.
+/// @param a_serial 出力先シリアルの指定.
+/// @return 終了時にtrueを返す.
+bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, Stream &a_serial) {
+  a_serial.println("Load and set servo settings from EEPROM.");
+  UnionEEPROM array_tmp = mrd_eeprom_read();
+  for (int i = 0; i < a_sv.num_max; i++) {
+    // 各サーボのマウント有無
+    a_sv.ixl_mount[i] = static_cast<bool>(array_tmp.saval[1][20 + i * 2] & 0x0001); // bit0:マウント有無
+    a_sv.ixr_mount[i] = static_cast<bool>(array_tmp.saval[1][50 + i * 2] & 0x0001); // bit0:マウント有無
+    // 各サーボの実サーボ呼び出しID番号
+    a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
+    a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
+    // 各サーボの回転方向(正転・逆転)
+    a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
+    a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
+    // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
+    a_sv.ixl_trim[i] = array_tmp.saval[1][21 + i * 2] * 0.01f;
+    a_sv.ixr_trim[i] = array_tmp.saval[1][51 + i * 2] * 0.01f;
+
+    if (a_monitor) {
+      a_serial.print("L-idx:");
+      a_serial.print(mrd_pddstr(i, 2, 0, false));
+      a_serial.print(", id:");
+      a_serial.print(mrd_pddstr(sv.ixl_id[i], 2, 0, false));
+      a_serial.print(", mt:");
+      a_serial.print(mrd_pddstr(sv.ixl_mount[i], 1, 0, false));
+      a_serial.print(", cw:");
+      a_serial.print(mrd_pddstr(sv.ixl_cw[i], 1, 0, true));
+      a_serial.print(", trm:");
+      a_serial.print(mrd_pddstr(sv.ixl_trim[i], 7, 2, true));
+      a_serial.print("  R-idx: ");
+      a_serial.print(mrd_pddstr(i, 2, 0, false));
+      a_serial.print(", id:");
+      a_serial.print(mrd_pddstr(sv.ixr_id[i], 2, 0, false));
+      a_serial.print(", mt:");
+      a_serial.print(mrd_pddstr(sv.ixr_mount[i], 1, 0, false));
+      a_serial.print(", cw:");
+      a_serial.print(mrd_pddstr(sv.ixr_cw[i], 1, 0, true));
+      a_serial.print(", trm:");
+      a_serial.println(mrd_pddstr(sv.ixr_trim[i], 7, 2, true));
+    }
+  }
   return true;
 }
 

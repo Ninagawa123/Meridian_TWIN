@@ -6,8 +6,9 @@
 // 20240804 mrd_writedim90の概念を導入.
 // 20240809 wiiリモコン, ヌンチャクに対応. Homeボタンでヌンチャクスティックのキャリブレーション.
 // 20240819 変数名をTWIN間で整合. EEPROM関連は調整中.
+// 20250505 トリム調整機能対応に合わせてコメントや変数名等微調整.
 
-#define VERSION "Meridian_TWIN_for_ESP32_v1.1.1_2024.08.19" // バージョン表示
+#define VERSION "Meridian_TWIN_for_ESP32_v1.1.1_2025.05.05" // バージョン表示
 
 //================================================================================================================
 //  初期設定
@@ -70,17 +71,17 @@ void setup() {
   memset(r_spi_meridim_dma, 0, MRDM_BYTE + 4); // ※+4は不具合対策
 
   // SPI通信の初回送信データをセット
-  memset(s_spi_meridim.bval, 0, MRDM_BYTE + 4); // ※+4は不具合対策
+  memset(s_spi_meridim.bval, 0, MRDM_BYTE + 4);                              // ※+4は不具合対策
   s_spi_meridim.sval[MRD_CKSM] = mrd.cksm_val(s_spi_meridim.sval, MRDM_LEN); // チェックサムを格納
-  memcpy(s_spi_meridim_dma, s_spi_meridim.bval, MRDM_BYTE + 4); // 送信データをDMAバッファに転記
+  memcpy(s_spi_meridim_dma, s_spi_meridim.bval, MRDM_BYTE + 4);              // 送信データをDMAバッファに転記
 
   // SPI通信の設定
   slave.setDataMode(SPI_MODE3);
   slave.setMaxTransferSize(MRDM_BYTE + 4);
   slave.setDMAChannel(2); // 専用メモリの割り当て(1か2のみ)
   slave.setQueueSize(1);  // キューサイズ とりあえず1
-  slave.begin(); // 引数を指定しなければデフォルトのSPI（SPI2,HSPIを利用）
-                 // ピン番号は CS: 15, CLK: 14, MOSI: 13, MISO: 12
+  slave.begin();          // 引数を指定しなければデフォルトのSPI (SPI2,HSPIを利用)
+                          // ピン番号は CS: 15, CLK: 14, MOSI: 13, MISO: 12
 
   // Bluetoothの開始と表示(WIIMOTE)
   if (MOUNT_PAD == WIIMOTE) { // Bluetooth用スレッドの開始
@@ -106,7 +107,7 @@ void loop() {
   mrd.monitor_check_flow("[1]", monitor.flow); // 動作チェック用シリアル表示
 
   // @[1-1] UDPの受信待ち受けループ
-  if (flg.udp_receive_mode) // UDPの受信実施フラグの確認（モード確認）
+  if (flg.udp_receive_mode) // UDPの受信実施フラグの確認 (モード確認)
   {
     unsigned long start_tmp = millis();
 
@@ -148,12 +149,12 @@ void loop() {
     memcpy(s_spi_meridim.bval, r_udp_meridim.bval, MRDM_BYTE + 4);
 
     // エラービット14番(ESP32のPCからのUDP受信エラー検出)をサゲる
-    mrd_clearBit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
+    mrd_clear_bit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
 
   } else { // チェックサムがNGならバッファから転記せず前回のデータを使用する
 
     // エラービット14番(ESP32のPCからのUDP受信エラー検出)をアゲる
-    mrd_setBit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
+    mrd_set_bit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
 
     err.pc_esp++;
   }
@@ -173,7 +174,7 @@ void loop() {
   if (mrdsq.r_expect == r_udp_meridim.usval[MRD_SEQ]) {
 
     // エラービット10番[ESP受信のスキップ検出]をサゲる
-    mrd_clearBit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
+    mrd_clear_bit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
     flg.meridim_rcvd = true; // Meridim受信成功フラグをアゲる
 
   } else { // 受信シーケンス番号の値が予想と違ったら,
@@ -182,7 +183,7 @@ void loop() {
     mrdsq.r_expect = r_udp_meridim.usval[MRD_SEQ];
 
     // エラービット10番[ESP受信のスキップ検出]をアゲる
-    mrd_setBit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
+    mrd_set_bit16(s_spi_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
 
     // シーケンス番号が前回と同じでなければ,
     if (mrdsq.r_past != r_udp_meridim.usval[MRD_SEQ]) {
@@ -229,7 +230,7 @@ void loop() {
     mrd_meriput90_pad(s_spi_meridim, pad_array, PAD_BUTTON_MARGE);
   }
 
-  // @[4-3] フレームスキップ検出用のカウントを転記して格納（PCからのカウントと同じ値をESPに転送）
+  // @[4-3] フレームスキップ検出用のカウントを転記して格納 (PCからのカウントと同じ値をESPに転送)
   // → PCから受け取った値がs_spi_meridim.sval[MRD_SEQ]に入っているのでここでは何もしない
 
   // @[4-4] チェックサムの更新
@@ -269,17 +270,17 @@ void loop() {
           // チェックサムがOKなら, DMAからUDP送信配列に転記
           memcpy(s_udp_meridim.bval, tmp_meridim.bval, MRDM_BYTE);
           // エラービット12番[ESP32のSPI受信エラー]をサゲる
-          mrd_clearBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_12_TSY_ESP);
+          mrd_clear_bit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_12_TSY_ESP);
           mrd_meriput90_cksm(s_udp_meridim); // チェックサムの更新
           flg.meridim_rcvd = true;           // Meridim受信成功フラグをアゲる
-          flg.spi_rcvd = true; // SPI受信完了フラグをアゲてループを抜ける
+          flg.spi_rcvd = true;               // SPI受信完了フラグをアゲてループを抜ける
 
         } else { // チェックサムがNGなら, 前回の受信値を使用する
           // エラービット12番[ESP32のSPI受信エラー]をアゲる
-          mrd_setBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_12_TSY_ESP);
+          mrd_set_bit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_12_TSY_ESP);
           mrd_meriput90_cksm(s_udp_meridim); // チェックサムの更新
           flg.meridim_rcvd = false;          // Meridim受信成功フラグをサゲる
-          flg.spi_rcvd = true; // SPI受信完了フラグをアゲてループを抜ける
+          flg.spi_rcvd = true;               // SPI受信完了フラグをアゲてループを抜ける
         }
       }
     }
@@ -316,7 +317,7 @@ void loop() {
 
   // @[7-1] UDP送信の実行
 
-  if (flg.udp_send_mode) // UDPの送信実施フラグの確認（モード確認）
+  if (flg.udp_send_mode) // UDPの送信実施フラグの確認 (モード確認)
   {
     flg.udp_busy = true; // UDP使用中フラグをアゲる
     mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp);

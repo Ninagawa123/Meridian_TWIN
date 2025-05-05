@@ -27,25 +27,52 @@ int mrd_max_used_index(const int a_arr[], int a_size) {
 /// @param a_byte ビットをセットする16ビットの変数.参照渡し.
 /// @param a_bit_pos セットするビットの位置(0から15).
 /// @return なし.
-inline void mrd_setBit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte |= (1 << a_bit_pos); }
+inline void mrd_set_bit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte |= (1 << a_bit_pos); }
 
 /// @brief 指定された位置のビットをクリアする(16ビット変数用).
 /// @param a_byte ビットをクリアする16ビットの変数.参照渡し.
 /// @param a_bit_pos クリアするビットの位置(0から15).
 /// @return なし.
-inline void mrd_clearBit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte &= ~(1 << a_bit_pos); }
+inline void mrd_clear_bit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte &= ~(1 << a_bit_pos); }
 
 /// @brief 指定された位置のビットをセットする(8ビット変数用).
 /// @param value ビットをセットする8ビットの変数.参照渡し.
 /// @param a_bit_pos セットするビットの位置(0から7).
 /// @return なし.
-inline void mrd_setBit8(uint8_t &value, uint8_t a_bit_pos) { value |= (1 << a_bit_pos); }
+inline void mrd_set_bit8(uint8_t &value, uint8_t a_bit_pos) { value |= (1 << a_bit_pos); }
 
 /// @brief 指定された位置のビットをクリアする(8ビット変数用).
 /// @param value ビットをクリアする8ビットの変数.参照渡し.
 /// @param a_bit_pos クリアするビットの位置(0から7).
 /// @return なし.
-inline void mrd_clearBit8(uint8_t &value, uint8_t a_bit_pos) { value &= ~(1 << a_bit_pos); }
+inline void mrd_clear_bit8(uint8_t &value, uint8_t a_bit_pos) { value &= ~(1 << a_bit_pos); }
+
+/// @brief 任意の整数値から、任意幅のビット列を取り出す汎用関数.
+/// @tparam T 型テンプレート.任意の整数型(符号付き・符号無しどちらでも可)
+/// @param value 抽出元となる値.
+/// @param pos   取り出し開始位置(LSB＝0, 右から数え, 最初は0番)
+/// @param len   取り出すビット幅
+/// @return unsigned 取り出したビット列(0〜 2^len−1 の範囲)
+template <class T> // 型テンプレート
+unsigned mrd_slice_bits(T value, unsigned pos, unsigned len) {
+  return (static_cast<unsigned>(value) >> pos) & ((1u << len) - 1u);
+}
+
+/// @brief 任意の整数値の指定範囲のビット列に値を設定する汎用関数.
+/// @tparam T 型テンプレート.任意の整数型(符号付き・符号無しどちらでも可)
+/// @tparam U 設定する値の型(通常は整数型)
+/// @param value 設定先となる値.
+/// @param pos 設定開始位置(LSB＝0, 右から数え, 最初は0番)
+/// @param len 設定するビット幅
+/// @param new_value 設定したい値(0〜 2^len−1 の範囲)
+/// @return T 設定後の値
+template <class T>
+T mrd_set_bits(T value, unsigned pos, unsigned len, unsigned new_value) {
+  unsigned mask = ((1u << len) - 1u);                         // マスクを作成.指定範囲のビットを1で埋める
+  unsigned masked_new_value = new_value & mask;               // マスクして範囲内に収める
+  T cleared = value & ~(static_cast<T>(mask) << pos);         // 既存の値から指定範囲のビットをクリア
+  return cleared | (static_cast<T>(masked_new_value) << pos); // 新しい値を設定
+}
 
 /// @brief 列挙型(L,R,C)から文字列を取得する関数.
 /// @param a_line 列挙型 enum UartLine
@@ -61,6 +88,40 @@ const char *mrd_get_line_name(UartLine a_line) {
   default:
     return "Unknown";
   }
+}
+
+/// @brief 数値をシリアルモニタ表示するときにパディングする.
+/// @param num 表示したい値.
+/// @param total_width 桁数.
+/// @param rac_Width 小数点以下の桁数(0ならば小数点以下非表示).
+/// @param show_plus +記号の有無.
+/// @return 整形されたストリング.
+String mrd_pddstr(float num, int total_width, int frac_width, bool show_plus = true) {
+  char buf[30];
+  char sign = (num < 0) ? '-' : (show_plus ? '+' : '\0');
+  if (num < 0)
+    num = -num;
+
+  // 小数あり/なし
+  if (frac_width) {
+    if (sign)
+      sprintf(buf, "%c%d.%0*d", sign, (int)num, frac_width, (int)((num - (int)num) * pow(10, frac_width) + 0.5));
+    else
+      sprintf(buf, "%d.%0*d", (int)num, frac_width, (int)((num - (int)num) * pow(10, frac_width) + 0.5));
+  } else {
+    if (sign)
+      sprintf(buf, "%c%d", sign, (int)(num + 0.5));
+    else
+      sprintf(buf, "%d", (int)(num + 0.5));
+  }
+
+  // パディング
+  String result = "";
+  int pad = total_width - strlen(buf);
+  for (int i = 0; i < pad; i++)
+    result += ' ';
+  result += buf;
+  return result;
 }
 
 //------------------------------------------------------------------------------------
@@ -83,8 +144,8 @@ bool mrd_timeout_check(unsigned long a_limit) {
   unsigned long current_time = millis(); // 現在の時間を取得
 
   if (current_time - timeout_start >= a_limit) { // 指定された時間が経過しているかチェック
-    flg_timer_started = false; // タイムアウト監視開始フラグをサゲる
-    return true;               // 指定された時間が経過していれば true を返す
+    flg_timer_started = false;                   // タイムアウト監視開始フラグをサゲる
+    return true;                                 // 指定された時間が経過していれば true を返す
   }
 
   return false; // まだ時間が経過していなければ false を返す
