@@ -90,19 +90,22 @@
 // [MRDM_LEN-1] チェックサム
 
 // Meridimの基本設定
-#define MRDM_LEN       90  // Meridim配列の長さ設定（デフォルトは90）
-#define FRAME_DURATION 10  // 1フレームあたりの単位時間（単位ms）
-#define CHARGE_TIME    200 // 起動時のコンデンサチャージ待機時間（単位ms）
+#define MRDM_LEN        90  // Meridim配列の長さ設定（デフォルトは90）
+#define FRAME_DURATION  10  // 1フレームあたりの単位時間（単位ms）
+#define CHARGE_TIME     200 // 起動時のコンデンサチャージ待機時間（単位ms）
+#define MRD_L_ORIGIDX   20  // Meridim配列のL系統の最初のインデックス(デフォルトは20)
+#define MRD_R_ORIGIDX   50  // Meridim配列のR系統の最初のインデックス(デフォルトは50)
+#define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 動作モード
 #define MODE_SPI_TRANS 1 // Tsy-ESP32間のSPI通信を行う（1:ON, 0:OFF）
 
 // EEPROMの設定
 #define EEPROM_BYTE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     0 // 起動時にconfig.hの内容をEEPROMにセット(1:する, 0:しない)
+#define EEPROM_SET     0   // 起動時にconfig.hの内容をEEPROMにセット(1:する, 0:しない)
 #define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
-#define EEPROM_LOAD    0   // 起動時にEEPROMの内容を諸設定にロードする(未導入)
-#define EEPROM_DUMP    0   // 起動時のEEPROM内容のダンプ表示
+#define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
+#define EEPROM_DUMP    1   // 起動時のEEPROM内容のダンプ表示
 #define EEPROM_STYLE   Hex // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
 
 // 起動時のチェック
@@ -110,24 +113,27 @@
 #define CHECK_EEPROM_RW 0 // EEPROMの動作チェック
 
 // シリアルモニタリング
-#define MONITOR_FRAME_DELAY       1 // シリアルモニタでフレーム遅延時間を表示（0:OFF, 1:ON）
-#define MONITOR_FLOW              0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
-#define MONITOR_ERR_SERVO         0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
-#define MONITOR_ERR_ALL           0 // 全経路の受信エラー率を表示（0:OFF, 1:ON）
-#define MONITOR_SEQ               0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
-#define MONITOR_PAD               0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
+#define MONITOR_FRAME_DELAY       1    // シリアルモニタでフレーム遅延時間を表示（0:OFF, 1:ON）
+#define MONITOR_FLOW              0    // シリアルモニタでフローを表示（0:OFF, 1:ON）
+#define MONITOR_ERR_SERVO         0    // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
+#define MONITOR_ERR_ALL           0    // 全経路の受信エラー率を表示（0:OFF, 1:ON）
+#define MONITOR_SEQ               0    // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
+#define MONITOR_PAD               0    // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
 #define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_ESP32   1 // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
+#define MOUNT_ESP32   1           // ESPの搭載 0:なし(SPI通信およびUDP通信を実施しない), 1:あり
 #define MOUNT_SD      1           // SDカードリーダーの有無 (0:なし, 1:あり)
 #define MOUNT_IMUAHRS MPU6050_IMU // IMU/AHRSの搭載状況 NO_IMU, MPU6050_IMU, MPU9250_IMU.BNO055_AHRS
-#define MOUNT_PAD     KRR5FH // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
+#define MOUNT_PAD     KRR5FH      // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH
+
+// 動作モード
+#define MODE_TSY_STANDALONE 0 // Teensyをボードに挿さず動作確認(0:NO, 1:YES)
 
 // I2C設定, I2Cセンサ関連設定
 #define I2C0_SPEED         400000 // I2Cの速度（400kHz推奨）
 #define IMUAHRS_INTERVAL   10     // IMU/AHRSのセンサの読み取り間隔(ms)
-#define IMUAHRS_STOCK      4 // MPUで移動平均を取る際の元にする時系列データの個数
+#define IMUAHRS_STOCK      4      // MPUで移動平均を取る際の元にする時系列データの個数
 #define I2C1_SPEED         100000 // I2Cの速度（100kHz推奨?）
 #define I2C1_MERIMOTE_ADDR 0x58   // MerimoteのI2Cアドレス
 
@@ -144,7 +150,7 @@
 #define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
-#define PIN_ERR_LED       2 // LEDピン番号 処理が時間内に収まっていない場合に点灯
+#define PIN_ERR_LED       2  // LEDピン番号 処理が時間内に収まっていない場合に点灯
 #define PIN_EN_L          6  // ICSサーボ信号の左系のENピン番号（固定）
 #define PIN_EN_R          5  // ICSサーボ信号の右系のENピン番号（固定）
 #define PIN_EN_C          23 // 半二重サーボ信号の3系のENピン番号（固定）
@@ -172,7 +178,7 @@
 #define SERVO_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
 #define SERVO_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
 #define SERVO_TIMEOUT_C     2       // R系統のICS返信待ちのタイムアウト時間
-#define SERVO_LOST_ERR_WAIT 6 // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SERVO_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
 
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
@@ -391,21 +397,21 @@ float IXL_TRIM[IXL_MAX] = {
 
 // R系統のトリム値(degree)
 float IXR_TRIM[IXR_MAX] = {
-    0,      // [00]腰ヨー
-    0,      // [01]右肩ピッチ
-    -89.44, // [02]右肩ロール
-    0,      // [03]右肘ヨー
-    89.98,  // [04]右肘ピッチ
-    0,      // [05]右股ヨー
-    1.69,   // [06]右股ロール
-    -3.38,  // [07]右股ピッチ
-    -57.38, // [08]右膝ピッチ
-    -20.25, // [09]右足首ピッチ
-    -2.36,  // [10]右足首ロール
-    0,      // [11]追加サーボ用
-    0,      // [12]追加サーボ用
-    0,      // [13]追加サーボ用
-    0,      // [14]追加サーボ用
+    -4.28,  // [00]腰ヨー
+    0.68,   // [01]右肩ピッチ
+    -89.41, // [02]右肩ロール
+    0.0,    // [03]右肘ヨー
+    91.83,  // [04]右肘ピッチ
+    0.0,    // [05]右股ヨー
+    1.0,    // [06]右股ロール
+    -21.42, // [07]右股ピッチ
+    -53.68, // [08]右膝ピッチ
+    -24.12, // [09]右足首ピッチ
+    0.0,    // [10]右足首ロール
+    0.0,    // [11]追加サーボ用
+    0.0,    // [12]追加サーボ用
+    0.0,    // [13]追加サーボ用
+    0.0,    // [14]追加サーボ用
 };
 
 // C系統のトリム値(degree)
@@ -430,28 +436,36 @@ float IXC_TRIM[IXC_MAX] = {
 //-------------------------------------------------------------------------
 //  固定値, マスターコマンド定義
 //-------------------------------------------------------------------------
-#define MCMD_TORQUE_ALL_OFF         0 // すべてのサーボトルクをオフにする（脱力）
+#define MCMD_TORQUE_ALL_OFF         0      // すべてのサーボトルクをオフにする（脱力）
 #define MCMD_DUMMY_DATA             -32768 // SPI送受信用のダミーデータ判定用
 #define MCMD_TEST_VALUE             -32767 // テスト用の仮設変数
-#define MCMD_SENSOR_YAW_CALIB       10002 // センサの推定ヨー軸を現在値センターとしてリセット
-#define MCMD_SENSOR_ALL_CALIB       10003 // センサの3軸について現在値を原点としてリセット
-#define MCMD_ERR_CLEAR_SERVO_ID     10004 // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
-#define MCMD_BOARD_TRANSMIT_ACTIVE  10005 // ボードが定刻で送信を行うモード（PC側が受信待ち）
-#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
-#define MCMD_FRAMETIMER_RESET       10007 // フレームタイマーを現在時刻にリセット
-#define MCMD_BOARD_STOP_DURING      10008 // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
-#define MCMD_EEPROM_ENTER_WRITE     10009 // EEPROM書き込みモードのスタート
-#define MCMD_EEPROM_EXIT_WRITE      10010 // EEPROM書き込みモードの終了
-#define MCMD_EEPROM_ENTER_READ      10011 // EEPROM読み出しモードのスタート
-#define MCMD_EEPROM_EXIT_READ       10012 // EEPROM読み出しモードの終了
-#define MCMD_SDCARD_ENTER_WRITE     10013 // SDCARD書き込みモードのスタート
-#define MCMD_SDCARD_EXIT_WRITE      10014 // SDCARD書き込みモードの終了
-#define MCMD_SDCARD_ENTER_READ      10015 // SDCARD読み出しモードのスタート
-#define MCMD_SDCARD_EXIT_READ       10016 // SDCARD読み出しモードの終了
-#define MCMD_EEPROM_SAVE_TRIM       10101 // 現在の姿勢をトリム値としてサーボに書き込む
-#define MCMD_EEPROM_LOAD_TRIM       10102 // EEPROMのトリム値をサーボに反映する
-#define MCMD_NAK                    32766 // コマンド実行の失敗を応答
-#define MCMD_ACK                    32767 // コマンド実行の成功を応答
+#define MCMD_SENSOR_YAW_CALIB       10002  // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_SENSOR_ALL_CALIB       10003  // センサの3軸について現在値を原点としてリセット
+#define MCMD_ERR_CLEAR_SERVO_ID     10004  // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
+#define MCMD_BOARD_TRANSMIT_ACTIVE  10005  // ボードが定刻で送信を行うモード（PC側が受信待ち）
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード（PC側が定刻送信）
+#define MCMD_FRAMETIMER_RESET       10007  // フレームタイマーを現在時刻にリセット
+#define MCMD_BOARD_STOP_DURING      10008  // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
+#define MCMD_EEPROM_ENTER_WRITE     10009  // EEPROM書き込みモードのスタート
+#define MCMD_EEPROM_EXIT_WRITE      10010  // EEPROM書き込みモードの終了
+#define MCMD_EEPROM_ENTER_READ      10011  // EEPROM読み出しモードのスタート
+#define MCMD_EEPROM_EXIT_READ       10012  // EEPROM読み出しモードの終了
+#define MCMD_SDCARD_ENTER_WRITE     10013  // SDCARD書き込みモードのスタート
+#define MCMD_SDCARD_EXIT_WRITE      10014  // SDCARD書き込みモードの終了
+#define MCMD_SDCARD_ENTER_READ      10015  // SDCARD読み出しモードのスタート
+#define MCMD_SDCARD_EXIT_READ       10016  // SDCARD読み出しモードの終了
+#define MCMD_START_TRIM_SETTING     10100  // トリム設定モードに入る(Meridian_console.py連携)
+#define MCMD_EEPROM_SAVE_TRIM       10101  // 現在の姿勢をトリム値としてサーボに書き込む
+#define MCMD_EEPROM_LOAD_TRIM       10102  // EEPROMのトリム値をサーボに反映する
+#define MCMD_EEPROM_BOARDTOPC_DATA0 10200  // EEPROMの[0][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_BOARDTOPC_DATA1 10201  // EEPROMの[1][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_BOARDTOPC_DATA2 10202  // EEPROMの[2][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA0 10300  // EEPROM用の[0][*]をPCからボードにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA1 10301  // EEPROM用の[1][*]をPCからボードにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA2 10302  // EEPROM用の[2][*]をPCからボードにMeridimで送信する
+
+#define MCMD_NAK 32766 // コマンド実行の失敗を応答
+#define MCMD_ACK 32767 // コマンド実行の成功を応答
 
 //-------------------------------------------------------------------------
 //---- Meridim90 配列アクセス対応キー  ---------------------------------------
@@ -558,7 +572,7 @@ float IXC_TRIM[IXC_MAX] = {
 #define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
 #define ERRBIT_11_BOARD_DELAY  11 // Teensy or ESP32の処理ディレイ (末端で捕捉)
 #define ERRBIT_10_UDP_ESP_SKIP 10 // PC → ESP32 のUDPフレームスキップエラー
-#define ERRBIT_9_BOARD_SKIP    9 // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
-#define ERRBIT_8_PC_SKIP       8 // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_9_BOARD_SKIP    9  // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_8_PC_SKIP       8  // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
 
 #endif // __MERIDIAN_CONFIG__
