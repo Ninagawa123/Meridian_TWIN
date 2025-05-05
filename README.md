@@ -38,6 +38,7 @@ ESP32DevKitC のみを使用した最小限の構成で動作確認が可能で�
 当リポジトリで取り扱う Meridian_TWIN は ESP32DevKitC と Teensy4.0 を併用するタイプで, 対応ボードはMeridian Board Type.Kとなります.  
   
 近藤科学の小型二足ロボットキット**KHR-3HV**へのMeridian Board搭載を例に, 導入方法を説明します.  
+
   
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
 100Hzダンスのデモ動画  
@@ -139,10 +140,9 @@ Teensy4.0 とPCをUSBケーブルで接続し, PlatformIOの下にある"チェ�
 下記のライブラリはファイルを開く際に自動的に導入されます.  
 - **Meridian@^0.1.0 by Ninagawa123**  
 - **ESP32DMASPI@0.3.0 by hideakitai**  
-
+  
 #### keys.hの修正  
-keys.h内の  
-
+  
 ```
 #define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID  
 #define AP_PASS "xxxxxx"             // アクセスポイントのパスワード  
@@ -193,13 +193,14 @@ wifi接続に成功すると
 と表示され, 「ESP32's IP address =>」にESP32本体のIPアドレスが表示されます.この番号をメモしておきます.  
   
 ##### platformio.ini  
+  
 platformio.iniでは主に以下の設定を行なっています.
 - platformのバージョン指定
 - ESP32内部システムからのエラーコードシリアル出力の抑制
 - PCとのSerial通信速度設定を1,000,000に指定
 - ライブラリの指定
 - OTA(無線経由のプログラム書き込み機能)の無効化によるパーティション拡張
-    
+  
 #### 各種設定の確認  
 他にも, 接続するリモコンやシリアルモニタなどについての設定が可能です.  
 Teensy4.0, ESP32両方の「src/config.h」内のコメントを参考に適宜変更してください.  
@@ -268,7 +269,9 @@ MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画�
 また, 「DEMO」「Enable」にチェックを入れると, 画面内のロボットがサインカーブで構成されたダンスのデモを行います.  
 ここでさらに「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
   
+  
 ## リモコンの使用方法  
+  
 **KRR-5FH/KRC5-FH**  
 config.hにて「#define MOUNT_PAD KRR5FH」と設定してボードにアップロードします.  
 受信機のKRR-5FHはボードの**R系統に接続**します. KRC-5FHのペアリングは製品の説明書の通りです.  
