@@ -1,14 +1,13 @@
 # Meridian_TWIN
   
-<img width="800" alt="logo" src="./docs/images/Meridian_logo.png">  
+<img width=100% alt="logo" src="./docs/images/Meridian_logo.png">  
     
-Meridian_TWIN は, ロボットのリアルタイムなデジタルツイン化を実現する**Meridian**(meridian flow system)の一部です.  
-マイコンボードに当リポジトリのファイルを書き込み, ロボットに搭載して使用します.  
+Meridian_TWIN は, ロボットのリアルタイムなデジタルツイン化を実現する**Meridian**(meridian flow system)の一部です.    
 センサーやサーボを制御しながら, PC等のデバイスとロボットの状態情報を 100 Hz の頻度で共有することができます.  
-処理能力の高い Teensy4.0 と通信能力のある ESP32DevKitC を連携させて併用することで, 高い拡張性と安定性を実現します.  
-(ESP32DevKitC のみで動く簡易版の[Meridian LITEへのリンクはこちら](https://github.com/Ninagawa123/Meridian_LITE)です.)
   
-<img width=100% alt="twin_flowsystem" src="./docs/images/Meridian_flowsystem_twin.png">  
+処理能力の高い Teensy4.0 と通信能力のある ESP32DevKitC を連携させて併用することで, 高い拡張性と安定性を実現します.  
+  
+<img width=100% alt="twin_flowsystem" src="./docs/Meridian_flowsystem_twin.png">  
 
 システムの中核は[Meridim90](https://ninagawa123.github.io/Meridian_info/#Protocol/Meridim90/overview90/)というコンパクトで汎用的なデータ配列です.  
 このデータ配列が中間プロトコルとしてデバイス間を高速に循環することで, リアルタイムな状態データの共有を実現します.  
@@ -37,10 +36,9 @@ ESP32DevKitC のみを使用した最小限の構成で動作確認が可能で�
 # Getting started 2 (TWIN版)  
   
 当リポジトリで取り扱う Meridian_TWIN は ESP32DevKitC と Teensy4.0 を併用するタイプで, 対応ボードはMeridian Board Type.Kとなります.  
+  
 近藤科学の小型二足ロボットキット**KHR-3HV**へのMeridian Board搭載を例に, 導入方法を説明します.  
-    
-[![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)  
-100Hzデータリンクのデモ動画  
+
   
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
 100Hzダンスのデモ動画  
@@ -67,15 +65,15 @@ ESP32DevKitC のみを使用した最小限の構成で動作確認が可能で�
   
 ### Meridian Board Type.K について  
 
-<img width="400" alt="TypeK" src="./docs/images/Meridian_TWIN_Board.png">  
+<img width="300" alt="TypeK" src="./docs/images/Meridian_TWIN_Board.png">  
   
 "Meridian Board Type.K" はサーボ制御用の半二重通信回路3系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです. Teensy4.0 と ESP32DevKitC を搭載し, サーボやセンサーを接続して使用します.  
   
-### ボードの制作もしくは入手の方法  
+#### ボードの制作もしくは入手の方法  
 - [回路図を公開](https://github.com/Ninagawa123/Meridian_TWIN/blob/main/docs/Meridian_TypeK_schema.pdf)しており, 自作することが可能です.  
 - 完成品ボードの頒布もあります. [https://1985b.booth.pm/](https://1985b.booth.pm/)  
   
-### Board と ESP32DevKitCのドッキング  
+#### Board と ESP32DevKitCのドッキング  
 
 Meridian Board Type.Kのメモリカードスロット側を下として, Teensy4.0, ESP32DevKitC それぞれのUSBポートが下になるように設置します.  
   
@@ -84,14 +82,14 @@ Teensy4.0, ESP32DevKitCにそれぞれのファイルを書き込みます.
 以下の説明の理解には PlatformIO や Teensy4.0, ESP32の扱いについてのごく初歩的な知識が必要です.
 (普段Arduino IDEを使っている方のためのPlatformIOの導入Tipsを[こちら(リンク)](https://qiita.com/Ninagawa_Izumi/items/6f58d9dbfdfe99be9c13)にまとめました.)  
   
-## ファイルの準備  
+### ファイルの準備  
 当リポジトリ右上の「\<\>code」ボタンより「Download ZIP」を選択し, ファイルをお手元のPCの適切なディレクトリに展開します.  
 (もちろんgit cloneなど他の手順でも構いません.)  
   
-#### Teensy4.0の準備  
+### Teensy4.0の準備  
 「Meridian_TWIN_Tsy40」ディレクトリの中にあるワークスペースファイル「Meridian_TWIN_for_Tsy40.code-workspace」をVScodeなどで開きます.  
 
-#### Teensy4.0に導入されるライブラリ
+### Teensy4.0に導入されるライブラリ
 下記のライブラリはファイルを開く際に自動的に導入されます.  
 - **Meridian by Ninagawa123** 
 - **TsyDMASPI by hideakitai** 
@@ -101,7 +99,7 @@ Teensy4.0, ESP32DevKitCにそれぞれのファイルを書き込みます.
 - **Adafruit Unified Sensor** 
 - **IcsClass_V210** (詳細は下記)
 
-##### IcsClass_V210の導入について
+#### IcsClass_V210の導入について
 近藤科学のICSサーボのためのライブラリもMITライセンスに基づき同梱していますが,  
 最新版については下記をご参照ください.  
 [https://kondo-robot.com/faq/ics-library-a2](https://kondo-robot.com/faq/ics-library-a2)  
@@ -142,10 +140,9 @@ Teensy4.0 とPCをUSBケーブルで接続し, PlatformIOの下にある"チェ�
 下記のライブラリはファイルを開く際に自動的に導入されます.  
 - **Meridian@^0.1.0 by Ninagawa123**  
 - **ESP32DMASPI@0.3.0 by hideakitai**  
-
-### keys.hの修正  
-keys.h内の  
-
+  
+#### keys.hの修正  
+  
 ```
 #define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID  
 #define AP_PASS "xxxxxx"             // アクセスポイントのパスワード  
@@ -195,14 +192,15 @@ wifi接続に成功すると
   
 と表示され, 「ESP32's IP address =>」にESP32本体のIPアドレスが表示されます.この番号をメモしておきます.  
   
-#### platformio.ini  
+##### platformio.ini  
+  
 platformio.iniでは主に以下の設定を行なっています.
 - platformのバージョン指定
 - ESP32内部システムからのエラーコードシリアル出力の抑制
 - PCとのSerial通信速度設定を1,000,000に指定
 - ライブラリの指定
 - OTA(無線経由のプログラム書き込み機能)の無効化によるパーティション拡張
-    
+  
 #### 各種設定の確認  
 他にも, 接続するリモコンやシリアルモニタなどについての設定が可能です.  
 Teensy4.0, ESP32両方の「src/config.h」内のコメントを参考に適宜変更してください.  
@@ -271,7 +269,9 @@ MeridianBoardの電源を入れ接続が確立すると, Meridian consoleの画�
 また, 「DEMO」「Enable」にチェックを入れると, 画面内のロボットがサインカーブで構成されたダンスのデモを行います.  
 ここでさらに「Power」にもチェックを入れると, ロボットのサーボにパワーが入り, 画面と同じ動きを実機で再現します.  
   
-# リモコンの使用方法  
+  
+## リモコンの使用方法  
+  
 **KRR-5FH/KRC5-FH**  
 config.hにて「#define MOUNT_PAD KRR5FH」と設定してボードにアップロードします.  
 受信機のKRR-5FHはボードの**R系統に接続**します. KRC-5FHのペアリングは製品の説明書の通りです.  
