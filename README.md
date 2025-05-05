@@ -8,7 +8,7 @@ Meridian_TWIN は, ロボットのリアルタイムなデジタルツイン化�
 処理能力の高い Teensy4.0 と通信能力のある ESP32DevKitC を連携させて併用することで, 高い拡張性と安定性を実現します.  
 (ESP32DevKitC のみで動く簡易版の[Meridian LITEへのリンクはこちら](https://github.com/Ninagawa123/Meridian_LITE)です.)
   
-<img width=100% alt="twin_flowsystem" src="./docs/images/Meridian_flowsystem_twin.png">  
+<img width=100% alt="twin_flowsystem" src="./docs/Meridian_flowsystem_twin.png">  
 
 システムの中核は[Meridim90](https://ninagawa123.github.io/Meridian_info/#Protocol/Meridim90/overview90/)というコンパクトで汎用的なデータ配列です.  
 このデータ配列が中間プロトコルとしてデバイス間を高速に循環することで, リアルタイムな状態データの共有を実現します.  
@@ -39,9 +39,6 @@ ESP32DevKitC のみを使用した最小限の構成で動作確認が可能で�
 当リポジトリで取り扱う Meridian_TWIN は ESP32DevKitC と Teensy4.0 を併用するタイプで, 対応ボードはMeridian Board Type.Kとなります.  
 近藤科学の小型二足ロボットキット**KHR-3HV**へのMeridian Board搭載を例に, 導入方法を説明します.  
     
-[![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)  
-100Hzデータリンクのデモ動画  
-  
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
 100Hzダンスのデモ動画  
   
