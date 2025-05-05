@@ -57,10 +57,10 @@
 // [11]      IMU/AHRS:temp                   温度
 // [12]-[14] IMU/AHRS:DMP ROLL,PITCH,YAW     DMP推定値 ロール,ピッチ,ヨー
 // [15]      ボタンデータ1
-// [16]      ボタンアナログ1（Stick Left）
-// [17]      ボタンアナログ2（Stick Right）
-// [18]      ボタンアナログ3（L2,R2 アナログ）
-// [19]      モーション設定（フレーム数）
+// [16]      ボタンアナログ1 (Stick Left)
+// [17]      ボタンアナログ2 (Stick Right)
+// [18]      ボタンアナログ3 (L2,R2 アナログ)
+// [19]      モーション設定 (フレーム数)
 // [20]      サーボID LO  コマンド
 // [21]      サーボID LO  データ値
 // [...]     ...
@@ -76,17 +76,17 @@
 // [MRDM_LEN-1] チェックサム
 
 // Meridimの基本設定
-#define MRDM_LEN       90  // Meridim配列の長さ設定（デフォルトは90）
-#define FRAME_DURATION 10  // 1フレームあたりの単位時間（単位ms）
-#define CHARGE_TIME    200 // 起動時のコンデンサチャージ待機時間（単位ms）
+#define MRDM_LEN       90  // Meridim配列の長さ設定 (デフォルトは90)
+#define FRAME_DURATION 10  // 1フレームあたりの単位時間 (単位ms)
+#define CHARGE_TIME    200 // 起動時のコンデンサチャージ待機時間 (単位ms)
 
 // 動作モード
-#define MODE_UDP_RECEIVE 1 // PCからのデータ受信（0:OFF, 1:ON, 通常は1）
-#define MODE_UDP_SEND    1 // PCへのデータ送信（0:OFF, 1:ON, 通常は1）
+#define MODE_UDP_RECEIVE 1 // PCからのデータ受信 (0:OFF, 1:ON, 通常は1)
+#define MODE_UDP_SEND    1 // PCへのデータ送信 (0:OFF, 1:ON, 通常は1)
 
 // Wifiの設定(SSID,パスワード等は別途keys.hで指定)
-#define MODE_FIXED_IP 0 // IPアドレスを固定するか（0:NO, 1:YES）
-#define UDP_TIMEOUT   4 // UDPの待受タイムアウト（単位ms,推奨値0）
+#define MODE_FIXED_IP 0 // IPアドレスを固定するか (0:NO, 1:YES)
+#define UDP_TIMEOUT   4 // UDPの待受タイムアウト (単位ms,推奨値0)
 
 // EEPROMの設定
 #define EEPROM_BYTE    540 // 使用するEEPROMのサイズ(バイト)
@@ -100,25 +100,25 @@
 #define CHECK_EEPROM_RW 0 // 起動時のEEPROMの動作チェック
 
 // シリアルモニタリング
-#define MONITOR_FLOW              0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
-#define MONITOR_ERR_ALL           0 // 全経路の受信エラー率を表示
-#define MONITOR_SEQ               0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
-#define MONITOR_PAD               0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
+#define MONITOR_FLOW              0     // シリアルモニタでフローを表示 (0:OFF, 1:ON)
+#define MONITOR_ERR_ALL           0     // 全経路の受信エラー率を表示
+#define MONITOR_SEQ               0     // シリアルモニタでシーケンス番号チェックを表示 (0:OFF, 1:ON)
+#define MONITOR_PAD               0     // シリアルモニタでリモコンのデータを表示 (0:OFF, 1:ON)
 #define MONITOR_SUPPRESS_DURATION 20000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // SPI設定
-#define SPI0_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
+#define SPI0_SPEED 6000000 // SPI通信の速度 (6000000kHz推奨)
 
 // PC接続関連設定
-#define SERIAL_PC_BPS     1000000 // PCとのシリアル速度（モニタリング表示用）
+#define SERIAL_PC_BPS     1000000 // PCとのシリアル速度 (モニタリング表示用)
 #define SERIAL_PC_TIMEOUT 2000    // PCとのシリアル接続確立タイムアウト(ms)
 
 // JOYPAD関連設定
-#define MOUNT_PAD        NONE // ESP32へのジョイパッドの搭載 NONE:0, PC:0, WIIMOTE:5, WIIMOTE_C:6
+#define MOUNT_PAD        NONE  // ESP32へのジョイパッドの搭載 NONE:0, PC:0, WIIMOTE:5, WIIMOTE_C:6
 #define PAD_INIT_TIMEOUT 10000 // 起動時のJOYPADの接続確立のタイムアウト(ms)
-#define PAD_INTERVAL     10 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define PAD_BUTTON_MARGE 0 // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
-#define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する
+#define PAD_INTERVAL     10    // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define PAD_BUTTON_MARGE 0     // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
+#define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
 #define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
@@ -134,21 +134,21 @@
 //-------------------------------------------------------------------------
 #define MCMD_DUMMY_DATA             -32768 // SPI送受信用のダミーデータ判定用
 #define MCMD_TEST_VALUE             -32767 // テスト用の仮設変数
-#define MCMD_SENSOR_YAW_CALIB       10002 // センサの推定ヨー軸を現在値センターとしてリセット
-#define MCMD_SENSOR_ALL_CALIB       10003 // センサの3軸について現在値を原点としてリセット
-#define MCMD_ERR_CLEAR_SERVO_ID     10004 // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
-#define MCMD_BOARD_TRANSMIT_ACTIVE  10005 // ボードが定刻で送信を行うモード（PC側が受信待ち）
-#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
-#define MCMD_FRAMETIMER_RESET       10007 // フレームタイマーを現在時刻にリセット
-#define MCMD_BOARD_STOP_DURING      10008 // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
-#define MCMD_EEPROM_ENTER_WRITE     10009 // EEPROM書き込みモードのスタート
-#define MCMD_EEPROM_EXIT_WRITE      10010 // EEPROM書き込みモードの終了
-#define MCMD_EEPROM_ENTER_READ      10011 // EEPROM読み出しモードのスタート
-#define MCMD_EEPROM_EXIT_READ       10012 // EEPROM読み出しモードの終了
-#define MCMD_SDCARD_ENTER_WRITE     10013 // SDCARD書き込みモードのスタート
-#define MCMD_SDCARD_EXIT_WRITE      10014 // SDCARD書き込みモードの終了
-#define MCMD_SDCARD_ENTER_READ      10015 // SDCARD読み出しモードのスタート
-#define MCMD_SDCARD_EXIT_READ       10016 // SDCARD読み出しモードの終了
+#define MCMD_SENSOR_YAW_CALIB       10002  // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_SENSOR_ALL_CALIB       10003  // センサの3軸について現在値を原点としてリセット
+#define MCMD_ERR_CLEAR_SERVO_ID     10004  // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
+#define MCMD_BOARD_TRANSMIT_ACTIVE  10005  // ボードが定刻で送信を行うモード (PC側が受信待ち)
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード (PC側が定刻送信)
+#define MCMD_FRAMETIMER_RESET       10007  // フレームタイマーを現在時刻にリセット
+#define MCMD_BOARD_STOP_DURING      10008  // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
+#define MCMD_EEPROM_ENTER_WRITE     10009  // EEPROM書き込みモードのスタート
+#define MCMD_EEPROM_EXIT_WRITE      10010  // EEPROM書き込みモードの終了
+#define MCMD_EEPROM_ENTER_READ      10011  // EEPROM読み出しモードのスタート
+#define MCMD_EEPROM_EXIT_READ       10012  // EEPROM読み出しモードの終了
+#define MCMD_SDCARD_ENTER_WRITE     10013  // SDCARD書き込みモードのスタート
+#define MCMD_SDCARD_EXIT_WRITE      10014  // SDCARD書き込みモードの終了
+#define MCMD_SDCARD_ENTER_READ      10015  // SDCARD読み出しモードのスタート
+#define MCMD_SDCARD_EXIT_READ       10016  // SDCARD読み出しモードの終了
 
 //-------------------------------------------------------------------------
 //  Meridim90 配列アクセス対応キー
@@ -255,7 +255,7 @@
 #define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
 #define ERRBIT_11_BOARD_DELAY  11 // Teensy or ESP32の処理ディレイ (末端で捕捉)
 #define ERRBIT_10_UDP_ESP_SKIP 10 // PC → ESP32 のUDPフレームスキップエラー
-#define ERRBIT_9_BOARD_SKIP    9 // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
-#define ERRBIT_8_PC_SKIP       8 // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_9_BOARD_SKIP    9  // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_8_PC_SKIP       8  // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
 
 #endif // __MERIDIAN_CONFIG_H__
