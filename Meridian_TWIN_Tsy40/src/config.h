@@ -7,10 +7,15 @@
 // [GND]               -> GND
 // [00] RX1, CRX2      -> ICS_3rd_TX
 // [01] TX1, CTX2      -> ICS_3rd_RX
-// [02]                -> LED（lights up when the processing time is not within the specified
-// time.） [03]                -> (NeoPixel?) [04]                -> (NeoPixel?) [05] ->
-// ICS_Right_EN [06]                -> ICS_Left_EN [07] RX2            -> ICS_Left_TX [08] TX2 ->
-// ICS_Left_RX [09]                -> SD_DAT3/CD (SD[2]) [10] CS             -> SPI_CS (ESP32[15])
+// [02]                -> LED（lights up when the processing time is not within the specified time.） 
+// [03]                -> (NeoPixel?) 
+// [04]                -> (NeoPixel?) 
+// [05]                -> ICS_Right_EN 
+// [06]                -> ICS_Left_EN 
+// [07] RX2            -> ICS_Left_TX 
+// [08] TX2            -> ICS_Left_RX 
+// [09]                -> SD_DAT3/CD (SD[2]) 
+// [10] CS             -> SPI_CS (ESP32[15])
 // [11] MOSI           -> SPI/SD_MOSI (ESP32[13]) & SD_CMD (SD[3])
 // [12] MISO           -> SPI/SD_MISO (ESP32[12]) & SD_DAT0 (SD[7])
 // [Vin]               -> 5V
