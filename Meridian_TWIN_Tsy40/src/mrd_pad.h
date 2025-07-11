@@ -90,8 +90,8 @@ uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics) {
     updated_val_tmp = static_cast<uint64_t>(pad_common_tmp);
     updated_val_tmp |= ((uint64_t)pad_analog_tmp[0] & 0xFF) << 16;
     updated_val_tmp |= ((uint64_t)pad_analog_tmp[1] & 0xFF) << 24;
-    //   updated_val_tmp |= ((uint64_t)pad_analog_tmp[2] & 0xFF) << 32;
-    //   updated_val_tmp |= ((uint64_t)pad_analog_tmp[3] & 0xFF) << 40;
+    updated_val_tmp |= ((uint64_t)pad_analog_tmp[2] & 0xFF) << 32;
+    updated_val_tmp |= ((uint64_t)pad_analog_tmp[3] & 0xFF) << 40;
 
     last_time_tmp = current_time_tmp; // 最後の実行時間を更新
     pre_val_tmp = updated_val_tmp;
