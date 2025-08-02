@@ -107,7 +107,7 @@
 
 // EEPROMの設定
 #define EEPROM_BYTE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     0   // 起動時にconfig.hの内容をEEPROMにセット(1:する, 0:しない)
+#define EEPROM_SET     1   // 起動時にconfig.hの内容をEEPROMにセット(1:する, 0:しない)　起動初回はEEPROMを書き込むように設定
 #define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
 #define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
 #define EEPROM_DUMP    1   // 起動時のEEPROM内容のダンプ表示
