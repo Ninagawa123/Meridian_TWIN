@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_MAIN__
 #define __MERIDIAN_MAIN__
 
-#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2025.05.05" // バージョン表示
+#define VERSION "Meridian_TWIN_for_Teensy_v1.1.1_2025.08.02" // バージョン表示
 
 // Meridian_TWIN_for_Teensy By Izumi Ninagawa & Meridian Project
 // MIT Licenced.
@@ -13,6 +13,7 @@
 // 20240812 変数, 関数, ファイル名等を大幅に変更.
 // 20240819 EEPROMのコードは調整中.
 // 20250505 トリム調整モードに対応. (Meridian_console.py連携)
+// 20250801 SDメモリの起動順を修正
 
 //================================================================================================================
 //  初期設定
@@ -115,9 +116,6 @@ void setup() {
   s_spi_meridim_dummy.sval[0] = MCMD_DUMMY_DATA;    // ダミーデータの設定
   s_spi_meridim.sval[0] = MRDM_LEN;                 // (マスターコマンド）
 
-  // SPI通信用DMAの設定
-  TsyDMASPI0.begin(SS, SPISettings(SPI0_SPEED, MSBFIRST, SPI_MODE3));
-
   // I2C0をスタート(主にセンサ)
   mrd_disp.imuahrs(MOUNT_IMUAHRS); // 6軸9軸センサタイプの表示
   mrd_wire0_intervaltimer_start(mrd_wire0_setup(MOUNT_IMUAHRS, I2C0_SPEED, ahrs));
@@ -136,6 +134,9 @@ void setup() {
   // フラグ調整
   flg.spi_trans = MODE_SPI_TRANS & MOUNT_ESP32; // SPI(ESP32)の送受信をするかどうか
   flg.spi_rcvd = false;                         // SPI受信完了フラグをサゲる
+
+  // SPI通信用DMAの設定と開始
+  TsyDMASPI0.begin(SS, SPISettings(SPI0_SPEED, MSBFIRST, SPI_MODE3));
 
   // 起動時
   mrd_disp.flow_start_twin_tsy();
